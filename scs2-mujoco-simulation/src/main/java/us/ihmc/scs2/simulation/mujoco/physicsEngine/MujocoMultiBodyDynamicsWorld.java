@@ -8,6 +8,7 @@ import org.bytedeco.javacpp.DoublePointer;
 
 import us.ihmc.euclid.tuple3D.interfaces.Vector3DReadOnly;
 import us.ihmc.scs2.simulation.mujoco.Mujoco;
+import us.ihmc.scs2.simulation.mujoco.MujocoObjectType;
 import us.ihmc.scs2.simulation.mujoco.Mujoco.mjContact;
 import us.ihmc.scs2.simulation.mujoco.Mujoco.mjData;
 import us.ihmc.scs2.simulation.mujoco.Mujoco.mjModel;
@@ -162,7 +163,7 @@ public class MujocoMultiBodyDynamicsWorld
    {
       if (geomId < 0)
          return "<none>";
-      BytePointer name = Mujoco.mj_id2name(model, Mujoco.mjOBJ_GEOM, geomId);
+      BytePointer name = Mujoco.mj_id2name(model, MujocoObjectType.GEOM, geomId);
       if (name == null || name.isNull())
          return "geom#" + geomId;
       String s = name.getString();

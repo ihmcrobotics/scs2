@@ -7,7 +7,7 @@ import org.bytedeco.javacpp.tools.InfoMap;
 import org.bytedeco.javacpp.tools.InfoMapper;
 
 // @formatter:off
-@Properties(value =
+@Properties(value = {
 @Platform(value = "linux",
       includepath = {"../../install/mujoco/include"},
       // mujoco.h is the umbrella header but JavaCPP only emits Java classes for symbols that
@@ -15,8 +15,7 @@ import org.bytedeco.javacpp.tools.InfoMapper;
       // mjModel/mjData/mjSpec/mjVFS/mjLROpt/etc. become real Java types instead of dangling
       // references. mjxmacro.h is intentionally omitted -- it is X-macro preprocessor magic for
       // dispatch tables and JavaCPP cannot make sense of it.
-      include = {"mujoco/mjtnum.h",
-                 "mujoco/mjexport.h",
+      include = {"mujoco/mjexport.h",
                  "mujoco/mjsan.h",
                  "mujoco/mjmacro.h",
                  "mujoco/mjthread.h",
@@ -32,6 +31,25 @@ import org.bytedeco.javacpp.tools.InfoMapper;
       link = "mujoco",
       preload = {"mujoco", "jniMujoco"}
 ),
+@Platform(value = "windows",
+      includepath = {"../../install/mujoco/include"},
+      include = {"mujoco/mjexport.h",
+                 "mujoco/mjsan.h",
+                 "mujoco/mjmacro.h",
+                 "mujoco/mjthread.h",
+                 "mujoco/mjplugin.h",
+                 "mujoco/mjmodel.h",
+                 "mujoco/mjdata.h",
+                 "mujoco/mjvisualize.h",
+                 "mujoco/mjrender.h",
+                 "mujoco/mjui.h",
+                 "mujoco/mjspec.h",
+                 "mujoco/mujoco.h"},
+      linkpath = "../../install/mujoco/lib",
+      link = "mujoco",
+      preload = {"mujoco", "jniMujoco"}
+)
+},
       target = "us.ihmc.scs2.simulation.mujoco.Mujoco"
 )
 // @formatter:on
@@ -44,6 +62,17 @@ public class MujocoInfoMapper implements InfoMapper
       // DoublePointer maps naturally and there is no surprise when reading qpos/qvel/ctrl arrays.
       infoMap.put(new Info("mjtNum").cast().valueTypes("double").pointerTypes("DoublePointer"));
       infoMap.put(new Info("mjtByte").cast().valueTypes("byte").pointerTypes("BytePointer"));
+      infoMap.put(new Info("mjtBool").cast().valueTypes("boolean").pointerTypes("BoolPointer"));
+      infoMap.put(new Info("mjtSize").cast().valueTypes("long").pointerTypes("LongPointer"));
+      infoMap.put(new Info("mjtDisableBit", "mjtEnableBit", "mjtJoint", "mjtGeom", "mjtProjection",
+                           "mjtCamLight", "mjtLightType", "mjtTexture", "mjtTextureRole",
+                           "mjtColorSpace", "mjtIntegrator", "mjtCone", "mjtJacobian", "mjtSolver",
+                           "mjtEq", "mjtWrap", "mjtTrn", "mjtDyn", "mjtGain", "mjtBias", "mjtObj",
+                           "mjtSensor", "mjtStage", "mjtDataType", "mjtConDataField",
+                           "mjtRayDataField", "mjtCamOutBit", "mjtSameFrame", "mjtSleepPolicy",
+                           "mjtLRMode", "mjtFlexSelf", "mjtSDFType", "mjtState", "mjtConstraint",
+                           "mjtConstraintState", "mjtWarning", "mjtTimer", "mjtSleepState")
+            .cast().valueTypes("int").pointerTypes("IntPointer"));
 
       // mjspec.h defines C++ std-alias types (mjString = std::string, mjStringVec = vector<string>,
       // mjByteVec = vector<std::byte>, etc.). JavaCPP can't cleanly round-trip these through JNI

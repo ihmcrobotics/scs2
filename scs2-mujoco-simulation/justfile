@@ -13,6 +13,10 @@ install:
         --workdir /home/robotlab/scs2-mujoco-simulation \
         ihmcrobotics/scs2-mujoco-simulation:0.1 bash install.sh
 
+# Stage the Windows MuJoCo SDK (headers + mujoco.lib + mujoco.dll).
+install-windows:
+    powershell.exe -NoProfile -ExecutionPolicy Bypass -File ./install.ps1
+
 # Run JavaCPP to generate Mujoco.java and libjniMujoco.so. Requires `just install` first.
 wrap:
     docker run \
@@ -21,6 +25,10 @@ wrap:
         --volume $(pwd):/home/robotlab/scs2-mujoco-simulation \
         --workdir /home/robotlab/scs2-mujoco-simulation \
         ihmcrobotics/scs2-mujoco-simulation:0.1 bash wrap.sh
+
+# Run JavaCPP to generate Mujoco.java and jniMujoco.dll. Requires `just install-windows` first.
+wrap-windows:
+    powershell.exe -NoProfile -ExecutionPolicy Bypass -File ./wrap.ps1
 
 # Clear the local install and build artifacts (does not touch the Java side).
 clear:

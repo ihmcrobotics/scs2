@@ -6,6 +6,7 @@ import java.util.Map;
 import org.bytedeco.javacpp.BytePointer;
 
 import us.ihmc.scs2.simulation.mujoco.Mujoco;
+import us.ihmc.scs2.simulation.mujoco.MujocoObjectType;
 import us.ihmc.scs2.simulation.mujoco.Mujoco.mjModel;
 
 /**
@@ -43,7 +44,7 @@ public class MujocoMultiBodyRobot
       int bodyId;
       try (BytePointer name = new BytePointer(namePrefix + scs2BodyName))
       {
-         bodyId = Mujoco.mj_name2id(model, Mujoco.mjOBJ_BODY, name);
+         bodyId = Mujoco.mj_name2id(model, MujocoObjectType.BODY, name);
       }
       if (bodyId < 0)
       {
@@ -68,7 +69,7 @@ public class MujocoMultiBodyRobot
       int jointId;
       try (BytePointer name = new BytePointer(namePrefix + scs2JointName))
       {
-         jointId = Mujoco.mj_name2id(model, Mujoco.mjOBJ_JOINT, name);
+         jointId = Mujoco.mj_name2id(model, MujocoObjectType.JOINT, name);
       }
       if (jointId < 0)
          throw new RuntimeException("MuJoCo joint not found: '" + namePrefix + scs2JointName + "' in robot '" + robotName + "'");

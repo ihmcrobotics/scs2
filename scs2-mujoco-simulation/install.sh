@@ -1,6 +1,13 @@
 #!/bin/bash
 set -e -o xtrace
 
+case "$(uname -s)" in
+    MINGW*|MSYS*|CYGWIN*)
+        powershell.exe -NoProfile -ExecutionPolicy Bypass -File ./install.ps1 "$@"
+        exit $?
+        ;;
+esac
+
 # ==============================
 # User Configuration Variables
 # ==============================

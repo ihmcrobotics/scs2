@@ -12,15 +12,15 @@ Scope of v1 (per the design plan at
 `~/.claude/plans/awesome-now-in-the-vivid-allen.md`):
 
 - Headless only. No `mjr_*` rendering. SCS2's JavaFX visualizer renders the mecano state.
-- Linux x86_64 only.
+- Linux x86_64 and Windows x86_64.
 - Single composite MuJoCo world per `SimulationSession`. All robots and terrain must be added
   before the first `simulate()` call — MuJoCo does not support mid-run model edits in this build.
 - URDF for robots, MJCF wrapper for world + terrain.
 
 ## Build pipeline
 
-The native binding is built inside a Docker container, mirroring `ihmc-crocoddyl-wrapper`. From
-this directory:
+The Linux native binding is built inside a Docker container, mirroring `ihmc-crocoddyl-wrapper`.
+From this directory:
 
 ```bash
 just docker     # one-time: builds the ubuntu:22.04 image with clang + Java 17
@@ -36,7 +36,28 @@ src/main/resources/mujoco/linux-x86_64/libjniMujoco.so
 src/main/resources/mujoco/linux-x86_64/libmujoco.so.3.x.y
 ```
 
-`./gradlew :scs2-mujoco-simulation:compileJava` then builds the Java side.
+On Windows, run from a Visual Studio Developer PowerShell so `cl.exe` is available:
+
+```powershell
+.\install.ps1   # downloads/stages the MuJoCo Windows SDK, mujoco.lib, and mujoco.dll
+.\wrap.ps1      # runs JavaCPP and generates Mujoco.java + jniMujoco.dll
+```
+
+If the SDK has already been unpacked locally, pass it explicitly:
+
+```powershell
+.\install.ps1 -MujocoSdkPath .\mujoco-3.2.7-windows-x86_64
+```
+
+After the Windows wrap succeeds you should see:
+
+```
+src/main/generated-java/us/ihmc/scs2/simulation/mujoco/Mujoco.java
+src/main/resources/mujoco/windows-x86_64/jniMujoco.dll
+src/main/resources/mujoco/windows-x86_64/mujoco.dll
+```
+
+`./gradlew :scs2-mujoco-simulation:compileJava` then builds the Java side on either platform.
 
 ## Verification
 
@@ -53,7 +74,8 @@ src/main/resources/mujoco/linux-x86_64/libmujoco.so.3.x.y
 
 ```
 build.gradle.kts                                Gradle module wiring (mirrors scs2-bullet-simulation)
-Dockerfile, justfile, install.sh, wrap.sh       Native build pipeline
+Dockerfile, justfile, install.sh, wrap.sh       Linux native build pipeline
+install.ps1, wrap.ps1                           Windows native build pipeline
 src/main/java/us/ihmc/scs2/simulation/mujoco/
   preset/MujocoInfoMapper.java                  JavaCPP @Platform mapper for mujoco.h
   MujocoNativeLibrary.java                      Loads libjniMujoco.so + libmujoco.so
@@ -71,6 +93,7 @@ src/main/java/us/ihmc/scs2/simulation/mujoco/
     parameters/YoMujocoSimulationParameters.java
 src/main/generated-java/.../Mujoco.java         (produced by `just wrap`)
 src/main/resources/mujoco/linux-x86_64/         (libs produced by `just install` + `just wrap`)
+src/main/resources/mujoco/windows-x86_64/       (libs produced by `install.ps1` + `wrap.ps1`)
 src/test/java/.../MujocoNativeSmokeTest.java    Headless smoke test
 ```
 
@@ -91,6 +114,6 @@ src/test/java/.../MujocoNativeSmokeTest.java    Headless smoke test
   controllers that read external wrenches.
 - **Rewindability** (the `SimulationRewindabilityTester` pattern) needs `mj_setState` /
   `mj_getState` exposure plus matching mecano state snapshotting.
-- **Non-Linux platforms.** `MujocoNativeLibrary.getPackage` returns `unknown` for non-Linux x86_64;
-  add macOS / Windows when needed.
+- **macOS.** `MujocoNativeLibrary.getPackage` still returns `unknown` for macOS; add it when
+  needed.
 ```
