@@ -5,7 +5,8 @@ import us.ihmc.scs2.simulation.physicsEngine.PhysicsEngineFactory;
 
 /**
  * Static factories that produce {@link PhysicsEngineFactory} lambdas wired to {@link MujocoPhysicsEngine}.
- * Use exactly as you would {@code BulletPhysicsEngineFactory.newBulletPhysicsEngineFactory()}.
+ * Pass the returned factory to {@code SimulationConstructionSet2} or {@code SCS2JavaFXVisualizer}
+ * wherever a {@link PhysicsEngineFactory} is accepted.
  */
 public interface MujocoPhysicsEngineFactory
 {

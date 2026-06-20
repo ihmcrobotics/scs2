@@ -3,6 +3,10 @@ package us.ihmc.scs2.simulation.mujoco.physicsEngine.parameters;
 /**
  * Holds tunable MuJoCo simulation parameters that map onto entries in {@code mjOption}. Applied
  * once at world compile time.
+ * <p>
+ * Intent: keep defaults as close to MuJoCo's own {@code mjOption} defaults as possible. Any
+ * deliberate deviation should be documented on the field with the MuJoCo default value noted.
+ * </p>
  */
 public class MujocoSimulationParameters implements MujocoSimulationParametersBasics
 {
