@@ -16,6 +16,7 @@ public class MujocoNativeLibrary implements NativeLibraryDescription
          architecturePackage = switch (operatingSystem)
          {
             case LINUX64 -> "linux-x86_64";
+            case WIN64 -> "windows-x86_64";
             default -> "unknown";
          };
       }
@@ -31,8 +32,12 @@ public class MujocoNativeLibrary implements NativeLibraryDescription
          case LINUX64:
             // Filename must match the SONAME recorded in libjniMujoco.so by the linker, which is
             // the versioned MuJoCo library (verify with `readelf -d`). Bump in lockstep with the
-            // MUJOCO_VERSION variable in install.sh.
+            // MUJOCO_VERSION variable in install.sh / install.ps1.
             return NativeLibraryWithDependencies.fromFilename("libjniMujoco.so", "libmujoco.so.3.2.7");
+         case WIN64:
+            // On Windows the NativeLibraryLoader loads dependencies in declaration order before
+            // the JNI bridge, so mujoco.dll is extracted and loaded first.
+            return NativeLibraryWithDependencies.fromFilename("jniMujoco.dll", "mujoco.dll");
          default:
             break;
       }

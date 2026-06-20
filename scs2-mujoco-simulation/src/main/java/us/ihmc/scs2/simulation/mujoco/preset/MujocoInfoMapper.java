@@ -7,7 +7,7 @@ import org.bytedeco.javacpp.tools.InfoMap;
 import org.bytedeco.javacpp.tools.InfoMapper;
 
 // @formatter:off
-@Properties(value =
+@Properties(value = {
 @Platform(value = "linux",
       includepath = {"../../install/mujoco/include"},
       // mujoco.h is the umbrella header but JavaCPP only emits Java classes for symbols that
@@ -32,6 +32,25 @@ import org.bytedeco.javacpp.tools.InfoMapper;
       link = "mujoco",
       preload = {"mujoco", "jniMujoco"}
 ),
+@Platform(value = "windows",
+      includepath = {"../../install/mujoco/include"},
+      include = {"mujoco/mjtnum.h",
+                 "mujoco/mjexport.h",
+                 "mujoco/mjsan.h",
+                 "mujoco/mjmacro.h",
+                 "mujoco/mjthread.h",
+                 "mujoco/mjplugin.h",
+                 "mujoco/mjmodel.h",
+                 "mujoco/mjdata.h",
+                 "mujoco/mjvisualize.h",
+                 "mujoco/mjrender.h",
+                 "mujoco/mjui.h",
+                 "mujoco/mjspec.h",
+                 "mujoco/mujoco.h"},
+      linkpath = {"../../install/mujoco/lib"},
+      link = "mujoco",
+      preload = {"mujoco", "jniMujoco"}
+)},
       target = "us.ihmc.scs2.simulation.mujoco.Mujoco"
 )
 // @formatter:on
