@@ -1,7 +1,6 @@
 package us.ihmc.scs2.simulation.mujoco.physicsEngine;
 
 import us.ihmc.euclid.orientation.interfaces.Orientation3DReadOnly;
-import us.ihmc.euclid.shape.convexPolytope.interfaces.ConvexPolytope3DReadOnly;
 import us.ihmc.euclid.shape.convexPolytope.interfaces.Vertex3DReadOnly;
 import us.ihmc.euclid.transform.interfaces.RigidBodyTransformReadOnly;
 import us.ihmc.euclid.tuple3D.interfaces.Tuple3DReadOnly;
@@ -143,31 +142,19 @@ public final class MujocoTools
    static void appendMeshAsset(StringBuilder sb, String name, CollisionShapeDefinition shape, int indent)
    {
       GeometryDefinition geometry = shape.getGeometryDefinition();
+      if (!isMeshGeometry(geometry))
+         return;
+      sb.append("  ".repeat(indent)).append("<mesh name=\"").append(meshName(name)).append("\" vertex=\"");
       if (geometry instanceof ConvexPolytope3DDefinition polytope)
       {
-         sb.append("  ".repeat(indent)).append("<mesh name=\"").append(meshName(name)).append("\" vertex=\"");
-         appendConvexPolytopeVertices(sb, polytope.getConvexPolytope());
-         sb.append("\"/>\n");
+         for (Vertex3DReadOnly vertex : polytope.getConvexPolytope().getVertices())
+            appendVertex(sb, vertex.getX(), vertex.getY(), vertex.getZ());
       }
       else if (geometry instanceof Ramp3DDefinition ramp)
       {
-         sb.append("  ".repeat(indent)).append("<mesh name=\"").append(meshName(name)).append("\" vertex=\"");
          appendRampVertices(sb, ramp);
-         sb.append("\"/>\n");
       }
-   }
-
-   /** Append every hull vertex of the polytope (in its own frame) as a flat "x y z  x y z ..." list. */
-   private static void appendConvexPolytopeVertices(StringBuilder sb, ConvexPolytope3DReadOnly polytope)
-   {
-      boolean first = true;
-      for (Vertex3DReadOnly vertex : polytope.getVertices())
-      {
-         if (!first)
-            sb.append("  ");
-         sb.append(vertex.getX()).append(' ').append(vertex.getY()).append(' ').append(vertex.getZ());
-         first = false;
-      }
+      sb.append("\"/>\n");
    }
 
    /**
@@ -249,8 +236,12 @@ public final class MujocoTools
       Tuple3DReadOnly axis = jointDef.getAxis();
       sb.append(pad).append("<joint name=\"").append(namePrefix).append(jointDef.getName())
         .append("\" type=\"").append(mjcfType)
-        .append("\" axis=\"").append(axis.getX()).append(' ').append(axis.getY()).append(' ').append(axis.getZ())
-        .append("\"/>\n");
+        .append("\" axis=\"").append(axis.getX()).append(' ').append(axis.getY()).append(' ').append(axis.getZ()).append('"');
+
+      // Damping
+      if (jointDef.getDamping() > 0.0)
+         sb.append(" damping=\"").append(jointDef.getDamping()).append('"');
+      sb.append("/>\n");
    }
 
    /** True if the transform has neither rotation nor translation (so pos/quat can be omitted). */
