@@ -30,18 +30,6 @@ mainDependencies {
    api("us.ihmc:ihmc-native-library-loader:2.0.6")
 }
 
-debugDependencies {
-   api(ihmc.sourceSetProject("main"))
-   api("us.ihmc:scs2-session-visualizer-jfx:source")
-   // SimulationConstructionSet2: user-facing wrapper around SimulationSession + visualizer; needed
-   // by PushRobotControllerSCS2.addPushButtonToSCS to install the toolbar button.
-   api("us.ihmc:scs2-simulation-construction-set:source")
-   // Canonical SCS2 push tool. Lives in ihmc-open-robotics-software for historical reasons; the
-   // engine-agnostic ExternalWrenchPoint plumbing in scs2-simulation makes it work against any
-   // PhysicsEngine that forwards external wrenches (which our MujocoPhysicsEngine does).
-   api("us.ihmc:ihmc-simulation-toolkit:source")
-}
-
 testDependencies {
    api("us.ihmc:scs2-session-visualizer-jfx:source")
 }
