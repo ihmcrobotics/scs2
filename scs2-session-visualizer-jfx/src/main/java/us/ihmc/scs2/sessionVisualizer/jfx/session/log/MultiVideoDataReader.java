@@ -30,11 +30,11 @@ public class MultiVideoDataReader
          try
          {
             VideoDataReader reader;
-            if (camera.getTypeAsString().equals("CAPTURE_CARD_MAGEWELL"))
+            if (isMagewellCamera(camera))
             {
                reader = new MagewellVideoDataReader(camera, dataDirectory, logProperties.getVideo().getHasTimebase());
             }
-            else if (camera.getTypeAsString().equals("CAPTURE_CARD"))
+            else if (isBlackMagicCamera(camera))
             {
                reader = new BlackMagicVideoDataReader(camera, dataDirectory, logProperties.getVideo().getHasTimebase());
             }
@@ -107,5 +107,17 @@ public class MultiVideoDataReader
    public List<VideoDataReader> getReaders()
    {
       return readers;
+   }
+
+   static boolean isMagewellCamera(Camera camera)
+   {
+      String type = camera.getTypeAsString();
+      return "CAPTURE_CARD_MAGEWELL".equals(type) || "Magewell".equals(type);
+   }
+
+   static boolean isBlackMagicCamera(Camera camera)
+   {
+      String type = camera.getTypeAsString();
+      return "CAPTURE_CARD".equals(type) || "Capture Card".equals(type);
    }
 }
