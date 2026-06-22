@@ -49,8 +49,8 @@ src/main/resources/mujoco/linux-x86_64/libmujoco.so.3.x.y
    under gravity and asserts z decreases over 1000 steps.
 
 2. **End-to-end with a real SCS2 example.** Port one of the SCS2 example simulations (e.g.
-   `SphereAtRestExperimentalSimulation`) to use
-   `MujocoPhysicsEngineFactory.newMujocoPhysicsEngineFactory()`. Compare trajectories against the
+   `SphereAtRestExperimentalSimulation`) to construct a `PhysicsEngineFactory` lambda wrapping
+   `new MujocoPhysicsEngine(frame, rootRegistry, parameters)`. Compare trajectories against the
    existing Bullet / ImpulseBased engines for sanity.
 
 ## Layout
@@ -64,7 +64,6 @@ src/main/java/us/ihmc/scs2/simulation/mujoco/
   MujocoNativeLibrary.java                      Loads libjniMujoco.so + libmujoco.so
   physicsEngine/
     MujocoPhysicsEngine.java                    Implements scs2-simulation PhysicsEngine
-    MujocoPhysicsEngineFactory.java             newMujocoPhysicsEngineFactory()
     MujocoMultiBodyDynamicsWorld.java           Owns mjModel*, mjData*
     MujocoRobot.java                            SCS2 RobotExtension wrapper
     MujocoMultiBodyRobot.java                   joint-name -> mjModel address map
