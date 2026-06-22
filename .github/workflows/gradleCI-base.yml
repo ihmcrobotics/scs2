@@ -55,18 +55,13 @@ jobs:
         run: |
           Xvfb ${{env.DISPLAY}} ${{env.XVFB_PARMS}} &
 
-      - name: Install just
-        if: ${{ inputs.setup-mujoco-native }}
-        run: |
-          curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --to /usr/local/bin
-
       - name: Build MuJoCo native bindings
         if: ${{ inputs.setup-mujoco-native }}
         working-directory: scs2-mujoco-simulation
         run: |
-          just docker
-          just install
-          just wrap
+          ./build.sh docker
+          ./build.sh install
+          ./build.sh wrap
 
       - name: Gradle test - ${{ inputs.test-category }}
         run: |

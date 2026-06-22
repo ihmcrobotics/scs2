@@ -5,7 +5,7 @@ MuJoCo physics backend for SCS2, alongside Bullet / ContactPointBased / ImpulseB
 ## Status
 
 Java sources compile against a JavaCPP-generated `Mujoco.java`. CI (`test-fast`) builds the
-native bindings via `just install && just wrap` before running tests, so the module is verified
+native bindings via `./build.sh install && ./build.sh wrap` before running tests, so the module is verified
 on every push/PR — see `.github/workflows/gradleCI-base.yml`.
 
 Scope:
@@ -22,17 +22,17 @@ The native binding is built inside a Docker container, mirroring `ihmc-crocoddyl
 this directory:
 
 ```bash
-just docker     # one-time: builds the ubuntu:22.04 image with clang + Java 17
-just install    # downloads the MuJoCo SDK release tarball, stages headers + libmujoco.so
-just wrap       # runs JavaCPP: parses MujocoInfoMapper, generates Mujoco.java + libjniMujoco.so
+./build.sh docker     # one-time: builds the ubuntu:22.04 image with clang + Java 17
+./build.sh install    # downloads the MuJoCo SDK release tarball, stages headers + libmujoco.so
+./build.sh wrap       # runs JavaCPP: parses MujocoInfoMapper, generates Mujoco.java + libjniMujoco.so
 ```
 
 `install.sh` pins `MUJOCO_VERSION=3.2.7` (released 2024-01-15). This is intentional, not
 oversight: `MujocoInfoMapper.java` is a hand-maintained JavaCPP preset against that header
 layout, and bumping the version requires re-validating the struct/API mapping against whatever
-changed upstream before re-running `just wrap`.
+changed upstream before re-running `./build.sh wrap`.
 
-After `just wrap` succeeds you should see:
+After `./build.sh wrap` succeeds you should see:
 
 ```
 src/main/generated-java/us/ihmc/scs2/simulation/mujoco/Mujoco.java
@@ -44,7 +44,7 @@ src/main/resources/mujoco/linux-x86_64/libmujoco.so.3.x.y
 
 ## Verification
 
-1. **Native smoke test.** Once `just wrap` has produced the binding, run
+1. **Native smoke test.** Once `./build.sh wrap` has produced the binding, run
    `./gradlew :scs2-mujoco-simulation:test --tests MujocoNativeSmokeTest`. This drops a sphere
    under gravity and asserts z decreases over 1000 steps.
 
@@ -57,7 +57,7 @@ src/main/resources/mujoco/linux-x86_64/libmujoco.so.3.x.y
 
 ```
 build.gradle.kts                                Gradle module wiring (mirrors scs2-bullet-simulation)
-justfile                                        `just docker|install|wrap|clear` entry points
+build.sh                                        `./build.sh docker|install|wrap|clear` entry points
 native-build/                                   Dockerfile, install.sh/.ps1, wrap.sh/.ps1
 src/main/java/us/ihmc/scs2/simulation/mujoco/
   preset/MujocoInfoMapper.java                  JavaCPP @Platform mapper for mujoco.h
@@ -74,8 +74,8 @@ src/main/java/us/ihmc/scs2/simulation/mujoco/
     MujocoTools.java                            transform <-> MJCF attribute strings
     parameters/MujocoSimulationParameters.java
     parameters/YoMujocoSimulationParameters.java
-src/main/generated-java/.../Mujoco.java         (produced by `just wrap`)
-src/main/resources/mujoco/linux-x86_64/         (libs produced by `just install` + `just wrap`)
+src/main/generated-java/.../Mujoco.java         (produced by `./build.sh wrap`)
+src/main/resources/mujoco/linux-x86_64/         (libs produced by `./build.sh install` + `./build.sh wrap`)
 src/test/java/.../MujocoNativeSmokeTest.java    Headless smoke test
 ```
 
