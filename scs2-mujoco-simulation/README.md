@@ -58,7 +58,8 @@ src/main/resources/mujoco/linux-x86_64/libmujoco.so.3.x.y
 
 ```
 build.gradle.kts                                Gradle module wiring (mirrors scs2-bullet-simulation)
-Dockerfile, justfile, install.sh, wrap.sh       Native build pipeline
+justfile                                        `just docker|install|wrap|clear` entry points
+native-build/                                   Dockerfile, install.sh/.ps1, wrap.sh/.ps1
 src/main/java/us/ihmc/scs2/simulation/mujoco/
   preset/MujocoInfoMapper.java                  JavaCPP @Platform mapper for mujoco.h
   MujocoNativeLibrary.java                      Loads libjniMujoco.so + libmujoco.so

@@ -2,7 +2,7 @@ set shell := ["bash", "-cu"]
 
 # Build the Docker image used for the install/wrap steps.
 docker:
-    docker build -t ihmcrobotics/scs2-mujoco-simulation:0.1 .
+    docker build -t ihmcrobotics/scs2-mujoco-simulation:0.1 -f native-build/Dockerfile .
 
 # Stage MuJoCo SDK (headers + libmujoco.so) into build/ and resources/
 install:
@@ -11,7 +11,7 @@ install:
         --user $(id -u):$(id -g) \
         --volume $(pwd):/home/robotlab/scs2-mujoco-simulation \
         --workdir /home/robotlab/scs2-mujoco-simulation \
-        ihmcrobotics/scs2-mujoco-simulation:0.1 bash install.sh
+        ihmcrobotics/scs2-mujoco-simulation:0.1 bash native-build/install.sh
 
 # Run JavaCPP to generate Mujoco.java and libjniMujoco.so. Requires `just install` first.
 wrap:
@@ -20,7 +20,7 @@ wrap:
         --user $(id -u):$(id -g) \
         --volume $(pwd):/home/robotlab/scs2-mujoco-simulation \
         --workdir /home/robotlab/scs2-mujoco-simulation \
-        ihmcrobotics/scs2-mujoco-simulation:0.1 bash wrap.sh
+        ihmcrobotics/scs2-mujoco-simulation:0.1 bash native-build/wrap.sh
 
 # Clear the local install and build artifacts (does not touch the Java side).
 clear:
