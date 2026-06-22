@@ -4,15 +4,14 @@ MuJoCo physics backend for SCS2, alongside Bullet / ContactPointBased / ImpulseB
 
 ## Status
 
-**v1 / scaffolded.** Java sources compile against a JavaCPP-generated `Mujoco.java` that is
-produced by `just wrap` — the module is not buildable until you have run the install + wrap
-pipeline below at least once.
+Java sources compile against a JavaCPP-generated `Mujoco.java`. CI (`test-fast`) builds the
+native bindings via `just install && just wrap` before running tests, so the module is verified
+on every push/PR — see `.github/workflows/gradleCI-base.yml`.
 
-Scope of v1 (per the design plan at
-`~/.claude/plans/awesome-now-in-the-vivid-allen.md`):
+Scope:
 
 - Headless only. No `mjr_*` rendering. SCS2's JavaFX visualizer renders the mecano state.
-- Linux x86_64 only.
+- Linux x86_64 and Windows x86_64.
 - Single composite MuJoCo world per `SimulationSession`. All robots and terrain must be added
   before the first `simulate()` call — MuJoCo does not support mid-run model edits in this build.
 - URDF for robots, MJCF wrapper for world + terrain.
@@ -84,10 +83,10 @@ src/test/java/.../MujocoNativeSmokeTest.java    Headless smoke test
 
 - **MJCF `<include>` of URDF.** `MujocoMultiBodyRobotFactory.buildWorldMjcf` emits
   `<include file="robot.urdf"/>`. If MuJoCo treats the included file strictly as MJCF and refuses
-  URDF, the fallback is direct MJCF generation from `RobotDefinition` (see the plan, ~500 extra
-  lines). Verify with the smoke test once the binding is wrapped.
-- **Mesh + convex polytope terrain** is not yet supported by `MujocoTerrainFactory`. v1 covers
-  box / sphere / cylinder / capsule.
+  URDF, the fallback is direct MJCF generation from `RobotDefinition`. Verify with the smoke test
+  if MJCF parsing changes upstream.
+- **Mesh + convex polytope terrain** is not yet supported by `MujocoTerrainFactory`. Currently
+  covers box / sphere / cylinder / capsule.
 - **Multi-DoF non-root joints** (planar, spherical, cross-four-bar) are silently skipped by
   `MujocoRobot.pushStateToMujoco`. They need MJCF-side modeling and a corresponding state
   push/pull strategy.
@@ -97,6 +96,5 @@ src/test/java/.../MujocoNativeSmokeTest.java    Headless smoke test
   controllers that read external wrenches.
 - **Rewindability** (the `SimulationRewindabilityTester` pattern) needs `mj_setState` /
   `mj_getState` exposure plus matching mecano state snapshotting.
-- **Non-Linux platforms.** `MujocoNativeLibrary.getPackage` returns `unknown` for non-Linux x86_64;
-  add macOS / Windows when needed.
+- **macOS** is not supported; `MujocoNativeLibrary.getPackage` returns `unknown` for it.
 ```
