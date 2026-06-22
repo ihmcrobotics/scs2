@@ -24,9 +24,14 @@ this directory:
 
 ```bash
 just docker     # one-time: builds the ubuntu:22.04 image with clang + Java 17
-just install    # downloads the MuJoCo SDK 3.x release tarball, stages headers + libmujoco.so
+just install    # downloads the MuJoCo SDK release tarball, stages headers + libmujoco.so
 just wrap       # runs JavaCPP: parses MujocoInfoMapper, generates Mujoco.java + libjniMujoco.so
 ```
+
+`install.sh` pins `MUJOCO_VERSION=3.2.7` (released 2024-01-15). This is intentional, not
+oversight: `MujocoInfoMapper.java` is a hand-maintained JavaCPP preset against that header
+layout, and bumping the version requires re-validating the struct/API mapping against whatever
+changed upstream before re-running `just wrap`.
 
 After `just wrap` succeeds you should see:
 
