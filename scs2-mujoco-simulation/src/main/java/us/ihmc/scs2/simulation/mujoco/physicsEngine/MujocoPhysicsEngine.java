@@ -73,17 +73,12 @@ public class MujocoPhysicsEngine implements PhysicsEngine
    private File workingDirectory;
    private boolean hasBeenInitialized = false;
 
-   public MujocoPhysicsEngine(ReferenceFrame inertialFrame, YoRegistry rootRegistry)
+   public MujocoPhysicsEngine(ReferenceFrame inertialFrame, YoRegistry rootRegistry, MujocoSimulationParametersReadOnly parameters)
    {
       this.inertialFrame = inertialFrame;
       this.rootRegistry = rootRegistry;
       this.globalSimulationParameters = new YoMujocoSimulationParameters("globalMujoco", physicsEngineRegistry);
       this.hasBeenCompiled = new YoBoolean("mujocoHasBeenCompiled", physicsEngineRegistry);
-   }
-
-   public MujocoPhysicsEngine(ReferenceFrame inertialFrame, YoRegistry rootRegistry, MujocoSimulationParametersReadOnly parameters)
-   {
-      this(inertialFrame, rootRegistry);
       globalSimulationParameters.set(parameters);
    }
 
