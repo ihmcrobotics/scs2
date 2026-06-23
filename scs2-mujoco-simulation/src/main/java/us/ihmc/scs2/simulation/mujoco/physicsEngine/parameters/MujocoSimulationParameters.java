@@ -10,7 +10,6 @@ package us.ihmc.scs2.simulation.mujoco.physicsEngine.parameters;
  */
 public class MujocoSimulationParameters implements MujocoSimulationParametersBasics
 {
-   private double timestep = 0.002;
    private int solverIterations = 25;
    private int subSteps = 1;
    private double contactSolrefTimeconst = 0.02;
@@ -26,18 +25,6 @@ public class MujocoSimulationParameters implements MujocoSimulationParametersBas
    public static MujocoSimulationParameters defaultMujocoSimulationParameters()
    {
       return new MujocoSimulationParameters();
-   }
-
-   @Override
-   public double getTimestep()
-   {
-      return timestep;
-   }
-
-   @Override
-   public void setTimestep(double timestep)
-   {
-      this.timestep = timestep;
    }
 
    @Override

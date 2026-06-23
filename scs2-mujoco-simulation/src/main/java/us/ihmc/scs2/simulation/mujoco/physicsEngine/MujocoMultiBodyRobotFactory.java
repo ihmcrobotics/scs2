@@ -68,8 +68,7 @@ public final class MujocoMultiBodyRobotFactory
       // impratio: frictional-to-normal constraint impedance ratio. cone: pyramidal (default) or
       // elliptic friction cone. Both are key levers for foot slip under shear loads (see the
       // contact tuning notes below and MujocoSimulationParameters).
-      mjcf.append("  <option timestep=\"").append(parameters.getTimestep())
-          .append("\" gravity=\"0 0 -9.81\" integrator=\"implicitfast\" solver=\"Newton\" iterations=\"")
+      mjcf.append("  <option gravity=\"0 0 -9.81\" integrator=\"implicitfast\" solver=\"Newton\" iterations=\"")
           .append(parameters.getSolverIterations())
           .append("\" noslip_iterations=\"").append(parameters.getNoslipIterations())
           .append("\" impratio=\"").append(parameters.getImpratio())

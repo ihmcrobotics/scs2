@@ -11,7 +11,6 @@ import us.ihmc.yoVariables.variable.YoInteger;
  */
 public class YoMujocoSimulationParameters implements MujocoSimulationParametersBasics
 {
-   private final YoDouble timestep;
    private final YoInteger solverIterations;
    private final YoInteger subSteps;
    private final YoDouble contactSolrefTimeconst;
@@ -26,7 +25,6 @@ public class YoMujocoSimulationParameters implements MujocoSimulationParametersB
 
    public YoMujocoSimulationParameters(String prefix, YoRegistry registry)
    {
-      timestep = new YoDouble(prefix + "Timestep", registry);
       solverIterations = new YoInteger(prefix + "SolverIterations", registry);
       subSteps = new YoInteger(prefix + "SubSteps", registry);
       contactSolrefTimeconst = new YoDouble(prefix + "ContactSolrefTimeconst", registry);
@@ -40,18 +38,6 @@ public class YoMujocoSimulationParameters implements MujocoSimulationParametersB
       frictionSlide = new YoDouble(prefix + "FrictionSlide", registry);
 
       set(MujocoSimulationParameters.defaultMujocoSimulationParameters());
-   }
-
-   @Override
-   public double getTimestep()
-   {
-      return timestep.getValue();
-   }
-
-   @Override
-   public void setTimestep(double timestep)
-   {
-      this.timestep.set(timestep);
    }
 
    @Override

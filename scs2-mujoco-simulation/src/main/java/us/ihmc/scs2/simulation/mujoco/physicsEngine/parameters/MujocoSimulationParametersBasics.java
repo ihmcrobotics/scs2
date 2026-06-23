@@ -9,7 +9,6 @@ public interface MujocoSimulationParametersBasics extends MujocoSimulationParame
 {
    default void set(MujocoSimulationParametersReadOnly other)
    {
-      setTimestep(other.getTimestep());
       setSolverIterations(other.getSolverIterations());
       setSubSteps(other.getSubSteps());
       setContactSolrefTimeconst(other.getContactSolrefTimeconst());
@@ -22,8 +21,6 @@ public interface MujocoSimulationParametersBasics extends MujocoSimulationParame
       setUseEllipticFrictionCone(other.getUseEllipticFrictionCone());
       setFrictionSlide(other.getFrictionSlide());
    }
-
-   void setTimestep(double timestep);
 
    void setSolverIterations(int solverIterations);
 

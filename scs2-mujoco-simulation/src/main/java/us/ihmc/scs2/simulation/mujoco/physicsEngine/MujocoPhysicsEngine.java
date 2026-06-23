@@ -107,6 +107,7 @@ public class MujocoPhysicsEngine implements PhysicsEngine
       }
 
       simulateDt = dt;
+      dynamicsWorld.setTimestep(dt / globalSimulationParameters.getSubSteps());
       long now = System.nanoTime();
       if (simulateCallStartTime != 0)
          mujocoSimulateTimeMs.set((now - simulateCallStartTime) * 1.0e-6);

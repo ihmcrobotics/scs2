@@ -6,8 +6,6 @@ package us.ihmc.scs2.simulation.mujoco.physicsEngine.parameters;
  */
 public interface MujocoSimulationParametersReadOnly
 {
-   double getTimestep();
-
    int getSolverIterations();
 
    int getSubSteps();
