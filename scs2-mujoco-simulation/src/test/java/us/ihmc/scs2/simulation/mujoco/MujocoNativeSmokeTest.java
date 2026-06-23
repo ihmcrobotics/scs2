@@ -16,8 +16,9 @@ import us.ihmc.scs2.simulation.mujoco.Mujoco.mjModel;
  * - a trivial MJCF compiles via mj_loadXML;
  * - 1000 steps complete and the world's qpos remains finite.
  *
- * <p>Cannot be run until {@code just install} + {@code just wrap} have produced
- * {@code Mujoco.java} and the resources {@code .so} files. See module README.
+ * <p>Cannot be run until {@code ./build.sh install} + {@code ./build.sh wrap} (Linux) or
+ * {@code .\native-build\install.ps1} + {@code .\native-build\wrap.ps1} (Windows) have produced
+ * {@code Mujoco.java} and the native library files. See module README.
  */
 public class MujocoNativeSmokeTest
 {
