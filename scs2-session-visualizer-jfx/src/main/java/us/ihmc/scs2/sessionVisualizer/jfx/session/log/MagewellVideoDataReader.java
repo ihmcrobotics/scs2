@@ -4,9 +4,9 @@ import javafx.scene.image.Image;
 import javafx.scene.image.PixelReader;
 import javafx.scene.image.PixelWriter;
 import javafx.scene.image.WritableImage;
+import logger_msgs.Camera;
 import org.bytedeco.javacv.Frame;
 import org.bytedeco.javacv.JavaFXFrameConverter;
-import logger_msgs.Camera;
 import us.ihmc.scs2.session.log.MagewellScrubber;
 import us.ihmc.scs2.session.log.ProgressConsumer;
 

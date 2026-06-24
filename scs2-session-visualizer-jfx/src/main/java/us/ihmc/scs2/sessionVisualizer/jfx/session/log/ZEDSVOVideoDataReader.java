@@ -1,18 +1,18 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.session.log;
 
+import static us.ihmc.zed.global.zed.*;
+
 import javafx.scene.image.PixelWriter;
 import javafx.scene.image.WritableImage;
+import logger_msgs.Camera;
 import org.bytedeco.javacpp.Pointer;
 import org.bytedeco.opencv.global.opencv_core;
 import org.bytedeco.opencv.opencv_core.Mat;
-import logger_msgs.Camera;
 import us.ihmc.scs2.session.log.ProgressConsumer;
 import us.ihmc.scs2.session.log.ZEDSVOScrubber;
 
 import java.io.File;
 import java.io.IOException;
-
-import static us.ihmc.zed.global.zed.*;
 
 /**
  * Reads video data from one or more ZED SDK SVO2 files recorded during the log.

@@ -1,10 +1,10 @@
 package us.ihmc.scs2.session.log;
 
+import logger_msgs.ChildLog;
+import logger_msgs.Synchronization;
 import org.ejml.data.DMatrixRMaj;
 import org.ejml.dense.row.CommonOps_DDRM;
 import us.ihmc.log.LogTools;
-import logger_msgs.ChildLog;
-import logger_msgs.Synchronization;
 import us.ihmc.yoVariables.variable.YoVariable;
 
 import java.io.File;

@@ -3,9 +3,8 @@ package us.ihmc.scs2.sessionVisualizer.jfx.session.log;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import org.junit.jupiter.api.Test;
-
 import logger_msgs.Camera;
+import org.junit.jupiter.api.Test;
 
 public class MultiVideoDataReaderTest
 {

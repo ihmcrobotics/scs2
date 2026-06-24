@@ -1,17 +1,17 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.session.log;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.Future;
-
 import logger_msgs.Camera;
 import logger_msgs.LogProperties;
 import us.ihmc.fastddsjava.cdr.idl.IDLObjectSequence;
 import us.ihmc.scs2.session.log.ProgressConsumer;
 import us.ihmc.scs2.session.log.ZEDSVOScrubber;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.BackgroundExecutorManager;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.Future;
 
 public class MultiVideoDataReader
 {
