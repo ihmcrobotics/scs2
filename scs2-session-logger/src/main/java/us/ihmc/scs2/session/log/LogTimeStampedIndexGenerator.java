@@ -1,7 +1,7 @@
 package us.ihmc.scs2.session.log;
 
-import logger_msgs.MessageTypes;
 import logger_msgs.LogProperties;
+import logger_msgs.MessageTypes;
 import us.ihmc.idl.serializers.extra.ROS2PropertiesSerializer;
 import us.ihmc.robotDataLogger.handshake.YoVariableHandshakeParser;
 import us.ihmc.robotDataLogger.logger.YoVariableLoggerListener;

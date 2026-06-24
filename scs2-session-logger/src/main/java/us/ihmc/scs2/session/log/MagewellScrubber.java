@@ -1,7 +1,7 @@
 package us.ihmc.scs2.session.log;
 
-import org.bytedeco.javacv.Frame;
 import logger_msgs.Camera;
+import org.bytedeco.javacv.Frame;
 import us.ihmc.robotDataLogger.logger.MagewellDemuxer;
 import us.ihmc.robotDataLogger.logger.MagewellMuxer;
 import us.ihmc.tools.CaptureTimeTools;

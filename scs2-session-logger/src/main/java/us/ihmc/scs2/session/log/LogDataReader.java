@@ -1,5 +1,6 @@
 package us.ihmc.scs2.session.log;
 
+import com.github.luben.zstd.Zstd;
 import us.ihmc.commons.Conversions;
 import us.ihmc.log.LogTools;
 import us.ihmc.robotDataLogger.LogIndex;
@@ -9,7 +10,6 @@ import us.ihmc.robotDataLogger.logger.LogPropertiesReader;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicGroupDefinition;
 import us.ihmc.scs2.session.tools.RobotDataLogTools;
 import us.ihmc.tools.compression.SnappyUtils;
-import com.github.luben.zstd.Zstd;
 import us.ihmc.yoVariables.registry.YoRegistry;
 import us.ihmc.yoVariables.variable.YoDouble;
 import us.ihmc.yoVariables.variable.YoInteger;
