@@ -15,6 +15,9 @@ import java.io.IOException;
 
 public class MagewellVideoDataReader implements VideoDataReader
 {
+   /** Cap on consecutive non-video packets to skip per seek (audio/timecode interleaved with video). */
+   private static final int MAX_NON_VIDEO_FRAMES_TO_SKIP = 256;
+
    private final MagewellScrubber magewellScrubber;
    private final FrameData frameData = new FrameData();
 
@@ -32,9 +35,6 @@ public class MagewellVideoDataReader implements VideoDataReader
    {
       return magewellScrubber.getMagewellDemuxer().getImageWidth();
    }
-
-   /** Cap on consecutive non-video packets to skip per seek (audio/timecode interleaved with video). */
-   private static final int MAX_NON_VIDEO_FRAMES_TO_SKIP = 256;
 
    public void readVideoFrame(long queryRobotTimestamp)
    {
