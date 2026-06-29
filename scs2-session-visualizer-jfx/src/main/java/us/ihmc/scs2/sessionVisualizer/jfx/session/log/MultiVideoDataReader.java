@@ -111,6 +111,7 @@ public class MultiVideoDataReader
 
    static boolean isMagewellCamera(Camera camera)
    {
+      // logger_msgs Camera.type strings (legacy us.ihmc.robotDataLogger.CameraType values)
       String type = camera.getTypeAsString();
       return "CAPTURE_CARD_MAGEWELL".equals(type) || "Magewell".equals(type);
    }
