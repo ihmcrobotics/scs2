@@ -21,6 +21,7 @@ public class MujocoSimulationParameters implements MujocoSimulationParametersBas
    private double impratio = 1.0;
    private boolean useEllipticFrictionCone = false;
    private double frictionSlide = 1.0;
+   private double timestep = 0.0;
 
    public static MujocoSimulationParameters defaultMujocoSimulationParameters()
    {
@@ -157,5 +158,17 @@ public class MujocoSimulationParameters implements MujocoSimulationParametersBas
    public void setFrictionSlide(double frictionSlide)
    {
       this.frictionSlide = frictionSlide;
+   }
+
+   @Override
+   public double getTimestep()
+   {
+      return timestep;
+   }
+
+   @Override
+   public void setTimestep(double timestep)
+   {
+      this.timestep = timestep;
    }
 }

@@ -5,7 +5,7 @@ $ErrorActionPreference = 'Stop'
 # ==============================
 # User Configuration Variables
 # ==============================
-$MUJOCO_VERSION      = "3.2.7"
+$MUJOCO_VERSION      = "3.10.0"
 $MUJOCO_ZIP          = "mujoco-$MUJOCO_VERSION-windows-x86_64.zip"
 $MUJOCO_URL          = "https://github.com/google-deepmind/mujoco/releases/download/$MUJOCO_VERSION/$MUJOCO_ZIP"
 $WIN_RESOURCES_DIR   = "src\main\resources\mujoco\windows-x86_64"
