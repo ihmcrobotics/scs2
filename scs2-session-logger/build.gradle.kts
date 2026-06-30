@@ -22,7 +22,6 @@ mainDependencies {
    api("us.ihmc:ihmc-robot-data-logger:0.38.0")
    api("com.github.luben:zstd-jni:1.5.5-10")
    api("org.antlr:antlr4-runtime:4.13.1")
-   //api("org.lz4:lz4-java:1.8.0")
    api("com.github.vatbub:mslinks:1.0.6.2")
 }
 
