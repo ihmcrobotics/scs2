@@ -27,7 +27,7 @@ this directory:
 ./build.sh wrap       # runs JavaCPP: parses MujocoInfoMapper, generates Mujoco.java + libjniMujoco.so
 ```
 
-`install.sh` pins `MUJOCO_VERSION=3.2.7` (released 2024-01-15). This is intentional, not
+`install.sh` pins `MUJOCO_VERSION=3.10.0` (released 2024-01-15). This is intentional, not
 oversight: `MujocoInfoMapper.java` is a hand-maintained JavaCPP preset against that header
 layout, and bumping the version requires re-validating the struct/API mapping against whatever
 changed upstream before re-running `./build.sh wrap`.
