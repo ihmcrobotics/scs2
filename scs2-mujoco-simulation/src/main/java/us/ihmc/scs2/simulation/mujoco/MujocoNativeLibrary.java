@@ -33,7 +33,7 @@ public class MujocoNativeLibrary implements NativeLibraryDescription
             // Filename must match the SONAME recorded in libjniMujoco.so by the linker, which is
             // the versioned MuJoCo library (verify with `readelf -d`). Bump in lockstep with the
             // MUJOCO_VERSION variable in install.sh / install.ps1.
-            return NativeLibraryWithDependencies.fromFilename("libjniMujoco.so", "libmujoco.so.3.2.7");
+            return NativeLibraryWithDependencies.fromFilename("libjniMujoco.so", "libmujoco.so.3.10.0");
          case WIN64:
             // On Windows the NativeLibraryLoader loads dependencies in declaration order before
             // the JNI bridge, so mujoco.dll is extracted and loaded first.

@@ -27,4 +27,6 @@ public interface MujocoSimulationParametersReadOnly
    boolean getUseEllipticFrictionCone();
 
    double getFrictionSlide();
+
+   double getTimestep();
 }
