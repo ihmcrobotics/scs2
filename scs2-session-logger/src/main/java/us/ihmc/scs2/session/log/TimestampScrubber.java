@@ -203,7 +203,8 @@ public class TimestampScrubber
 
       if (index < 0)
       {
-         return closestInsertionIndex(queryRobotTimestamp, -index - 1);
+         int nextIndex = -index - 1; // insertionPoint
+         index = nextIndex;
       }
 
       return index;
@@ -231,24 +232,11 @@ public class TimestampScrubber
 
       if (index < 0)
       {
-         return closestInsertionIndex(queryRobotTimestamp, -index - 1);
+         int nextIndex = -index - 1; // insertionPoint
+         index = nextIndex;
       }
 
       return index;
-   }
-
-   private int closestInsertionIndex(long queryRobotTimestamp, int insertionPoint)
-   {
-      if (insertionPoint <= 0)
-         return 0;
-
-      if (insertionPoint >= robotTimestamps.length)
-         return robotTimestamps.length - 1;
-
-      long before = robotTimestamps[insertionPoint - 1];
-      long after = robotTimestamps[insertionPoint];
-
-      return queryRobotTimestamp - before <= after - queryRobotTimestamp ? insertionPoint - 1 : insertionPoint;
    }
 
    public int getCurrentIndex()

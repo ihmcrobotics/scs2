@@ -13,17 +13,6 @@ import us.ihmc.scs2.session.remote.SimpleYoVariablesUpdatedListener;
 
 public class RemoteSessionFactory implements SimpleYoVariablesUpdatedListener
 {
-   static
-   {
-      // RegistryConsumer's adaptive jitter buffer (RFC-1889) is sized for the lossy UDP realtime logger,
-      // where it can grow to thousands of frames (tens of seconds of latency). A live SCS2 viewer connects
-      // over an ordered, reliable TCP websocket, so it needs essentially no reordering buffer. Without this,
-      // the estimate saturates at its cap and pins the displayed delay at ~30s permanently. Default the cap
-      // low for the viewer while still allowing an explicit -Dscs2.remote.maxJitterBufferSamples override.
-      if (System.getProperty("scs2.remote.maxJitterBufferSamples") == null)
-         System.setProperty("scs2.remote.maxJitterBufferSamples", "10");
-   }
-
    private final ObjectProperty<RemoteSession> activeSessionProperty = new SimpleObjectProperty<>(this, "activeSession", null);
 
    public RemoteSessionFactory()

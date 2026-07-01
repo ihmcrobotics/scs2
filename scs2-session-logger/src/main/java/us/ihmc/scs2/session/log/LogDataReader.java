@@ -93,11 +93,7 @@ public class LogDataReader
       logChannel = logFileInputStream.getChannel();
 
       compressed = logProperties.getVariables().getCompressed();
-<<<<<<< HEAD
       compressionType = compressed ? LogCompressionType.fromString(logProperties.getVariables().getCompressionTypeAsString()) : LogCompressionType.NONE;
-=======
-      compressionType = compressed ? CompressionType.fromString(logProperties.getVariables().getCompressionTypeAsString()) : CompressionType.NONE;
->>>>>>> e787d8f6 (Stuff)
       singleTickSize = bufferSize;
 
       if (compressed)
@@ -111,8 +107,8 @@ public class LogDataReader
          logIndex = new LogIndex(indexData, logChannel.size());
 
          // For legacy logs we need to check what the batch size is
-         int storedBatchSize = (int) logProperties.getVariables().getCompressionBatchSize();
-         batchSize = storedBatchSize <= 0 ? 1 : storedBatchSize;
+         long storedBatchSize = logProperties.getVariables().getCompressionBatchSize();
+         batchSize = storedBatchSize <= 0 ? 1 : Math.toIntExact(storedBatchSize);
 
          int rawBatchBytes = bufferSize * batchSize;
          compressedBuffer = ByteBuffer.allocate(switch (compressionType)
@@ -127,8 +123,8 @@ public class LogDataReader
          int lastBatchTicks = batchSize; // Last batch is full
          if (batchSize > 1)
          {
-            int storedValidTicksInLastBatch = (int) logProperties.getVariables().getValidTicksInLastBatch();
-            lastBatchTicks = storedValidTicksInLastBatch > 0 ? storedValidTicksInLastBatch : batchSize;
+            long storedValidTicksInLastBatch = logProperties.getVariables().getValidTicksInLastBatch();
+            lastBatchTicks = storedValidTicksInLastBatch > 0 ? Math.toIntExact(storedValidTicksInLastBatch) : batchSize;
          }
          numberOfEntries = (logIndex.getNumberOfEntries() - 1) * batchSize + lastBatchTicks;
          LogTools.info("Loaded indexing.");
