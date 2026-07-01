@@ -1,3 +1,0 @@
-src/main/resources/mujoco/**/*.so
-src/main/resources/mujoco/**/*.so.*
-src/main/resources/mujoco/**/*.dll

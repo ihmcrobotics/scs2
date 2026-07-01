@@ -17,7 +17,6 @@ jobs:
     with:
       test-category: 'fast'
       setup-javafx-headless: false
-      setup-mujoco-native: true
 
   test-javafx-headless:
     uses: ./.github/workflows/gradleCI-base.yml
