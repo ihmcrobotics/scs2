@@ -9,6 +9,9 @@ $JAVACPP_VERSION     = "1.5.11"
 $WIN_RESOURCES_DIR   = "src\main\resources\mujoco\windows-x86_64"
 $GENERATED_JAVA_DIR  = "src\main\generated-java\us\ihmc\scs2\simulation\mujoco"
 
+# Module root is the parent of native-build/
+$moduleRoot  = Split-Path $PSScriptRoot
+
 # ==============================
 # Verify cl.exe is on PATH
 # (run this script from a "Developer PowerShell for VS 20xx" or after calling vcvarsall.bat)
@@ -24,13 +27,13 @@ Run this script from a 'Developer PowerShell for VS 20xx' (search the Start menu
 
 $buildJava   = "$PSScriptRoot\build\java"
 $javacppJar  = "$buildJava\javacpp.jar"
-$resourcesAbs = "$PSScriptRoot\$WIN_RESOURCES_DIR"
+$resourcesAbs = "$moduleRoot\$WIN_RESOURCES_DIR"
 
 # ==============================
 # Stage Java Sources for JavaCPP
 # ==============================
 New-Item -ItemType Directory -Force -Path $buildJava | Out-Null
-Copy-Item -Recurse -Force "$PSScriptRoot\src\main\java\*" $buildJava
+Copy-Item -Recurse -Force "$moduleRoot\src\main\java\*" $buildJava
 
 # ==============================
 # Download javacpp.jar
@@ -74,8 +77,8 @@ if ($LASTEXITCODE -ne 0) { throw "JavaCPP JNI compilation failed." }
 # ==============================
 # Copy Generated Java to generated-java source set
 # ==============================
-New-Item -ItemType Directory -Force -Path "$PSScriptRoot\$GENERATED_JAVA_DIR" | Out-Null
-Copy-Item -Force "$buildJava\us\ihmc\scs2\simulation\mujoco\Mujoco.java" "$PSScriptRoot\$GENERATED_JAVA_DIR\"
+New-Item -ItemType Directory -Force -Path "$moduleRoot\$GENERATED_JAVA_DIR" | Out-Null
+Copy-Item -Force "$buildJava\us\ihmc\scs2\simulation\mujoco\Mujoco.java" "$moduleRoot\$GENERATED_JAVA_DIR\"
 
 Write-Host ""
 Write-Host "Done."
