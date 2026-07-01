@@ -1,0 +1,3 @@
+# Build outputs and downloaded archives — only pre-built binaries are tracked
+install/
+src/

@@ -20,6 +20,7 @@ public interface MujocoSimulationParametersBasics extends MujocoSimulationParame
       setImpratio(other.getImpratio());
       setUseEllipticFrictionCone(other.getUseEllipticFrictionCone());
       setFrictionSlide(other.getFrictionSlide());
+      setTimestep(other.getTimestep());
    }
 
    void setSolverIterations(int solverIterations);
@@ -43,4 +44,6 @@ public interface MujocoSimulationParametersBasics extends MujocoSimulationParame
    void setUseEllipticFrictionCone(boolean useEllipticFrictionCone);
 
    void setFrictionSlide(double frictionSlide);
+
+   void setTimestep(double timestep);
 }

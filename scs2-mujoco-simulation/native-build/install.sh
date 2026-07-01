@@ -4,7 +4,7 @@ set -e -o xtrace
 # ==============================
 # User Configuration Variables
 # ==============================
-MUJOCO_VERSION="3.2.7"
+MUJOCO_VERSION="3.10.0"
 MUJOCO_TARBALL="mujoco-${MUJOCO_VERSION}-linux-x86_64.tar.gz"
 MUJOCO_URL="https://github.com/google-deepmind/mujoco/releases/download/${MUJOCO_VERSION}/${MUJOCO_TARBALL}"
 LINUX_RESOURCES_DIR="src/main/resources/mujoco/linux-x86_64"

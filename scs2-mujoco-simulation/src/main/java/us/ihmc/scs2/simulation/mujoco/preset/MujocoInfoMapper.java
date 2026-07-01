@@ -15,11 +15,10 @@ import org.bytedeco.javacpp.tools.InfoMapper;
       // mjModel/mjData/mjSpec/mjVFS/mjLROpt/etc. become real Java types instead of dangling
       // references. mjxmacro.h is intentionally omitted -- it is X-macro preprocessor magic for
       // dispatch tables and JavaCPP cannot make sense of it.
-      include = {"mujoco/mjtnum.h",
+      include = {"mujoco/mjtype.h",
                  "mujoco/mjexport.h",
                  "mujoco/mjsan.h",
                  "mujoco/mjmacro.h",
-                 "mujoco/mjthread.h",
                  "mujoco/mjplugin.h",
                  "mujoco/mjmodel.h",
                  "mujoco/mjdata.h",
@@ -34,11 +33,10 @@ import org.bytedeco.javacpp.tools.InfoMapper;
 ),
 @Platform(value = "windows",
       includepath = {"../../install/mujoco/include"},
-      include = {"mujoco/mjtnum.h",
+      include = {"mujoco/mjtype.h",
                  "mujoco/mjexport.h",
                  "mujoco/mjsan.h",
                  "mujoco/mjmacro.h",
-                 "mujoco/mjthread.h",
                  "mujoco/mjplugin.h",
                  "mujoco/mjmodel.h",
                  "mujoco/mjdata.h",
@@ -108,23 +106,22 @@ public class MujocoInfoMapper implements InfoMapper
       infoMap.put(new Info("mjuiItem", "mjuiItem_").pointerTypes("mjuiItem"));
       infoMap.put(new Info("mjuiSection", "mjuiSection_").pointerTypes("mjuiSection"));
       infoMap.put(new Info("mjUI", "mjUI_").pointerTypes("mjUI"));
-      infoMap.put(new Info("mjThreadPool", "mjThreadPool_").pointerTypes("mjThreadPool"));
-      infoMap.put(new Info("mjTask", "mjTask_").pointerTypes("mjTask"));
       infoMap.put(new Info("mjResource", "mjResource_").pointerTypes("mjResource"));
 
       // The mju_user_* callbacks in mujoco.h are inline function-pointer extern declarations
       // (e.g. `MJAPI extern void (*mju_user_warning)(const char*);`). JavaCPP's parser can't
       // extract a clean Java name from that syntax for the void-returning ones and ends up
       // emitting a method literally named "void", which then fails javac. Skip the whole block
-      // by line range -- the four lines are contiguous in upstream mujoco.h (start:
-      // mju_user_error, end: mju_user_free). JavaCPP keys file Info entries by basename.
+      // by line range. In 3.10.0 the four declarations were split into two groups:
+      // mju_user_malloc/mju_user_free and then mju_user_error/mju_user_warning.
+      // We span from the first to the last to cover all of them.
       infoMap.put(new Info("mujoco.h")
-            .linePatterns(".*mju_user_error.*", ".*mju_user_free.*").skip());
+            .linePatterns(".*mju_user_malloc.*", ".*mju_user_warning.*").skip());
 
       // The plugin / threadpool / file-system callback function pointers cannot be expressed as
       // Java methods out of the box; skip them in v1. Callers that need them can re-enable by
       // adding @Cast wrappers.
-      infoMap.put(new Info("mjPLUGIN_LIB_INIT", "mjPRIVATE__getPluginConfig").skip());
+      infoMap.put(new Info("mjPLUGIN_LIB_INIT").skip());
 
       // mjplugin.h defines plugin entry-point glue macros (mjDLLMAIN = DllMain on Windows,
       // mjEXTERNC = extern "C"). They aren't meant to surface as Java constants -- the RHS is
