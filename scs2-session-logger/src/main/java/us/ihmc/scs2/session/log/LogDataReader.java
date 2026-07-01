@@ -5,6 +5,7 @@ import us.ihmc.log.LogTools;
 import us.ihmc.robotDataLogger.LogIndex;
 import us.ihmc.robotDataLogger.handshake.YoVariableHandshakeParser;
 import us.ihmc.robotDataLogger.jointState.JointState;
+import us.ihmc.robotDataLogger.logger.LogCompressionType;
 import us.ihmc.robotDataLogger.logger.LogPropertiesReader;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicGroupDefinition;
 import us.ihmc.scs2.session.tools.RobotDataLogTools;
@@ -41,7 +42,7 @@ public class LogDataReader
 
    // Compressed data helpers
    private final boolean compressed;
-   private final CompressionType compressionType;
+   private final LogCompressionType compressionType;
    private final LogIndex logIndex;
    private final ByteBuffer compressedBuffer;
    private int index = 0;
@@ -92,7 +93,7 @@ public class LogDataReader
       logChannel = logFileInputStream.getChannel();
 
       compressed = logProperties.getVariables().getCompressed();
-      compressionType = compressed ? CompressionType.fromString(logProperties.getVariables().getCompressionTypeAsString()) : CompressionType.NONE;
+      compressionType = compressed ? LogCompressionType.fromString(logProperties.getVariables().getCompressionTypeAsString()) : LogCompressionType.NONE;
       singleTickSize = bufferSize;
 
       if (compressed)
@@ -124,7 +125,6 @@ public class LogDataReader
          {
             int storedValidTicksInLastBatch = logProperties.getVariables().getValidTicksInLastBatch();
             lastBatchTicks = storedValidTicksInLastBatch > 0 ? storedValidTicksInLastBatch : batchSize;
-
          }
          numberOfEntries = (logIndex.getNumberOfEntries() - 1) * batchSize + lastBatchTicks;
          LogTools.info("Loaded indexing.");
@@ -312,8 +312,12 @@ public class LogDataReader
       {
          case ZSTD ->
          {
-            long result = Zstd.decompressByteArray(batchBuffer.array(), 0, batchBuffer.capacity(),
-                                                   compressedBuffer.array(), compressedBuffer.position(), compressedBuffer.remaining());
+            long result = Zstd.decompressByteArray(batchBuffer.array(),
+                                                   0,
+                                                   batchBuffer.capacity(),
+                                                   compressedBuffer.array(),
+                                                   compressedBuffer.position(),
+                                                   compressedBuffer.remaining());
             if (Zstd.isError(result))
                throw new RuntimeException("Zstd decompression failed: " + Zstd.getErrorName(result));
             batchBuffer.position((int) result);
@@ -459,21 +463,5 @@ public class LogDataReader
    public List<JointState> getJointStates()
    {
       return jointStates;
-   }
-
-   private enum CompressionType
-   {
-      NONE, SNAPPY, ZSTD;
-
-      public static CompressionType fromString(String value)
-      {
-         return switch (value.trim().toLowerCase())
-         {
-            case "", "none" -> NONE;
-            case "snappy" -> SNAPPY;
-            case "zstd" -> ZSTD;
-            default -> throw new IllegalArgumentException("Unsupported compression type: " + value);
-         };
-      }
    }
 }
