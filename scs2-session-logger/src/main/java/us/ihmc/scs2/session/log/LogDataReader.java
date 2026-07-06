@@ -1,5 +1,6 @@
 package us.ihmc.scs2.session.log;
 
+import com.github.luben.zstd.Zstd;
 import us.ihmc.commons.Conversions;
 import us.ihmc.log.LogTools;
 import us.ihmc.robotDataLogger.LogIndex;
@@ -10,7 +11,6 @@ import us.ihmc.robotDataLogger.logger.LogPropertiesReader;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicGroupDefinition;
 import us.ihmc.scs2.session.tools.RobotDataLogTools;
 import us.ihmc.tools.compression.SnappyUtils;
-import com.github.luben.zstd.Zstd;
 import us.ihmc.yoVariables.registry.YoRegistry;
 import us.ihmc.yoVariables.variable.YoDouble;
 import us.ihmc.yoVariables.variable.YoInteger;
@@ -107,8 +107,8 @@ public class LogDataReader
          logIndex = new LogIndex(indexData, logChannel.size());
 
          // For legacy logs we need to check what the batch size is
-         int storedBatchSize = logProperties.getVariables().getCompressionBatchSize();
-         batchSize = storedBatchSize <= 0 ? 1 : storedBatchSize;
+         long storedBatchSize = logProperties.getVariables().getCompressionBatchSize();
+         batchSize = storedBatchSize <= 0 ? 1 : Math.toIntExact(storedBatchSize);
 
          int rawBatchBytes = bufferSize * batchSize;
          compressedBuffer = ByteBuffer.allocate(switch (compressionType)
@@ -123,8 +123,8 @@ public class LogDataReader
          int lastBatchTicks = batchSize; // Last batch is full
          if (batchSize > 1)
          {
-            int storedValidTicksInLastBatch = logProperties.getVariables().getValidTicksInLastBatch();
-            lastBatchTicks = storedValidTicksInLastBatch > 0 ? storedValidTicksInLastBatch : batchSize;
+            long storedValidTicksInLastBatch = logProperties.getVariables().getValidTicksInLastBatch();
+            lastBatchTicks = storedValidTicksInLastBatch > 0 ? Math.toIntExact(storedValidTicksInLastBatch) : batchSize;
          }
          numberOfEntries = (logIndex.getNumberOfEntries() - 1) * batchSize + lastBatchTicks;
          LogTools.info("Loaded indexing.");

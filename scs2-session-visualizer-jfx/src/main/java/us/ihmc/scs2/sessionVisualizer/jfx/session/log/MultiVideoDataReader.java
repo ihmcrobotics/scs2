@@ -1,17 +1,17 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.session.log;
 
+import logger_msgs.Camera;
+import logger_msgs.LogProperties;
+import us.ihmc.fastddsjava.cdr.idl.IDLObjectSequence;
+import us.ihmc.scs2.session.log.ProgressConsumer;
+import us.ihmc.scs2.session.log.ZEDSVOScrubber;
+import us.ihmc.scs2.sessionVisualizer.jfx.managers.BackgroundExecutorManager;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Future;
-
-import us.ihmc.robotDataLogger.Camera;
-import us.ihmc.robotDataLogger.CameraType;
-import us.ihmc.robotDataLogger.LogProperties;
-import us.ihmc.scs2.session.log.ProgressConsumer;
-import us.ihmc.scs2.session.log.ZEDSVOScrubber;
-import us.ihmc.scs2.sessionVisualizer.jfx.managers.BackgroundExecutorManager;
 
 public class MultiVideoDataReader
 {
@@ -22,7 +22,7 @@ public class MultiVideoDataReader
    public MultiVideoDataReader(File dataDirectory, LogProperties logProperties, BackgroundExecutorManager backgroundExecutorManager)
    {
       this.backgroundExecutorManager = backgroundExecutorManager;
-      List<Camera> cameras = logProperties.getCameras();
+      IDLObjectSequence<Camera> cameras = logProperties.getCameras();
 
       for (int i = 0; i < cameras.size(); i++)
       {
@@ -30,11 +30,11 @@ public class MultiVideoDataReader
          try
          {
             VideoDataReader reader;
-            if (camera.getType().toString().equals(CameraType.CAPTURE_CARD_MAGEWELL.toString()))
+            if (isMagewellCamera(camera))
             {
                reader = new MagewellVideoDataReader(camera, dataDirectory, logProperties.getVideo().getHasTimebase());
             }
-            else if (camera.getType().toString().equals(CameraType.CAPTURE_CARD.toString()))
+            else if (isBlackMagicCamera(camera))
             {
                reader = new BlackMagicVideoDataReader(camera, dataDirectory, logProperties.getVideo().getHasTimebase());
             }
@@ -107,5 +107,18 @@ public class MultiVideoDataReader
    public List<VideoDataReader> getReaders()
    {
       return readers;
+   }
+
+   static boolean isMagewellCamera(Camera camera)
+   {
+      // logger_msgs Camera.type strings (legacy us.ihmc.robotDataLogger.CameraType values)
+      String type = camera.getTypeAsString();
+      return "CAPTURE_CARD_MAGEWELL".equals(type) || "Magewell".equals(type);
+   }
+
+   static boolean isBlackMagicCamera(Camera camera)
+   {
+      String type = camera.getTypeAsString();
+      return "CAPTURE_CARD".equals(type) || "Capture Card".equals(type);
    }
 }
