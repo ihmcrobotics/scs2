@@ -1,6 +1,6 @@
 package us.ihmc.scs2.session.log;
 
-import us.ihmc.robotDataLogger.Synchronization;
+import logger_msgs.Synchronization;
 
 public class ChildLogSynchronization
 {
