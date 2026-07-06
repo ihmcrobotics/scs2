@@ -15,7 +15,7 @@ import java.util.stream.Collectors;
 public class ROS2SchemaParser
 {
    public static final String SUB_SCHEMA_SEPARATOR_REGEX = "\n(=+)\n";
-   public static final String SUB_SCHEMA_PREFIX = "MSG: fastdds/";
+   public static final String SUB_SCHEMA_PREFIX = "MSG: ";
    /**
     * ROS2 allows declaring unbounded arrays, e.g. "float64[]", which have no max length in the schema.
     * Since the max length is used to statically allocate the backing {@code YoVariable}s, unbounded arrays are treated as bounded with this default length.
