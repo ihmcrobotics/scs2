@@ -1,5 +1,6 @@
 package us.ihmc.scs2.session.mcap;
 
+import us.ihmc.log.LogTools;
 import us.ihmc.scs2.session.mcap.MCAPSchema.MCAPSchemaField;
 import us.ihmc.scs2.session.mcap.specs.records.Schema;
 
@@ -15,6 +16,11 @@ public class ROS2SchemaParser
 {
    public static final String SUB_SCHEMA_SEPARATOR_REGEX = "\n(=+)\n";
    public static final String SUB_SCHEMA_PREFIX = "MSG: fastdds/";
+   /**
+    * ROS2 allows declaring unbounded arrays, e.g. "float64[]", which have no max length in the schema.
+    * Since the max length is used to statically allocate the backing {@code YoVariable}s, unbounded arrays are treated as bounded with this default length.
+    */
+   public static final int UNBOUNDED_ARRAY_DEFAULT_MAX_LENGTH = 255;
 
    /**
     * Loads a schema from the given {@link Schema}.
@@ -95,7 +101,16 @@ public class ROS2SchemaParser
       if (lBracketIndex < rBracketIndex)
       {
          String maxLengthStr = field.getType().substring(lBracketIndex + 1, rBracketIndex);
-         if (maxLengthStr.startsWith("<="))
+         if (maxLengthStr.isEmpty())
+         {
+            // Unbounded array, e.g. "float64[]": no max length declared in the schema.
+            field.setArray(false);
+            field.setVector(true);
+            maxLengthStr = Integer.toString(UNBOUNDED_ARRAY_DEFAULT_MAX_LENGTH);
+            LogTools.warn("Unbounded arrays are not supported for type " + field.getType() + ", limiting max length to "
+                          + UNBOUNDED_ARRAY_DEFAULT_MAX_LENGTH);
+         }
+         else if (maxLengthStr.startsWith("<="))
          {
             field.setArray(false);
             field.setVector(true);
