@@ -58,7 +58,8 @@ public class YoVariableLogCropper extends YoVariableLogReader
       int batchSize = getBatchSize();
       int batchFrom = from / batchSize;
       int batchTo = to / batchSize;
-      int validTicksInLastBatch = (to % batchSize) + 1;
+      int tickOffsetInLastBatch = to % batchSize;
+      int validTicksInLastBatch = tickOffsetInLastBatch + 1;
       int numberOfBatches = batchTo - batchFrom + 1;
 
       try
@@ -137,7 +138,13 @@ public class YoVariableLogCropper extends YoVariableLogReader
          progressConsumer.info("Cropping video files");
 
          if (videoDataReaders != null && !videoDataReaders.isEmpty())
-            MultiVideoDataReader.crop(destination, videoDataReaders, getTimestamp(batchFrom), getTimestamp(batchTo), progressConsumer.subProgress(0.50, 1.0));
+         {
+            // The index only stores a timestamp per batch (the batch's first tick), so getTimestamp(batchTo) would
+            // give the start of the last batch instead of tick `to`. Decode the batch to read that tick's own
+            // timestamp, otherwise the video is cropped short relative to the variable data by up to batchSize - 1 ticks.
+            long endTimestamp = readData(batchTo).asLongBuffer().get(tickOffsetInLastBatch * getNumberOfVariables());
+            MultiVideoDataReader.crop(destination, videoDataReaders, getTimestamp(batchFrom), endTimestamp, progressConsumer.subProgress(0.50, 1.0));
+         }
 
          progressConsumer.done();
       }
