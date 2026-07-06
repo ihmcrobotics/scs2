@@ -414,7 +414,7 @@ public class MCAPLogFileReader
 
    private static String cleanupName(String name)
    {
-      return name.replace(':', '-');
+      return name.replace(':', '-').replace('/', '-');
    }
 
    public MCAPMessageManager getMessageManager()
