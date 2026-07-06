@@ -1,9 +1,9 @@
 package us.ihmc.scs2.session.log;
 
+import logger_msgs.LogProperties;
+import logger_msgs.Synchronization;
 import us.ihmc.commons.Conversions;
 import us.ihmc.log.LogTools;
-import us.ihmc.robotDataLogger.LogProperties;
-import us.ihmc.robotDataLogger.Synchronization;
 import us.ihmc.robotDataLogger.logger.LogPropertiesReader;
 import us.ihmc.scs2.definition.robot.RobotDefinition;
 import us.ihmc.scs2.definition.robot.RobotStateDefinition;

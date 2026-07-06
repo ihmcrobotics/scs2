@@ -1,5 +1,22 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.session.log;
 
+import gnu.trove.list.array.TIntArrayList;
+import logger_msgs.LogProperties;
+import us.hebi.matlab.mat.format.Mat5;
+import us.hebi.matlab.mat.types.MatFile;
+import us.hebi.matlab.mat.types.Matrix;
+import us.hebi.matlab.mat.types.Struct;
+import us.ihmc.robotDataLogger.logger.YoVariableLogReader;
+import us.ihmc.scs2.session.log.ProgressConsumer;
+import us.ihmc.yoVariables.registry.YoNamespace;
+import us.ihmc.yoVariables.registry.YoRegistry;
+import us.ihmc.yoVariables.variable.YoBoolean;
+import us.ihmc.yoVariables.variable.YoDouble;
+import us.ihmc.yoVariables.variable.YoEnum;
+import us.ihmc.yoVariables.variable.YoInteger;
+import us.ihmc.yoVariables.variable.YoLong;
+import us.ihmc.yoVariables.variable.YoVariable;
+
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -11,23 +28,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.LongConsumer;
 import java.util.function.Predicate;
-
-import gnu.trove.list.array.TIntArrayList;
-import us.hebi.matlab.mat.format.Mat5;
-import us.hebi.matlab.mat.types.MatFile;
-import us.hebi.matlab.mat.types.Matrix;
-import us.hebi.matlab.mat.types.Struct;
-import us.ihmc.robotDataLogger.LogProperties;
-import us.ihmc.robotDataLogger.logger.YoVariableLogReader;
-import us.ihmc.scs2.session.log.ProgressConsumer;
-import us.ihmc.yoVariables.registry.YoNamespace;
-import us.ihmc.yoVariables.registry.YoRegistry;
-import us.ihmc.yoVariables.variable.YoBoolean;
-import us.ihmc.yoVariables.variable.YoDouble;
-import us.ihmc.yoVariables.variable.YoEnum;
-import us.ihmc.yoVariables.variable.YoInteger;
-import us.ihmc.yoVariables.variable.YoLong;
-import us.ihmc.yoVariables.variable.YoVariable;
 
 public class YoVariableLogCropper extends YoVariableLogReader
 {

@@ -1,5 +1,12 @@
 package us.ihmc.scs2.session.log;
 
+import logger_msgs.LogProperties;
+import logger_msgs.MessageTypes;
+import us.ihmc.idl.serializers.extra.ROS2PropertiesSerializer;
+import us.ihmc.robotDataLogger.handshake.YoVariableHandshakeParser;
+import us.ihmc.robotDataLogger.logger.YoVariableLoggerListener;
+import us.ihmc.tools.compression.SnappyUtils;
+
 import java.io.DataInputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -7,13 +14,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
-
-import us.ihmc.idl.serializers.extra.PropertiesSerializer;
-import us.ihmc.robotDataLogger.LogProperties;
-import us.ihmc.robotDataLogger.LogPropertiesPubSubType;
-import us.ihmc.robotDataLogger.handshake.YoVariableHandshakeParser;
-import us.ihmc.robotDataLogger.logger.YoVariableLoggerListener;
-import us.ihmc.tools.compression.SnappyUtils;
 
 public class LogTimeStampedIndexGenerator
 {
@@ -30,7 +30,8 @@ public class LogTimeStampedIndexGenerator
       byte[] handshakeData = new byte[(int) handshake.length()];
       handshakeStream.readFully(handshakeData);
       handshakeStream.close();
-      int logLineLength = YoVariableHandshakeParser.getNumberOfStateVariables(logProperties.getVariables().getHandshakeFileType(), handshakeData);
+      int logLineLength = YoVariableHandshakeParser.getNumberOfStateVariables(
+            MessageTypes.handshakeFileType(logProperties.getVariables().getHandshakeFileType()), handshakeData);
 
       File logdata = new File(logDirectory, logProperties.getVariables().getDataAsString());
       if (!logdata.exists())
@@ -101,7 +102,7 @@ public class LogTimeStampedIndexGenerator
       logProperties.getVariables().setIndex(newIndexFile);
 
       File log = new File(logDirectory, YoVariableLoggerListener.propertyFile);
-      PropertiesSerializer<LogProperties> writer = new PropertiesSerializer<>(new LogPropertiesPubSubType());
+      ROS2PropertiesSerializer<LogProperties> writer = new ROS2PropertiesSerializer<>(LogProperties.class);
       writer.serialize(log, logProperties);
 
       index.delete();
