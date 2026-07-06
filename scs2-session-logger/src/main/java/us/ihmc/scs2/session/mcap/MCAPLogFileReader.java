@@ -219,6 +219,9 @@ public class MCAPLogFileReader
          Channel channel = (Channel) record.body();
          if (frameTransformManager.hasMCAPFrameTransforms() && channel.schemaId() == frameTransformManager.getFrameTransformSchema().getId())
             continue;
+         if (yoMessageMap.containsKey(channel.id()))
+            // Channels can legitimately be redeclared across multiple chunks; only build the message once.
+            continue;
 
          MCAPSchema schema = schemas.get(channel.schemaId());
 
