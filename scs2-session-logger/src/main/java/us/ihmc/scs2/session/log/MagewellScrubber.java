@@ -94,7 +94,7 @@ public class MagewellScrubber
       magewellMuxer.start();
 
       Frame frame;
-      while ((frame = magewellDemuxer.getNextFrame()) != null && magewellDemuxer.getFrameNumber() <= endFrame)
+      while (i < videoTimestampsForCroppedLog.length && (frame = magewellDemuxer.getNextFrame()) != null && magewellDemuxer.getFrameNumber() <= endFrame)
       {
          // Skip non-video packets (audio, timecode) that grabFrame() returns from multi-stream MP4s.
          if (frame.image == null || frame.imageWidth <= 0 || frame.imageHeight <= 0)
@@ -115,7 +115,10 @@ public class MagewellScrubber
          }
       }
 
-      for (i = 0; i < videoTimestampsForCroppedLog.length; i++)
+      // i may be less than videoTimestampsForCroppedLog.length if the demuxer ran out of frames before reaching
+      // endFrame (e.g. seeking landed short on an old, keyframe-less recording); only pair up what was actually written.
+      int framesWritten = i;
+      for (i = 0; i < framesWritten; i++)
       {
          timestampWriter.print(robotTimestampsForCroppedLog[i]);
          timestampWriter.print(" ");
