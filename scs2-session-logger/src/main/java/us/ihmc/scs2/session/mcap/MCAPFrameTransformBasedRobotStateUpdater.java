@@ -24,22 +24,24 @@ public class MCAPFrameTransformBasedRobotStateUpdater implements RobotStateUpdat
       for (JointBasics joint : robot.getAllJoints())
       {
          String successorName = joint.getSuccessor().getName();
-         String predecessorName = joint.getPredecessor().getName();
          YoFoxGloveFrameTransform transform = frameTransformManager.getTransformFromSanitizedName(successorName);
          if (transform == null)
          {
             LogTools.error("No transform found for " + successorName);
             continue;
          }
-         YoFoxGloveFrameTransform parentJointTransform = frameTransformManager.getTransformFromSanitizedName(predecessorName);
-         if (parentJointTransform == null)
-         {
-            LogTools.error("No transform found for " + predecessorName);
-            continue;
-         }
 
          if (joint instanceof OneDoFJointBasics oneDoFJoint)
          {
+            // OneDoFJointStateUpdater needs the parent joint's transform to root to compute the joint's local configuration,
+            // unlike SixDoFJointStateUpdater below, which only needs the successor's transform to its immediate TF parent.
+            String predecessorName = joint.getPredecessor().getName();
+            YoFoxGloveFrameTransform parentJointTransform = frameTransformManager.getTransformFromSanitizedName(predecessorName);
+            if (parentJointTransform == null)
+            {
+               LogTools.error("No transform found for " + predecessorName);
+               continue;
+            }
             jointStateUpdaters.add(new OneDoFJointStateUpdater(oneDoFJoint, transform, parentJointTransform));
          }
          else if (joint instanceof SixDoFJointBasics sixDoFJoint)
