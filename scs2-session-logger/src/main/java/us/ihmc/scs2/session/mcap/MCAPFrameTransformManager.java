@@ -612,24 +612,39 @@ public class MCAPFrameTransformManager
 
    /**
     * Generic fallback used to advance the CDR cursor past a field this reader doesn't otherwise care about, so that
-    * later, recognized fields in the same struct stay correctly aligned. Complex fields are skipped by recursing into
-    * their sub-schema; arrays/sequences of complex types are not supported here since none appear in the tf2_msgs
-    * message tree this reader targets.
+    * later, recognized fields in the same struct stay correctly aligned. Handles primitive and complex fields,
+    * fixed-size arrays, and unbounded sequences alike - each element (primitive or complex) is skipped the same
+    * way a non-array field of that type would be, looping {@code maxLength} times for a fixed array or using the
+    * sequence's own encoded length for an unbounded one.
     */
-   private static void skipField(CDRDeserializer cdr, MCAPSchemaField field, Map<String, MCAPSchema> subSchemaMap)
+   static void skipField(CDRDeserializer cdr, MCAPSchemaField field, Map<String, MCAPSchema> subSchemaMap)
    {
-      if (!field.isComplexType())
+      if (field.isArray())
+      {
+         cdr.read_array((elementIndex, elementCdr) -> skipElement(elementCdr, field, subSchemaMap), field.getMaxLength());
+      }
+      else if (field.isVector())
+      {
+         cdr.read_sequence((elementIndex, elementCdr) -> skipElement(elementCdr, field, subSchemaMap));
+      }
+      else
+      {
+         skipElement(cdr, field, subSchemaMap);
+      }
+   }
+
+   private static void skipElement(CDRDeserializer cdr, MCAPSchemaField field, Map<String, MCAPSchema> subSchemaMap)
+   {
+      // Not field.isComplexType(): ROS2SchemaParser sets that flag unconditionally for any bracketed (array or
+      // vector) field, even when the element type is primitive (e.g. "float64[36]") - so it can't be trusted here
+      // to distinguish a primitive array element from a struct one. Whether subSchemaMap actually resolves the
+      // (bracket-stripped) type name is the reliable check.
+      MCAPSchema subSchema = subSchemaMap.get(field.getType());
+      if (subSchema == null)
       {
          cdr.skipNext(CDRDeserializer.Type.parseType(field.getType()));
          return;
       }
-
-      if (field.isArray() || field.isVector())
-         throw new UnsupportedOperationException("Skipping arrays/sequences of complex fields is not supported: " + field.getName());
-
-      MCAPSchema subSchema = subSchemaMap.get(field.getType());
-      if (subSchema == null)
-         throw new IllegalStateException("Could not find a schema for the type: " + field.getType());
       for (MCAPSchemaField subField : subSchema.getFields())
          skipField(cdr, subField, subSchemaMap);
    }

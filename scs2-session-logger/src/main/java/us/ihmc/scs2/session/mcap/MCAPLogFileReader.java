@@ -61,6 +61,8 @@ public class MCAPLogFileReader
    private final TIntObjectHashMap<Schema> rawSchemas = new TIntObjectHashMap<>();
    private final TIntObjectHashMap<YoMCAPMessage> yoMessageMap = new TIntObjectHashMap<>();
    private final MCAPFrameTransformManager frameTransformManager;
+   private final MCAPJointStateManager jointStateManager = new MCAPJointStateManager();
+   private final MCAPOdometryManager odometryManager = new MCAPOdometryManager();
    private final YoLong currentChunkStartTimestamp = new YoLong("MCAPCurrentChunkStartTimestamp", propertiesRegistry);
    private final YoLong currentChunkEndTimestamp = new YoLong("MCAPCurrentChunkEndTimestamp", propertiesRegistry);
    private final YoLong currentTimestamp = new YoLong("MCAPCurrentTimestamp", propertiesRegistry);
@@ -107,11 +109,25 @@ public class MCAPLogFileReader
       LogTools.info("Created frame transform manager in {} ms.", TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTime));
 
       startTime = System.nanoTime();
+      // Must run before loadSchemas()/loadChannels(), which exclude this schema from generic decoding: a real
+      // nav_msgs/Odometry message can't be generically decoded at all (PoseWithCovariance.pose nests a field also
+      // named "pose", which SCS2's YoRegistry namespace rules reject), so it's hand-parsed here instead.
+      odometryManager.initialize(mcap);
+      LogTools.info("Created odometry manager in {} ms.", TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTime));
+
+      startTime = System.nanoTime();
       loadSchemas(); // On 10GB log file, this takes about 32 seconds.
       LogTools.info("Loaded schemas in {} ms.", TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTime));
       startTime = System.nanoTime();
       loadChannels(); // This is fast.
       LogTools.info("Loaded channels in {} ms.", TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTime));
+
+      startTime = System.nanoTime();
+      // Runs after loadChannels() (unlike frameTransformManager/odometryManager, which must run before schema
+      // loading to exclude their own schema from generic decoding) since this manager wants the opposite: for
+      // /joint_states to remain generically decoded, and to look up its already-built YoMCAPMessage from yoMessageMap.
+      jointStateManager.initialize(mcap, chunkBuffer, yoMessageMap);
+      LogTools.info("Created joint state manager in {} ms.", TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTime));
 
       startTime = System.nanoTime();
       // Doing this last to not slow down the loading.
@@ -192,6 +208,9 @@ public class MCAPLogFileReader
          if (frameTransformManager.hasMCAPFrameTransforms() && schema.id() == frameTransformManager.getFrameTransformSchema().getId())
             continue;
 
+         if (odometryManager.hasOdometrySchema() && schema.id() == odometryManager.getOdometrySchemaId())
+            continue;
+
          try
          {
             if (schema.encoding().equalsIgnoreCase("ros2msg"))
@@ -218,6 +237,9 @@ public class MCAPLogFileReader
             continue;
          Channel channel = (Channel) record.body();
          if (frameTransformManager.hasMCAPFrameTransforms() && channel.schemaId() == frameTransformManager.getFrameTransformSchema().getId())
+            continue;
+
+         if (odometryManager.hasOdometrySchema() && channel.schemaId() == odometryManager.getOdometrySchemaId())
             continue;
          if (yoMessageMap.containsKey(channel.id()))
             // Channels can legitimately be redeclared across multiple chunks; only build the message once.
@@ -320,6 +342,10 @@ public class MCAPLogFileReader
          {
             boolean wasAFrameTransform = frameTransformManager.readMessage(message);
             if (wasAFrameTransform)
+               continue;
+
+            boolean wasOdometry = odometryManager.readMessage(message);
+            if (wasOdometry)
                continue;
 
             YoMCAPMessage yoMCAPMessage = yoMessageMap.get(message.channelId());
@@ -449,7 +475,7 @@ public class MCAPLogFileReader
    {
       if (frameTransformManager.hasMCAPFrameTransforms())
       {
-         return new MCAPFrameTransformBasedRobotStateUpdater(robot, frameTransformManager);
+         return new MCAPFrameTransformBasedRobotStateUpdater(robot, frameTransformManager, jointStateManager, odometryManager, currentTimestamp);
       }
 
       for (YoMCAPMessage yoMCAPMessage : yoMessageMap.valueCollection())
