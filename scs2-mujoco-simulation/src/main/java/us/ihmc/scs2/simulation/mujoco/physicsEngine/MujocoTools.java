@@ -1,10 +1,20 @@
 package us.ihmc.scs2.simulation.mujoco.physicsEngine;
 
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
+
 import us.ihmc.euclid.orientation.interfaces.Orientation3DReadOnly;
 import us.ihmc.euclid.shape.convexPolytope.interfaces.Vertex3DReadOnly;
 import us.ihmc.euclid.transform.interfaces.RigidBodyTransformReadOnly;
 import us.ihmc.euclid.tuple3D.interfaces.Tuple3DReadOnly;
+import us.ihmc.euclid.tuple3D.interfaces.Vector3DReadOnly;
 import us.ihmc.euclid.tuple4D.Quaternion;
+import us.ihmc.log.LogTools;
+import us.ihmc.scs2.definition.DefinitionIOTools;
 import us.ihmc.scs2.definition.collision.CollisionShapeDefinition;
 import us.ihmc.scs2.definition.geometry.Box3DDefinition;
 import us.ihmc.scs2.definition.geometry.Capsule3DDefinition;
@@ -12,6 +22,7 @@ import us.ihmc.scs2.definition.geometry.ConvexPolytope3DDefinition;
 import us.ihmc.scs2.definition.geometry.Cylinder3DDefinition;
 import us.ihmc.scs2.definition.geometry.Ellipsoid3DDefinition;
 import us.ihmc.scs2.definition.geometry.GeometryDefinition;
+import us.ihmc.scs2.definition.geometry.ModelFileGeometryDefinition;
 import us.ihmc.scs2.definition.geometry.Ramp3DDefinition;
 import us.ihmc.scs2.definition.geometry.Sphere3DDefinition;
 import us.ihmc.scs2.definition.robot.JointDefinition;
@@ -111,6 +122,18 @@ public final class MujocoTools
            .append(ellipsoid.getRadiusY()).append(' ')
            .append(ellipsoid.getRadiusZ()).append("\"/>\n");
       }
+      else if (geometry instanceof ModelFileGeometryDefinition modelFile)
+      {
+         if (isSupportedModelFileMesh(modelFile))
+         {
+            // Mesh assets carry no size; the geom just references the <mesh> declared by appendMeshAsset.
+            sb.append(" type=\"mesh\" mesh=\"").append(meshName(name)).append("\"/>\n");
+         }
+         else
+         {
+            sb.append("/><!-- skipped unsupported model file: ").append(modelFile.getFileName()).append(" -->\n");
+         }
+      }
       else if (isMeshGeometry(geometry))
       {
          // Mesh assets carry no size; the geom just references the <mesh> declared by appendMeshAsset.
@@ -122,10 +145,21 @@ public final class MujocoTools
       }
    }
 
-   /** True if the geometry is emitted as a MuJoCo mesh (convex polytope or ramp) rather than a primitive. */
+   /** True if the geometry is emitted as a MuJoCo mesh (polytope, ramp, or supported model file). */
    static boolean isMeshGeometry(GeometryDefinition geometry)
    {
-      return geometry instanceof ConvexPolytope3DDefinition || geometry instanceof Ramp3DDefinition;
+      if (geometry instanceof ConvexPolytope3DDefinition || geometry instanceof Ramp3DDefinition)
+         return true;
+      return geometry instanceof ModelFileGeometryDefinition modelFile && isSupportedModelFileMesh(modelFile);
+   }
+
+   static boolean isSupportedModelFileMesh(ModelFileGeometryDefinition modelFile)
+   {
+      String fileName = modelFile.getFileName();
+      if (fileName == null)
+         return false;
+      String lower = fileName.toLowerCase();
+      return lower.endsWith(".stl") || lower.endsWith(".obj");
    }
 
    /** The {@code <mesh>} asset name paired with the {@code <geom>} of the same {@code name}. */
@@ -135,15 +169,23 @@ public final class MujocoTools
    }
 
    /**
-    * If {@code shape} is a mesh geometry (convex polytope or ramp), emit its {@code <mesh>} asset
-    * with an inline vertex cloud (MuJoCo computes the convex hull). The mesh is named to match the
-    * {@code <geom>} that {@link #appendGeom} emits for the same {@code name}. No-op for primitives.
+    * If {@code shape} is a mesh geometry, emit its {@code <mesh>} asset. Convex polytopes / ramps use an
+    * inline vertex cloud (MuJoCo builds the convex hull). {@link ModelFileGeometryDefinition} meshes
+    * (STL/OBJ) are copied into {@code workingDirectory} and referenced via {@code file="..."}.
+    * No-op for primitives. Pass {@code workingDirectory == null} only when no model-file meshes are present.
     */
-   static void appendMeshAsset(StringBuilder sb, String name, CollisionShapeDefinition shape, int indent)
+   static void appendMeshAsset(StringBuilder sb, String name, CollisionShapeDefinition shape, int indent, File workingDirectory)
    {
       GeometryDefinition geometry = shape.getGeometryDefinition();
       if (!isMeshGeometry(geometry))
          return;
+
+      if (geometry instanceof ModelFileGeometryDefinition modelFile)
+      {
+         appendModelFileMeshAsset(sb, name, modelFile, indent, workingDirectory);
+         return;
+      }
+
       sb.append("  ".repeat(indent)).append("<mesh name=\"").append(meshName(name)).append("\" vertex=\"");
       if (geometry instanceof ConvexPolytope3DDefinition polytope)
       {
@@ -155,6 +197,57 @@ public final class MujocoTools
          appendRampVertices(sb, ramp);
       }
       sb.append("\"/>\n");
+   }
+
+   /** Backward-compatible overload used by terrain (no model-file meshes). */
+   static void appendMeshAsset(StringBuilder sb, String name, CollisionShapeDefinition shape, int indent)
+   {
+      appendMeshAsset(sb, name, shape, indent, null);
+   }
+
+   private static void appendModelFileMeshAsset(StringBuilder sb,
+                                                String name,
+                                                ModelFileGeometryDefinition modelFile,
+                                                int indent,
+                                                File workingDirectory)
+   {
+      if (workingDirectory == null)
+      {
+         LogTools.warn("Skipping MuJoCo mesh asset '{}': working directory is null", modelFile.getFileName());
+         return;
+      }
+
+      String sourceFileName = modelFile.getFileName();
+      if (!isSupportedModelFileMesh(modelFile))
+      {
+         LogTools.warn("Skipping MuJoCo mesh asset '{}': only .stl/.obj are supported", sourceFileName);
+         return;
+      }
+
+      try
+      {
+         URL sourceURL = DefinitionIOTools.resolveModelFileURL(modelFile);
+         String lower = sourceFileName.toLowerCase();
+         String extension = lower.substring(lower.lastIndexOf('.'));
+         File meshFile = new File(workingDirectory, meshName(name) + extension);
+         try (InputStream in = sourceURL.openStream())
+         {
+            Files.copy(in, meshFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+         }
+
+         sb.append("  ".repeat(indent)).append("<mesh name=\"").append(meshName(name))
+           .append("\" file=\"").append(meshFile.getName()).append('"');
+         Vector3DReadOnly scale = modelFile.getScale();
+         if (scale != null && (scale.getX() != 1.0 || scale.getY() != 1.0 || scale.getZ() != 1.0))
+         {
+            sb.append(" scale=\"").append(scale.getX()).append(' ').append(scale.getY()).append(' ').append(scale.getZ()).append('"');
+         }
+         sb.append("/>\n");
+      }
+      catch (IOException | RuntimeException e)
+      {
+         throw new RuntimeException("Failed to stage MuJoCo mesh '" + sourceFileName + "' into " + workingDirectory, e);
+      }
    }
 
    /**
