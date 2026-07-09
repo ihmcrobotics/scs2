@@ -20,6 +20,7 @@ public class MCAPSchema
    private final String name;
    private final boolean isEnum;
    private final String[] enumConstants;
+   private final long[] enumValues;
    private final List<MCAPSchemaField> staticFields = new ArrayList<>();
    private final List<MCAPSchemaField> fields;
    private final Map<String, MCAPSchema> subSchemaMap;
@@ -50,14 +51,15 @@ public class MCAPSchema
       this.fields = fields;
       this.isEnum = false;
       this.enumConstants = null;
+      this.enumValues = null;
    }
 
    /**
-    * Creates a schema that represents an enum.
+    * Creates a schema that represents an enum with implicit 0-based ordinal values (e.g. OMG IDL enums).
     *
     * @param name          the name of the schema.
     * @param id            the ID of the schema.
-    * @param enumConstants the enum constants of the schema.
+    * @param enumConstants the enum constant names, in ordinal order.
     */
    protected MCAPSchema(String name, int id, String[] enumConstants)
    {
@@ -67,6 +69,26 @@ public class MCAPSchema
       this.fields = null;
       this.isEnum = true;
       this.enumConstants = enumConstants;
+      this.enumValues = null;
+   }
+
+   /**
+    * Creates a schema that represents an enum with explicit integer values (e.g. ROS 2 message constants).
+    *
+    * @param name          the name of the schema.
+    * @param id            the ID of the schema.
+    * @param enumConstants the enum constant names, sorted by their corresponding value.
+    * @param enumValues    the integer value for each constant, parallel to {@code enumConstants}.
+    */
+   protected MCAPSchema(String name, int id, String[] enumConstants, long[] enumValues)
+   {
+      this.name = name;
+      this.id = id;
+      this.subSchemaMap = null;
+      this.fields = null;
+      this.isEnum = true;
+      this.enumConstants = enumConstants;
+      this.enumValues = enumValues;
    }
 
    /**
@@ -107,6 +129,19 @@ public class MCAPSchema
    public String[] getEnumConstants()
    {
       return enumConstants;
+   }
+
+   /**
+    * The integer value for each enum constant, parallel to {@link #getEnumConstants()}.
+    * <p>
+    * {@code null} for enums with implicit 0-based ordinal values (e.g. OMG IDL enums).
+    * </p>
+    *
+    * @return the enum values, or {@code null} if ordinals are implicit.
+    */
+   public long[] getEnumValues()
+   {
+      return enumValues;
    }
 
    /**
@@ -218,6 +253,8 @@ public class MCAPSchema
          out += "\n\t-fields=\n" + EuclidCoreIOTools.getCollectionString("\n", fields, f -> f.toString(indent + 2));
       if (enumConstants != null)
          out += "\n\t-enumConstants=" + Arrays.toString(enumConstants);
+      if (enumValues != null)
+         out += "\n\t-enumValues=" + Arrays.toString(enumValues);
       if (!staticFields.isEmpty())
          out += "\n\t-staticFields=\n" + EuclidCoreIOTools.getCollectionString("\n", staticFields, f -> f.toString(indent + 2));
       if (subSchemaMap != null)
@@ -318,6 +355,8 @@ public class MCAPSchema
       private boolean isComplexType;
       // Used for static fields
       private String defaultValue;
+      // Non-null when this field should be displayed as an enum (ROS 2 constant-based enums)
+      private MCAPSchema enumSchema;
 
       public MCAPSchemaField()
       {
@@ -341,6 +380,7 @@ public class MCAPSchema
          this.isVector = other.isVector;
          this.maxLength = other.maxLength;
          this.isComplexType = other.isComplexType;
+         this.enumSchema = other.enumSchema;
       }
 
       @Override
@@ -395,6 +435,16 @@ public class MCAPSchema
       public void setDefaultValue(String defaultValue)
       {
          this.defaultValue = defaultValue;
+      }
+
+      public void setEnumSchema(MCAPSchema enumSchema)
+      {
+         this.enumSchema = enumSchema;
+      }
+
+      public MCAPSchema getEnumSchema()
+      {
+         return enumSchema;
       }
 
       /**
