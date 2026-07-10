@@ -179,7 +179,22 @@ public class CollisionTools
       else if (definition instanceof Ramp3DDefinition ramp3DDefinition)
          return new FrameRamp3D(referenceFrame, toRamp3D(originPose, ramp3DDefinition));
       else if (definition instanceof ModelFileGeometryDefinition modelFileGeometryDefinition)
-         return new FrameConvexPolytope3D(referenceFrame, toConvexPolytope3D(originPose, modelFileGeometryDefinition));
+      {
+         // SCS2's impulse/Bullet collidable path only loads Wavefront OBJ into a convex polytope.
+         // MuJoCo (and other engines) may still consume STL/DAE ModelFile geometries from the
+         // RobotDefinition directly, so skip unsupported files here instead of aborting robot build.
+         try
+         {
+            return new FrameConvexPolytope3D(referenceFrame, toConvexPolytope3D(originPose, modelFileGeometryDefinition));
+         }
+         catch (UnsupportedOperationException e)
+         {
+            LogTools.warn("Skipping SCS2 collidable for unsupported model file {}: {}",
+                          modelFileGeometryDefinition.getFileName(),
+                          e.getMessage());
+            return null;
+         }
+      }
 
       LogTools.warn("Unhandled geometry type: " + definition.getClass().getSimpleName());
       return null;
