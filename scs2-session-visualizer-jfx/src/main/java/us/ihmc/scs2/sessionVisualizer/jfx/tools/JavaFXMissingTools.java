@@ -453,11 +453,22 @@ public class JavaFXMissingTools
       if (!dialog.isShowing())
       {
          // TODO Seems that on Ubuntu the changes done to the window position/size are not processed properly until the window is showing.
+         // TODO This should be fixed - Nick
          // This may be related to the bug reported when using GTK3: https://github.com/javafxports/openjdk-jfx/pull/446, might be fixed in later version.
          dialog.setOnShown(e ->
                            {
-                              runLater(JavaFXMissingTools.class, () ->
+                              runNFramesLater(5, () ->
                               {
+                                 // The dialog may already have been dismissed by the time this runs; its DialogPane
+                                 // is detached from its Scene in that case, so bail out rather than NPE.
+                                 if (!dialog.isShowing())
+                                    return;
+
+                                 Scene dialogScene = dialog.getDialogPane().getScene();
+                                 if (dialogScene == null || dialogScene.getWindow() == null)
+                                    return;
+
+                                 dialogScene.getWindow().sizeToScene();
                                  dialog.setX(owner.getX() + 0.5 * (owner.getWidth() - dialog.getWidth()));
                                  dialog.setY(owner.getY() + 0.5 * (owner.getHeight() - dialog.getHeight()));
                               });
