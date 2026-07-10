@@ -73,7 +73,9 @@ public final class MujocoMultiBodyRobotFactory
           .append("\" noslip_iterations=\"").append(parameters.getNoslipIterations())
           .append("\" impratio=\"").append(parameters.getImpratio())
           .append("\" cone=\"").append(parameters.getUseEllipticFrictionCone() ? "elliptic" : "pyramidal")
-          .append("\"/>\n");
+          .append("\">\n");
+      mjcf.append("    <flag filterparent=\"").append(parameters.getFilterParentCollisions() ? "enable" : "disable").append("\"/>\n");
+      mjcf.append("  </option>\n");
       mjcf.append("  <compiler angle=\"radian\"/>\n");
       // Contact tuning (empirical, for closed-loop locomotion):
       // * friction "(slide torsional rolling)": slide is parameter-driven; rolling 0.01 (vs MuJoCo's
@@ -101,14 +103,18 @@ public final class MujocoMultiBodyRobotFactory
       mjcf.append("  </default>\n");
       // <asset> (mesh terrain) must precede <worldbody>. Only emitted when some terrain shape needs a
       // mesh (convex polytope / ramp); primitive-only worlds produce an empty fragment and no block.
-      StringBuilder terrainAssets = new StringBuilder();
+      StringBuilder meshAssets = new StringBuilder();
       for (int i = 0; i < terrainObjects.size(); i++)
       {
-         terrainAssets.append(MujocoTerrainFactory.toMjcfAssetFragment(terrainObjects.get(i), "terrain_" + i + "_"));
+         meshAssets.append(MujocoTerrainFactory.toMjcfAssetFragment(terrainObjects.get(i), "terrain_" + i + "_"));
       }
-      if (terrainAssets.length() > 0)
+      for (Robot robot : robots)
       {
-         mjcf.append("  <asset>\n").append(terrainAssets).append("  </asset>\n");
+         appendRobotMeshAssets(meshAssets, robot.getRobotDefinition(), workingDirectory);
+      }
+      if (meshAssets.length() > 0)
+      {
+         mjcf.append("  <asset>\n").append(meshAssets).append("  </asset>\n");
       }
       mjcf.append("  <worldbody>\n");
       for (int i = 0; i < terrainObjects.size(); i++)
@@ -122,6 +128,13 @@ public final class MujocoMultiBodyRobotFactory
          appendRobotBodies(mjcf, robotDefinition, ignoredJointNames, 2);
       }
       mjcf.append("  </worldbody>\n");
+      if (parameters.getFilterParentCollisions())
+      {
+         for (Robot robot : robots)
+         {
+            appendParentChildContactExcludes(mjcf, robot.getRobotDefinition(), 2);
+         }
+      }
       mjcf.append("</mujoco>\n");
       return mjcf.toString();
    }
@@ -235,6 +248,46 @@ public final class MujocoMultiBodyRobotFactory
       }
 
       sb.append(pad).append("</body>\n");
+   }
+
+   private static void appendRobotMeshAssets(StringBuilder sb, RobotDefinition robotDefinition, File workingDirectory)
+   {
+      String namePrefix = robotDefinition.getName() + "_";
+      for (RigidBodyDefinition body : robotDefinition.getAllRigidBodies())
+      {
+         int geomIndex = 0;
+         for (CollisionShapeDefinition shape : body.getCollisionShapeDefinitions())
+         {
+            MujocoTools.appendMeshAsset(sb, namePrefix + body.getName() + "_geom_" + geomIndex, shape, 2, workingDirectory);
+            geomIndex++;
+         }
+      }
+   }
+
+   private static void appendParentChildContactExcludes(StringBuilder sb, RobotDefinition robotDefinition, int indent)
+   {
+      String namePrefix = robotDefinition.getName() + "_";
+      String pad = "  ".repeat(indent);
+      StringBuilder excludes = new StringBuilder();
+      for (JointDefinition joint : robotDefinition.getAllJoints())
+      {
+         JointDefinition parentJoint = joint.getParentJoint();
+         RigidBodyDefinition childBody = joint.getSuccessor();
+         if (parentJoint == null || childBody == null)
+            continue;
+
+         RigidBodyDefinition parentBody = parentJoint.getSuccessor();
+         if (parentBody == null)
+            continue;
+
+         excludes.append(pad).append("  <exclude body1=\"").append(namePrefix).append(parentBody.getName())
+                 .append("\" body2=\"").append(namePrefix).append(childBody.getName()).append("\"/>\n");
+      }
+
+      if (excludes.length() == 0)
+         return;
+
+      sb.append(pad).append("<contact>\n").append(excludes).append(pad).append("</contact>\n");
    }
 
    private static RigidBodyTransform computeSpawnTransform(JointDefinition joint)
