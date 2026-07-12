@@ -157,10 +157,14 @@ public class ROS2SchemaParser
       int firstSpace = effectiveLine.indexOf(' ');
       if (firstSpace < 0)
          return false;
+      // ROS2 msg field declarations ("TYPE NAME", optionally with array brackets) never contain '=';
+      // only constant declarations ("TYPE NAME=VALUE" or "TYPE NAME = VALUE") do, so presence of '=' after
+      // the type is sufficient. Previously this also required '=' to appear before any space, which broke
+      // on the "NAME = VALUE" spacing style (e.g. "uint8 UNKNOWN = 0"): the space between NAME and '='
+      // came first, so those constants were misclassified as regular fields, corrupting CDR deserialization
+      // for every message using the "<Type>Enum <field>_foxglove_enum" pattern.
       String remaining = effectiveLine.substring(firstSpace + 1).trim();
-      int equalsIndex = remaining.indexOf('=');
-      int spaceIndex = remaining.indexOf(' ');
-      return equalsIndex >= 0 && (spaceIndex < 0 || equalsIndex < spaceIndex);
+      return remaining.indexOf('=') >= 0;
    }
 
    private static MCAPSchemaField parseConstantField(String line)
