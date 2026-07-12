@@ -1,109 +1,58 @@
 package us.ihmc.scs2.session.mcap.encoding;
 
-import net.jpountz.lz4.LZ4Compressor;
-import net.jpountz.lz4.LZ4Factory;
-import net.jpountz.xxhash.XXHash32;
-import net.jpountz.xxhash.XXHashFactory;
-import us.ihmc.scs2.session.mcap.encoding.LZ4FrameDecoder.BD;
-import us.ihmc.scs2.session.mcap.encoding.LZ4FrameDecoder.BLOCKSIZE;
-import us.ihmc.scs2.session.mcap.encoding.LZ4FrameDecoder.FLG;
-import us.ihmc.scs2.session.mcap.encoding.LZ4FrameDecoder.FrameInfo;
+import org.bytedeco.javacpp.Pointer;
+import org.bytedeco.lz4.LZ4FFrameInfo;
+import org.bytedeco.lz4.LZ4FPreferences;
+import org.bytedeco.lz4.global.lz4;
 
-import java.io.OutputStream;
 import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-import java.util.Arrays;
 
 /**
- * This class is a modified version of the original LZ4FrameOutputStream from the lz4-java project.
+ * Encodes LZ4 frame-format streams, backed by bytedeco's JNI bindings to the reference liblz4 implementation ({@code lz4frame.h}).
  * <p>
- * This version allows to decode a byte array into another byte array, without using any {@link OutputStream}.
+ * Always writes independent blocks with 4MB block size and no checksums, matching the write behavior of the Java implementation this replaces --
+ * so the on-disk format produced here is unchanged. Only {@link LZ4FrameDecoder} gains new read capability (dependent/linked blocks).
  * </p>
  */
 public class LZ4FrameEncoder
 {
-   static final FLG.Bits[] DEFAULT_FEATURES = new FLG.Bits[] {FLG.Bits.BLOCK_INDEPENDENCE};
+   // Built once and reused for every encode() call on this instance -- LZ4FPreferences is just a read-only settings struct handed to each
+   // LZ4F_compressFrame call, it holds no per-call state, so there's no reason to rebuild it every time.
+   private final LZ4FPreferences preferences;
 
-   static final String CLOSED_STREAM = "The stream is already closed";
-
-   private final LZ4Compressor compressor;
-   private final XXHash32 checksum;
-   private final ByteBuffer blockBuffer; // Buffer for uncompressed input data
-   private final byte[] compressedBuffer; // Only allocated once so it can be reused
-   private final int maxBlockSize;
-   private final long knownSize;
-   private final ByteBuffer intLEBuffer = ByteBuffer.allocate(LZ4FrameDecoder.INTEGER_BYTES).order(ByteOrder.LITTLE_ENDIAN);
-
-   private FrameInfo frameInfo = null;
-
-   /**
-    * Creates a new encoder that will compress data of unknown size using the LZ4 algorithm.
-    *
-    * @param blockSize the BLOCKSIZE to use
-    * @param bits      a set of features to use
-    * @see #LZ4FrameEncoder(BLOCKSIZE, long, FLG.Bits...)
-    */
-   public LZ4FrameEncoder(BLOCKSIZE blockSize, FLG.Bits... bits)
-   {
-      this(blockSize, -1L, bits);
-   }
-
-   /**
-    * Creates a new encoder that will compress data using using fastest instances of {@link LZ4Compressor} and {@link XXHash32}.
-    *
-    * @param blockSize the BLOCKSIZE to use
-    * @param knownSize the size of the uncompressed data. A value less than zero means unknown.
-    * @param bits      a set of features to use
-    */
-   public LZ4FrameEncoder(BLOCKSIZE blockSize, long knownSize, FLG.Bits... bits)
-   {
-      this(blockSize, knownSize, LZ4Factory.fastestInstance().fastCompressor(), XXHashFactory.fastestInstance().hash32(), bits);
-   }
-
-   /**
-    * Creates a new encoder that will compress data using the specified instances of {@link LZ4Compressor} and {@link XXHash32}.
-    *
-    * @param blockSize  the BLOCKSIZE to use
-    * @param knownSize  the size of the uncompressed data. A value less than zero means unknown.
-    * @param compressor the {@link LZ4Compressor} instance to use to compress data
-    * @param checksum   the {@link XXHash32} instance to use to check data for integrity
-    * @param bits       a set of features to use
-    */
-   public LZ4FrameEncoder(BLOCKSIZE blockSize, long knownSize, LZ4Compressor compressor, XXHash32 checksum, FLG.Bits... bits)
-   {
-      this.compressor = compressor;
-      this.checksum = checksum;
-      frameInfo = new FrameInfo(new FLG(FLG.DEFAULT_VERSION, bits), new BD(blockSize));
-      maxBlockSize = frameInfo.getBD().getBlockMaximumSize();
-      blockBuffer = ByteBuffer.allocate(maxBlockSize).order(ByteOrder.LITTLE_ENDIAN);
-      compressedBuffer = new byte[this.compressor.maxCompressedLength(maxBlockSize)];
-      if (frameInfo.getFLG().isEnabled(FLG.Bits.CONTENT_SIZE) && knownSize < 0)
-      {
-         throw new IllegalArgumentException("Known size must be greater than zero in order to use the known size feature");
-      }
-      this.knownSize = knownSize;
-   }
-
-   /**
-    * Creates a new encoder that will compress data using the LZ4 algorithm. The block independence flag is set, and none of the other flags are
-    * set.
-    *
-    * @param blockSize the BLOCKSIZE to use
-    * @see #LZ4FrameEncoder(BLOCKSIZE, FLG.Bits...)
-    */
-   public LZ4FrameEncoder(BLOCKSIZE blockSize)
-   {
-      this(blockSize, DEFAULT_FEATURES);
-   }
-
-   /**
-    * Creates a new encoder that will compress data using the LZ4 algorithm with 4-MB blocks.
-    *
-    * @see #LZ4FrameEncoder(BLOCKSIZE)
-    */
    public LZ4FrameEncoder()
    {
-      this(BLOCKSIZE.SIZE_4MB);
+      // bytedeco ships LZ4F_INIT_FRAMEINFO()/LZ4F_INIT_PREFERENCES() helpers that are supposed to fill these structs with sane defaults, but
+      // they're not actually present in this version's compiled jar (checked via javap), so every field is set explicitly here instead of
+      // relying on a default-initialized struct -- native memory isn't guaranteed to come back zeroed.
+      LZ4FFrameInfo frameInfo = new LZ4FFrameInfo();
+      // 4MB blocks, matching the old hand-rolled encoder's default (BLOCKSIZE.SIZE_4MB) -- larger blocks compress MCAP chunk-sized payloads
+      // better than the smaller options (64KB/256KB/1MB).
+      frameInfo.blockSizeID(lz4.LZ4F_max4MB);
+      // Independent blocks, matching the old encoder's only supported mode. This is a deliberate compatibility choice, not just parity: linked
+      // (dependent) blocks compress slightly better, but plenty of decoders -- including the one this class used to be paired with -- can't
+      // read them. Writing independent blocks means anything SCS2 produces stays readable everywhere, even though SCS2's own LZ4FrameDecoder
+      // can now read either mode.
+      frameInfo.blockMode(lz4.LZ4F_blockIndependent);
+      // No content/block checksums, matching the old encoder's defaults -- MCAP chunks already carry their own CRC32 of the uncompressed
+      // records (see MutableChunk.uncompressedCRC32()), so an LZ4-level checksum would just be redundant integrity-checking at extra CPU/byte
+      // cost.
+      frameInfo.contentChecksumFlag(lz4.LZ4F_noContentChecksum);
+      frameInfo.blockChecksumFlag(lz4.LZ4F_noBlockChecksum);
+      frameInfo.frameType(lz4.LZ4F_frame);
+      frameInfo.contentSize(0); // 0 = "not declaring the uncompressed size up front", same as the old encoder never set FLG.Bits.CONTENT_SIZE.
+      frameInfo.dictID(0); // Not using a shared/external compression dictionary.
+
+      preferences = new LZ4FPreferences();
+      preferences.frameInfo(frameInfo);
+      preferences.compressionLevel(0); // 0 = default (fast) compression level, not the slower high-compression mode.
+      preferences.autoFlush(0);
+      preferences.favorDecSpeed(0);
+      // Must be zero for forward compatibility per the LZ4F_preferences_t spec -- again, explicit because we can't assume the native
+      // allocation came back zeroed.
+      preferences.reserved(0, 0);
+      preferences.reserved(1, 0);
+      preferences.reserved(2, 0);
    }
 
    public byte[] encode(byte[] in, byte[] out)
@@ -113,12 +62,10 @@ public class LZ4FrameEncoder
 
    public byte[] encode(byte[] in, int inOffset, int inLength, byte[] out, int outOffset)
    {
-      ByteBuffer resultBuffer = encode(ByteBuffer.wrap(in, inOffset, inLength), out == null ? null : ByteBuffer.wrap(out, outOffset, out.length - outOffset));
-      if (resultBuffer == null)
-         return null;
-      byte[] result = new byte[resultBuffer.remaining()];
-      resultBuffer.get(result);
-      return result;
+      ByteBuffer inBuffer = ByteBuffer.wrap(in);
+      ByteBuffer outBuffer = out == null ? null : ByteBuffer.wrap(out);
+      ByteBuffer result = encode(inBuffer, inOffset, inLength, outBuffer, outOffset);
+      return result.array();
    }
 
    public ByteBuffer encode(ByteBuffer in, ByteBuffer out)
@@ -131,169 +78,40 @@ public class LZ4FrameEncoder
       int limitPrev = in.limit();
       in.position(inOffset);
       in.limit(inOffset + inLength);
-      if (out != null)
-      {
-         out.order(ByteOrder.LITTLE_ENDIAN);
-         out.position(outOffset);
-      }
 
       try
       {
+         ByteBuffer srcDirect = LZ4NativeUtil.toDirect(in);
+
+         long bound = lz4.LZ4F_compressFrameBound(inLength, preferences);
+         ByteBuffer dstDirect = ByteBuffer.allocateDirect((int) bound);
+
+         Pointer srcPointer = new Pointer(srcDirect);
+         Pointer dstPointer = new Pointer(dstDirect);
+
+         long compressedSize = lz4.LZ4F_compressFrame(dstPointer, bound, srcPointer, inLength, preferences);
+         LZ4NativeUtil.checkError(compressedSize);
+
+         dstDirect.limit((int) compressedSize);
+
          if (out != null)
          {
-            writeHeader(out);
-            ensureNotFinished();
-
-            // while b will fill the buffer
-            while (in.remaining() > blockBuffer.remaining())
-            {
-               int sizeWritten = blockBuffer.remaining();
-               // fill remaining space in buffer
-               blockBuffer.put(in.slice(in.position(), sizeWritten));
-               in.position(in.position() + sizeWritten);
-               writeBlock(out);
-            }
-            blockBuffer.put(in);
-            writeBlock(out);
-            writeEndMark(out);
+            out.position(outOffset);
+            out.put(dstDirect);
             out.flip();
             return out;
          }
          else
          {
-            ByteBuffer whenOutIsNull = ByteBuffer.allocate(inLength + LZ4FrameDecoder.LZ4_MAX_HEADER_LENGTH).order(ByteOrder.LITTLE_ENDIAN);
-            writeHeader(whenOutIsNull);
-            ensureNotFinished();
-
-            while (in.remaining() > blockBuffer.remaining())
-            {
-               int sizeWritten = blockBuffer.remaining();
-               // fill remaining space in buffer
-               blockBuffer.put(in.slice(in.position(), sizeWritten));
-               in.position(in.position() + sizeWritten);
-
-               whenOutIsNull = ensureCapacity(whenOutIsNull, blockBuffer.limit());
-               writeBlock(whenOutIsNull);
-            }
-            blockBuffer.put(in);
-            whenOutIsNull = ensureCapacity(whenOutIsNull, blockBuffer.limit());
-            writeBlock(whenOutIsNull);
-            whenOutIsNull = ensureCapacity(whenOutIsNull, 2 * LZ4FrameDecoder.INTEGER_BYTES);
-            writeEndMark(whenOutIsNull);
-
-            whenOutIsNull.flip();
-            return whenOutIsNull;
+            ByteBuffer result = ByteBuffer.allocate((int) compressedSize);
+            result.put(dstDirect);
+            result.flip();
+            return result;
          }
       }
       finally
       {
          in.limit(limitPrev);
-      }
-   }
-
-   private static ByteBuffer ensureCapacity(ByteBuffer buffer, int remainingNeeded)
-   {
-      if (buffer.remaining() >= remainingNeeded)
-         return buffer;
-
-      ByteBuffer extended = ByteBuffer.allocate(buffer.capacity() + remainingNeeded);
-      extended.order(ByteOrder.LITTLE_ENDIAN);
-      buffer.flip();
-      extended.put(buffer);
-      return extended;
-   }
-
-   /**
-    * Writes the magic number and frame descriptor to the underlying {@link OutputStream}.
-    */
-   private void writeHeader(ByteBuffer out)
-   {
-      if (out.remaining() < LZ4FrameDecoder.LZ4_MAX_HEADER_LENGTH)
-      {
-         throw new IllegalArgumentException("The provided buffer is too small to write the header");
-      }
-      out.order(ByteOrder.LITTLE_ENDIAN);
-      out.putInt(LZ4FrameDecoder.MAGIC);
-      out.put(frameInfo.getFLG().toByte());
-      out.put(frameInfo.getBD().toByte());
-      if (frameInfo.isEnabled(FLG.Bits.CONTENT_SIZE))
-      {
-         out.putLong(knownSize);
-      }
-      // compute checksum on all descriptor fields
-      final int hash = (checksum.hash(out.array(), LZ4FrameDecoder.INTEGER_BYTES, out.position() - LZ4FrameDecoder.INTEGER_BYTES, 0) >> 8) & 0xFF;
-      out.put((byte) hash);
-   }
-
-   /**
-    * Compresses buffered data, optionally computes an XXHash32 checksum, and writes the result to the buffer.
-    */
-   private void writeBlock(ByteBuffer out)
-   {
-      if (blockBuffer.position() == 0)
-      {
-         return;
-      }
-      // Make sure there's no stale data
-      Arrays.fill(compressedBuffer, (byte) 0);
-
-      if (frameInfo.isEnabled(FLG.Bits.CONTENT_CHECKSUM))
-      {
-         frameInfo.updateStreamHash(blockBuffer.array(), 0, blockBuffer.position());
-      }
-
-      int compressedLength = compressor.compress(blockBuffer.array(), 0, blockBuffer.position(), compressedBuffer, 0);
-      final byte[] bufferToWrite;
-      final int compressMethod;
-
-      // Store block uncompressed if compressed length is greater (incompressible)
-      if (compressedLength >= blockBuffer.position())
-      {
-         compressedLength = blockBuffer.position();
-         bufferToWrite = Arrays.copyOf(blockBuffer.array(), compressedLength);
-         compressMethod = LZ4FrameDecoder.LZ4_FRAME_INCOMPRESSIBLE_MASK;
-      }
-      else
-      {
-         bufferToWrite = compressedBuffer;
-         compressMethod = 0;
-      }
-
-      // Write content
-      out.putInt(compressedLength | compressMethod);
-      out.put(bufferToWrite, 0, compressedLength); // TODO bufferToWrite is a copy, we could avoid it
-
-      // Calculate and write block checksum
-      if (frameInfo.isEnabled(FLG.Bits.BLOCK_CHECKSUM))
-      {
-         out.putInt(checksum.hash(bufferToWrite, 0, compressedLength, 0));
-      }
-      blockBuffer.rewind();
-   }
-
-   /**
-    * Similar to the {@link #writeBlock(ByteBuffer)} method. Writes a 0-length block (without block checksum) to signal the end
-    * of the block stream.
-    */
-   private void writeEndMark(ByteBuffer out)
-   {
-      out.order(ByteOrder.LITTLE_ENDIAN);
-      out.putInt(0);
-      if (frameInfo.isEnabled(FLG.Bits.CONTENT_CHECKSUM))
-      {
-         out.putInt(0, frameInfo.currentStreamHash());
-      }
-      frameInfo.finish();
-   }
-
-   /**
-    * A simple state check to ensure the stream is still open.
-    */
-   private void ensureNotFinished()
-   {
-      if (frameInfo.isFinished())
-      {
-         throw new IllegalStateException(CLOSED_STREAM);
       }
    }
 }
