@@ -778,6 +778,19 @@ public interface SessionVisualizerControls
    void addYoChart(String groupName, Collection<String> variableNames);
 
    /**
+    * Resizes the main chart group to the given number of rows and columns. This is equivalent to using the
+    * grid-layout picker in the GUI: any newly created cells are blank, no variable is plotted into them.
+    * <p>
+    * Existing charts that fall outside the new size are discarded, existing charts within the new size are left
+    * untouched.
+    * </p>
+    *
+    * @param numberOfRows    the new number of rows.
+    * @param numberOfColumns the new number of columns.
+    */
+   void resizeYoChartGroup(int numberOfRows, int numberOfColumns);
+
+   /**
     * Adds a variable entry to the default entry tab.
     *
     * @param variableName the name of the variable to add. The variable will be looked up using

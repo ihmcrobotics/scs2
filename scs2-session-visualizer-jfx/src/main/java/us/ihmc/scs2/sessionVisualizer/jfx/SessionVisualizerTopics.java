@@ -13,6 +13,7 @@ import us.ihmc.scs2.definition.yoGraphic.YoGraphicDefinition;
 import us.ihmc.scs2.definition.yoSlider.*;
 import us.ihmc.scs2.session.*;
 import us.ihmc.scs2.session.SessionMessagerAPI.Sensors.SensorMessage;
+import us.ihmc.scs2.sessionVisualizer.jfx.controllers.chart.ChartTable2D.ChartTable2DSize;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoComposite.search.SearchEngines;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.NewTerrainVisualRequest;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SecondaryWindowManager.NewWindowRequest;
@@ -75,6 +76,7 @@ public class SessionVisualizerTopics
 
    private Topic<YoEntryListDefinition> yoEntryListAdd;
    private Topic<ImmutablePair<String, YoChartConfigurationDefinition>> yoChartListAdd;
+   private Topic<Pair<Window, ChartTable2DSize>> yoChartGroupResize;
 
    private Topic<File> yoMultiSliderboardSave;
    private Topic<File> yoMultiSliderboardLoad;
@@ -179,6 +181,7 @@ public class SessionVisualizerTopics
 
       yoEntryListAdd = SessionVisualizerMessagerAPI.YoEntry.YoEntryListAdd;
       yoChartListAdd = SessionVisualizerMessagerAPI.YoChart.YoChartListAdd;
+      yoChartGroupResize = SessionVisualizerMessagerAPI.YoChart.YoChartGroupResize;
 
       yoMultiSliderboardSave = SessionVisualizerMessagerAPI.YoSliderboard.YoMultiSliderboardSave;
       yoMultiSliderboardLoad = SessionVisualizerMessagerAPI.YoSliderboard.YoMultiSliderboardLoad;
@@ -426,6 +429,11 @@ public class SessionVisualizerTopics
    public Topic<Pair<Window, File>> getYoChartGroupSaveConfiguration()
    {
       return yoChartGroupSaveConfiguration;
+   }
+
+   public Topic<Pair<Window, ChartTable2DSize>> getYoChartGroupResize()
+   {
+      return yoChartGroupResize;
    }
 
    public Topic<YoEntryListDefinition> getYoEntryListAdd()
