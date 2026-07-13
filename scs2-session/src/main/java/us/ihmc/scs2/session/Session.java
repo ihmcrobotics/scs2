@@ -1891,7 +1891,9 @@ public abstract class Session
    protected void initializePlaybackTick()
    {
       sharedBuffer.flushLinkedPushRequests();
-      sharedBuffer.readBuffer();
+      sharedBuffer.readParallelBuffer();
+      // Comment out the readBuffer() line as I want to default to more parallel operations so things are faster
+      // sharedBuffer.readBuffer();
    }
 
    /**
