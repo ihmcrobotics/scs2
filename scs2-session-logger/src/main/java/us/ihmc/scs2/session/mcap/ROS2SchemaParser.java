@@ -5,6 +5,7 @@ import us.ihmc.jros2.parser.field.InterfaceField;
 import us.ihmc.jros2.parser.field.InterfaceFieldParsingException;
 import us.ihmc.jros2.parser.msgdeps.MsgDepsContext;
 import us.ihmc.jros2.parser.msgdeps.MsgDepsParser;
+import us.ihmc.jros2.parser.util.BuiltinTools;
 import us.ihmc.log.LogTools;
 import us.ihmc.scs2.session.mcap.MCAPSchema.MCAPSchemaField;
 import us.ihmc.scs2.session.mcap.specs.records.Schema;
@@ -76,19 +77,24 @@ public class ROS2SchemaParser
       splitFieldsAndConstants(msgDepsContext.getFields().values(), fields, constants);
 
       LinkedHashMap<String, MCAPSchema> subSchemaMap = new LinkedHashMap<>();
+      // Package name of the schema each sub-schema was declared in, keyed the same as subSchemaMap. Needed to
+      // resolve bare (same-package) type references declared within that sub-schema.
+      Map<String, String> subSchemaPackageNames = new LinkedHashMap<>();
 
       for (Map.Entry<String, MsgContext> dependency : msgDepsContext.getDependencies().entrySet())
       {
          String subName = dependency.getKey();
+         MsgContext dependencyContext = dependency.getValue();
 
          List<MCAPSchemaField> subFields = new ArrayList<>();
          List<MCAPSchemaField> subConstants = new ArrayList<>();
-         splitFieldsAndConstants(dependency.getValue().getFields().values(), subFields, subConstants);
+         splitFieldsAndConstants(dependencyContext.getFields().values(), subFields, subConstants);
 
          MCAPSchema subSchema = new MCAPSchema(subName, -1, subFields, null);
          subSchema.getStaticFields().addAll(subConstants);
          registerEnumFields(subFields, subConstants);
          subSchemaMap.put(subName, subSchema);
+         subSchemaPackageNames.put(subName, dependencyContext.getPackageName());
       }
 
       // Update the fields to indicate whether they are complex types or not, and register enum fields.
@@ -96,15 +102,16 @@ public class ROS2SchemaParser
       registerEnumFields(fields, constants);
       for (MCAPSchemaField field : fields)
       {
-         field.setType(resolveTypeName(field.getType(), subSchemaMap));
+         field.setType(resolveTypeName(field.getType(), msgDepsContext.getPackageName(), subSchemaMap));
          if (subSchemaMap.containsKey(field.getType()))
             field.setComplexType(true);
       }
-      for (MCAPSchema subSchema : subSchemaMap.values())
+      for (Map.Entry<String, MCAPSchema> subSchemaEntry : subSchemaMap.entrySet())
       {
-         for (MCAPSchemaField subField : subSchema.getFields())
+         String enclosingPackageName = subSchemaPackageNames.get(subSchemaEntry.getKey());
+         for (MCAPSchemaField subField : subSchemaEntry.getValue().getFields())
          {
-            subField.setType(resolveTypeName(subField.getType(), subSchemaMap));
+            subField.setType(resolveTypeName(subField.getType(), enclosingPackageName, subSchemaMap));
             if (subSchemaMap.containsKey(subField.getType()))
                subField.setComplexType(true);
          }
@@ -233,8 +240,8 @@ public class ROS2SchemaParser
    {
       return switch (type)
       {
-         case "int8", "uint8", "int16", "uint16", "int32", "uint32", "int64", "uint64", "byte", "char" -> true;
-         default -> false;
+         case "bool", "float32", "float64", "string", "wstring" -> false;
+         default -> BuiltinTools.isBuiltinType(type);
       };
    }
 
@@ -253,23 +260,17 @@ public class ROS2SchemaParser
    }
 
    /**
-    * Resolves a short type name (no '/') to its fully-qualified key in the sub-schema map by matching
-    * the last path segment. Returns the original name unchanged if it already contains '/' or no match
-    * is found.
+    * Resolves a short type name (no '/') to its fully-qualified key in the sub-schema map using the ROS2 .msg
+    * convention that a bare type name refers to a message in the same package as the enclosing schema, i.e. the
+    * package jros2 already resolved for that schema (see {@code InterfaceContext.getPackageName()}). Returns the
+    * original name unchanged if it already contains '/' or the qualified name isn't a known sub-schema (e.g. it's
+    * a builtin primitive).
     */
-   private static String resolveTypeName(String type, Map<String, MCAPSchema> subSchemaMap)
+   private static String resolveTypeName(String type, String enclosingPackageName, Map<String, MCAPSchema> subSchemaMap)
    {
-      if (subSchemaMap.containsKey(type))
-         return type;
       if (type.contains("/") || type.contains("::"))
          return type;
-      for (String key : subSchemaMap.keySet())
-      {
-         int lastSlash = key.lastIndexOf('/');
-         String shortName = lastSlash >= 0 ? key.substring(lastSlash + 1) : key;
-         if (shortName.equals(type))
-            return key;
-      }
-      return type;
+      String qualifiedType = enclosingPackageName + "/" + type;
+      return subSchemaMap.containsKey(qualifiedType) ? qualifiedType : type;
    }
 }
