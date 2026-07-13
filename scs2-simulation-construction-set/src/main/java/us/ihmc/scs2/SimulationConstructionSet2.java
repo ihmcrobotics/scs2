@@ -1214,6 +1214,13 @@ public class SimulationConstructionSet2 implements YoVariableHolder, SimulationS
 
    /** {@inheritDoc} */
    @Override
+   public void resizeYoChartGroup(int numberOfRows, int numberOfColumns)
+   {
+      executeOrScheduleVisualizerTask(() -> visualizerControls.resizeYoChartGroup(numberOfRows, numberOfColumns));
+   }
+
+   /** {@inheritDoc} */
+   @Override
    public void addYoEntry(String groupName, Collection<String> variableNames)
    {
       executeOrScheduleVisualizerTask(() -> visualizerControls.addYoEntry(groupName, variableNames));
