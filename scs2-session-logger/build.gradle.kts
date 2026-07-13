@@ -20,6 +20,7 @@ mainDependencies {
    api("us.ihmc:scs2-simulation:source") // TODO Need to fix this, it needs the Robot.
 
    api("us.ihmc:ihmc-robot-data-logger:0.39.1")
+   api("us.ihmc:jros2-parser:1.4.0")
    api("org.antlr:antlr4-runtime:4.13.1")
    api("com.github.vatbub:mslinks:1.0.6.2")
    // Not using org.bytedeco:lz4-platform: it pulls in javacpp-platform, whose fixed javacpp:1.5.8
