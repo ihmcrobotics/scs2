@@ -1,10 +1,17 @@
 package us.ihmc.scs2.session.mcap;
 
+import us.ihmc.jros2.parser.MsgContext;
+import us.ihmc.jros2.parser.field.InterfaceField;
+import us.ihmc.jros2.parser.field.InterfaceFieldParsingException;
+import us.ihmc.jros2.parser.msgdeps.MsgDepsContext;
+import us.ihmc.jros2.parser.msgdeps.MsgDepsParser;
 import us.ihmc.log.LogTools;
 import us.ihmc.scs2.session.mcap.MCAPSchema.MCAPSchemaField;
 import us.ihmc.scs2.session.mcap.specs.records.Schema;
 
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -14,11 +21,17 @@ import java.util.stream.Collectors;
 /**
  * Class used to represent a Java interpreter of a MCAP schema which encoding is "ros2msg".
  * This schema resembles much of ROS2 messages.
+ * <p>
+ * The field-level tokenizing (splitting the bundled schema into its dependency blocks and parsing each field line)
+ * is delegated to {@code jros2-parser} ({@link MsgDepsParser}/{@link InterfaceField}), which implements the same
+ * bundled "ros2msg" convention (see <a href="https://mcap.dev/spec/registry#ros2msg">the MCAP spec</a>). This class
+ * is responsible for converting that into the {@link MCAPSchema} graph the rest of the MCAP pipeline
+ * ({@link us.ihmc.scs2.session.mcap.encoding.CDRDeserializer} and friends) walks at runtime, which jros2 has no
+ * equivalent of since it's built to feed Java source-code generation.
+ * </p>
  */
 public class ROS2SchemaParser
 {
-   public static final String SUB_SCHEMA_SEPARATOR_REGEX = "\n(=+)\n";
-   public static final String SUB_SCHEMA_PREFIX = "MSG: ";
    /**
     * ROS2 allows declaring unbounded arrays, e.g. "float64[]", which have no max length in the schema.
     * Since the max length is used to statically allocate the backing {@code YoVariable}s, unbounded arrays are treated as bounded with this default length.
@@ -46,27 +59,31 @@ public class ROS2SchemaParser
     */
    public static MCAPSchema loadSchema(String name, int id, byte[] data)
    {
-      String schemasBundledString = new String(data);
-      schemasBundledString = schemasBundledString.replaceAll("\r\n", "\n"); // To handle varying declaration of a new line.
-      String[] schemasStrings = schemasBundledString.split(SUB_SCHEMA_SEPARATOR_REGEX);
+      String schemasBundledString = new String(data, StandardCharsets.UTF_8);
+
+      MsgDepsContext msgDepsContext;
+      try
+      {
+         msgDepsContext = MsgDepsParser.parseMsgDeps(schemasBundledString, toPackageResourceName(name));
+      }
+      catch (InterfaceFieldParsingException e)
+      {
+         throw new RuntimeException("Failed to parse ros2msg schema for " + name, e);
+      }
 
       List<MCAPSchemaField> fields = new ArrayList<>();
       List<MCAPSchemaField> constants = new ArrayList<>();
-      parseFieldsAndConstants(schemasStrings[0], fields, constants);
+      splitFieldsAndConstants(msgDepsContext.getFields().values(), fields, constants);
 
       LinkedHashMap<String, MCAPSchema> subSchemaMap = new LinkedHashMap<>();
 
-      for (int i = 1; i < schemasStrings.length; i++)
+      for (Map.Entry<String, MsgContext> dependency : msgDepsContext.getDependencies().entrySet())
       {
-         String schemaString = schemasStrings[i];
-
-         int firstNewLineCharacter = schemaString.indexOf("\n");
-         String firstLine = schemaString.substring(0, firstNewLineCharacter);
-         String subName = firstLine.replace(SUB_SCHEMA_PREFIX, "").trim();
+         String subName = dependency.getKey();
 
          List<MCAPSchemaField> subFields = new ArrayList<>();
          List<MCAPSchemaField> subConstants = new ArrayList<>();
-         parseFieldsAndConstants(schemaString.substring(firstNewLineCharacter + 1), subFields, subConstants);
+         splitFieldsAndConstants(dependency.getValue().getFields().values(), subFields, subConstants);
 
          MCAPSchema subSchema = new MCAPSchema(subName, -1, subFields, null);
          subSchema.getStaticFields().addAll(subConstants);
@@ -99,19 +116,81 @@ public class ROS2SchemaParser
    }
 
    /**
-    * Splits the lines of a schema block into data fields and constant definitions.
+    * jros2's {@link MsgDepsParser} requires a "package/Resource" name (exactly one '/'), but MCAP schema names use
+    * the ROS2 "package/msg/Resource" convention. Strips the middle segment(s) to fit jros2's expectation.
     */
-   private static void parseFieldsAndConstants(String schemaBlock, List<MCAPSchemaField> fields, List<MCAPSchemaField> constants)
+   private static String toPackageResourceName(String schemaName)
    {
-      schemaBlock.lines()
-                 .filter(line -> !line.isBlank() && !line.trim().startsWith("#"))
-                 .forEach(line ->
-                          {
-                             if (isConstantDefinition(line))
-                                constants.add(parseConstantField(line));
-                             else
-                                fields.add(parseMCAPSchemaField(line));
-                          });
+      String[] parts = schemaName.split("/");
+      if (parts.length == 2)
+         return schemaName;
+      if (parts.length > 2)
+         return parts[0] + "/" + parts[parts.length - 1];
+      return "unknown/" + schemaName;
+   }
+
+   /**
+    * Splits a collection of jros2 fields into data fields and constant definitions, mirroring the previous
+    * hand-rolled distinction between a field declaration and a constant declaration ("TYPE NAME = VALUE").
+    */
+   private static void splitFieldsAndConstants(Collection<InterfaceField> interfaceFields, List<MCAPSchemaField> fields, List<MCAPSchemaField> constants)
+   {
+      for (InterfaceField interfaceField : interfaceFields)
+      {
+         if (interfaceField.getConstantValue() != null)
+            constants.add(toConstantField(interfaceField));
+         else
+            fields.add(toDataField(interfaceField));
+      }
+   }
+
+   private static MCAPSchemaField toConstantField(InterfaceField interfaceField)
+   {
+      MCAPSchemaField field = new MCAPSchemaField();
+      field.setType(interfaceField.getType());
+      field.setName(interfaceField.getName());
+      field.setDefaultValue(interfaceField.getConstantValue());
+      return field;
+   }
+
+   private static MCAPSchemaField toDataField(InterfaceField interfaceField)
+   {
+      MCAPSchemaField field = new MCAPSchemaField();
+      field.setType(interfaceField.getType());
+      field.setName(interfaceField.getName());
+
+      if (interfaceField.isArray())
+      {
+         if (interfaceField.isUnbounded())
+         {
+            field.setArray(false);
+            field.setVector(true);
+            field.setMaxLength(UNBOUNDED_ARRAY_DEFAULT_MAX_LENGTH);
+            LogTools.warn("Unbounded arrays are not supported for type " + interfaceField.getType() + ", limiting max length to "
+                          + UNBOUNDED_ARRAY_DEFAULT_MAX_LENGTH);
+         }
+         else if (interfaceField.isUpperBounded())
+         {
+            field.setArray(false);
+            field.setVector(true);
+            field.setMaxLength(interfaceField.getLength());
+         }
+         else
+         {
+            field.setArray(true);
+            field.setVector(false);
+            field.setMaxLength(interfaceField.getLength());
+         }
+         // Set unconditionally for any bracketed (array or vector) field, even if the element type is primitive.
+         field.setComplexType(true);
+      }
+      else
+      {
+         field.setArray(false);
+         field.setVector(false);
+         field.setMaxLength(-1);
+      }
+      return field;
    }
 
    /**
@@ -148,42 +227,6 @@ public class ROS2SchemaParser
 
          field.setEnumSchema(new MCAPSchema(field.getType(), -1, enumConstantNames, enumValues));
       }
-   }
-
-   private static boolean isConstantDefinition(String line)
-   {
-      int commentIndex = line.indexOf('#');
-      String effectiveLine = commentIndex >= 0 ? line.substring(0, commentIndex).trim() : line;
-      int firstSpace = effectiveLine.indexOf(' ');
-      if (firstSpace < 0)
-         return false;
-      // ROS2 msg field declarations ("TYPE NAME", optionally with array brackets) never contain '=';
-      // only constant declarations ("TYPE NAME=VALUE" or "TYPE NAME = VALUE") do, so presence of '=' after
-      // the type is sufficient. Previously this also required '=' to appear before any space, which broke
-      // on the "NAME = VALUE" spacing style (e.g. "uint8 UNKNOWN = 0"): the space between NAME and '='
-      // came first, so those constants were misclassified as regular fields, corrupting CDR deserialization
-      // for every message using the "<Type>Enum <field>_foxglove_enum" pattern.
-      String remaining = effectiveLine.substring(firstSpace + 1).trim();
-      return remaining.indexOf('=') >= 0;
-   }
-
-   private static MCAPSchemaField parseConstantField(String line)
-   {
-      int commentIndex = line.indexOf('#');
-      if (commentIndex >= 0)
-         line = line.substring(0, commentIndex).trim();
-      int firstSpace = line.indexOf(' ');
-      String type = line.substring(0, firstSpace).trim();
-      String remaining = line.substring(firstSpace + 1).trim();
-      int equalsIndex = remaining.indexOf('=');
-      String constantName = remaining.substring(0, equalsIndex).trim();
-      String constantValue = remaining.substring(equalsIndex + 1).trim();
-
-      MCAPSchemaField field = new MCAPSchemaField();
-      field.setType(type);
-      field.setName(constantName);
-      field.setDefaultValue(constantValue);
-      return field;
    }
 
    private static boolean isIntegerType(String type)
@@ -228,62 +271,5 @@ public class ROS2SchemaParser
             return key;
       }
       return type;
-   }
-
-   public static MCAPSchemaField parseMCAPSchemaField(String line)
-   {
-      int inlineCommentIndex = line.indexOf('#');
-      if (inlineCommentIndex >= 0)
-         line = line.substring(0, inlineCommentIndex).trim();
-      MCAPSchemaField field = new MCAPSchemaField();
-      field.setType(line.substring(0, line.indexOf(' ')).trim());
-      field.setName(line.substring(line.indexOf(' ') + 1).trim().split("\\s+")[0]);
-
-      int lBracketIndex = field.getType().indexOf('[');
-      int rBracketIndex = field.getType().indexOf(']');
-
-      if (lBracketIndex < rBracketIndex)
-      {
-         String maxLengthStr = field.getType().substring(lBracketIndex + 1, rBracketIndex);
-         if (maxLengthStr.isEmpty())
-         {
-            // Unbounded array, e.g. "float64[]": no max length declared in the schema.
-            field.setArray(false);
-            field.setVector(true);
-            maxLengthStr = Integer.toString(UNBOUNDED_ARRAY_DEFAULT_MAX_LENGTH);
-            LogTools.warn("Unbounded arrays are not supported for type " + field.getType() + ", limiting max length to "
-                          + UNBOUNDED_ARRAY_DEFAULT_MAX_LENGTH);
-         }
-         else if (maxLengthStr.startsWith("<="))
-         {
-            field.setArray(false);
-            field.setVector(true);
-            maxLengthStr = maxLengthStr.substring(2);
-         }
-         else
-         {
-            field.setArray(true);
-            field.setVector(false);
-         }
-         field.setComplexType(true);
-         try
-         {
-            field.setMaxLength(Integer.parseInt(maxLengthStr));
-         }
-         catch (NumberFormatException e)
-         {
-            // The length is probably defined as a maximum length "array[<=54]"
-            maxLengthStr = maxLengthStr.replace("<=", "");
-            field.setMaxLength(Integer.parseInt(maxLengthStr));
-         }
-         field.setType(field.getType().substring(0, lBracketIndex));
-      }
-      else
-      {
-         field.setArray(false);
-         field.setVector(false);
-         field.setMaxLength(-1);
-      }
-      return field;
    }
 }
