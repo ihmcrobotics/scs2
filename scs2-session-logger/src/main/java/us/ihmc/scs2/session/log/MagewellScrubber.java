@@ -4,7 +4,6 @@ import logger_msgs.Camera;
 import org.bytedeco.javacv.Frame;
 import us.ihmc.robotDataLogger.logger.MagewellDemuxer;
 import us.ihmc.robotDataLogger.logger.MagewellMuxer;
-import us.ihmc.tools.CaptureTimeTools;
 
 import java.io.File;
 import java.io.IOException;
@@ -88,8 +87,6 @@ public class MagewellScrubber
       PrintWriter timestampWriter = new PrintWriter(timestampFile);
       timestampWriter.println(1 + "\n" + frameRate);
 
-      long startTime = System.currentTimeMillis();
-
       MagewellMuxer magewellMuxer = new MagewellMuxer(outputFile, magewellDemuxer.getImageWidth(), magewellDemuxer.getImageHeight());
       magewellMuxer.start();
 
@@ -100,10 +97,9 @@ public class MagewellScrubber
          if (frame.image == null || frame.imageWidth <= 0 || frame.imageHeight <= 0)
             continue;
 
-         // We want to write all the frames at once to get equal timestamps between frames. When recording from the camera we have a fixed rate at which we
-         // receive frames, so we don't need to worry about it, here however, we don't have that so we cna grab the next frame as fast as possible. However if the
-         // timestamps between frames aren't large enough, things won't work. (maybe :))
-         long videoTimestamp = CaptureTimeTools.timeSinceStartedCaptureInMicroseconds(System.currentTimeMillis(), startTime);
+         // Use the frame's original PTS (relative to the crop start) so playback speed matches the source
+         // recording, regardless of how fast this machine happens to decode/encode during cropping.
+         long videoTimestamp = magewellDemuxer.getCurrentPTS() - startVideoTimestamp;
          magewellMuxer.recordFrame(frame, videoTimestamp);
          videoTimestampsForCroppedLog[i] = magewellMuxer.getTimeStamp();
          i++;
