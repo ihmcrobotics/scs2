@@ -348,6 +348,18 @@ public class YoSharedBuffer implements LinkedYoVariableFactory
    }
 
    /**
+    * Same effect as {@link #readBuffer()}, but parallelizes the value copy across variables. See
+    * {@link YoVariableBufferList#readParallelBufferAt(int)} for details.
+    */
+   public void readParallelBuffer()
+   {
+      if (isDisposed)
+         return;
+
+      registryBuffer.readParallelBuffer();
+   }
+
+   /**
     * Writes into the buffers at the current index, i.e. {@code properties.getCurrentIndex()}, the
     * value of their respective {@code YoVariable}.
     * <p>

@@ -35,6 +35,12 @@ public class YoDoubleBuffer extends YoVariableBuffer<YoDouble>
    }
 
    @Override
+   public boolean readBufferAtWithoutNotify(int index)
+   {
+      return yoVariable.set(buffer[index], false);
+   }
+
+   @Override
    long getValueAsLongBits(int index)
    {
       return Double.doubleToLongBits(buffer[index]);

@@ -118,6 +118,16 @@ public class YoRegistryBuffer
       yoVariableBuffers.readBufferAt(index);
    }
 
+   public void readParallelBuffer()
+   {
+      readParallelBufferAt(properties.getCurrentIndex());
+   }
+
+   public void readParallelBufferAt(int index)
+   {
+      yoVariableBuffers.readParallelBufferAt(index);
+   }
+
    public List<YoVariableBuffer<?>> getYoVariableBuffers()
    {
       return yoVariableBuffers;

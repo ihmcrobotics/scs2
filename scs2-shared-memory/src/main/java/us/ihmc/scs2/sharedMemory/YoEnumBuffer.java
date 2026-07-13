@@ -35,6 +35,12 @@ public class YoEnumBuffer<E extends Enum<E>> extends YoVariableBuffer<YoEnum<E>>
    }
 
    @Override
+   public boolean readBufferAtWithoutNotify(int index)
+   {
+      return yoVariable.set(buffer[index], false);
+   }
+
+   @Override
    long getValueAsLongBits(int index)
    {
       return buffer[index];

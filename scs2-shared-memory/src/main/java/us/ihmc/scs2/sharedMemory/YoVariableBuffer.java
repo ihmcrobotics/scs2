@@ -58,6 +58,20 @@ public abstract class YoVariableBuffer<T extends YoVariable>
 
    public abstract void readBufferAt(int index);
 
+   /**
+    * Reads the buffer value at the given index into this variable without notifying its listeners.
+    * <p>
+    * Used by {@link YoVariableBufferList#readParallelBufferAt(int)} to parallelize the value copy
+    * across variables (which touches no shared state) while deferring listener notification to a
+    * sequential pass afterward (listener callbacks are not guaranteed thread-safe, e.g. some touch
+    * JavaFX state that may only be accessed from the FX Application Thread).
+    * </p>
+    *
+    * @param index the index to read from.
+    * @return {@code true} if the value changed, {@code false} otherwise.
+    */
+   public abstract boolean readBufferAtWithoutNotify(int index);
+
    public abstract void fillBuffer(boolean zeroFill, int from, int length);
 
    public T getYoVariable()

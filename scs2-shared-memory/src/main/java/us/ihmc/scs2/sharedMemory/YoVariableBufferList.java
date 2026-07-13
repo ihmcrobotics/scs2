@@ -72,6 +72,29 @@ public class YoVariableBufferList extends AbstractList<YoVariableBuffer<?>>
       }
    }
 
+   /**
+    * Same effect as {@link #readBufferAt(int)}, but parallelizes the value copy across variables.
+    * <p>
+    * The value copy itself touches no shared state (each variable's own field), so it's safe to run
+    * in parallel exactly like {@link #writeBufferAt(int)}. Listener notification is a separate matter:
+    * {@code YoVariable} listeners are invoked synchronously and aren't guaranteed thread-safe (e.g. some
+    * touch JavaFX state), so notification is deferred and run sequentially afterward, on the calling
+    * thread, for only the variables whose value actually changed.
+    * </p>
+    */
+   public void readParallelBufferAt(int index)
+   {
+      YoVariableBuffer<?>[] changedBuffers = Arrays.stream(yoVariableBuffers, 0, size)
+                                                    .parallel()
+                                                    .filter(buffer -> buffer.readBufferAtWithoutNotify(index))
+                                                    .toArray(YoVariableBuffer<?>[]::new);
+
+      for (YoVariableBuffer<?> buffer : changedBuffers)
+      {
+         buffer.getYoVariable().notifyListeners();
+      }
+   }
+
    public void dispose()
    {
       for (int i = 0; i < yoVariableBuffers.length; i++)

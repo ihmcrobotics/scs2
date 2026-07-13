@@ -35,6 +35,12 @@ public class YoLongBuffer extends YoVariableBuffer<YoLong>
    }
 
    @Override
+   public boolean readBufferAtWithoutNotify(int index)
+   {
+      return yoVariable.set(buffer[index], false);
+   }
+
+   @Override
    long getValueAsLongBits(int index)
    {
       return buffer[index];
