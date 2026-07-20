@@ -1,5 +1,6 @@
 package us.ihmc.scs2.session.mcap;
 
+import gnu.trove.map.hash.TIntLongHashMap;
 import gnu.trove.map.hash.TIntObjectHashMap;
 import org.apache.commons.io.FileUtils;
 import us.ihmc.commons.nio.FileTools;
@@ -10,11 +11,13 @@ import us.ihmc.scs2.session.SessionIOTools;
 import us.ihmc.scs2.session.mcap.output.MCAPDataOutput;
 import us.ihmc.scs2.session.mcap.specs.MCAP;
 import us.ihmc.scs2.session.mcap.specs.records.Channel;
+import us.ihmc.scs2.session.mcap.specs.records.ChannelMessageCount;
 import us.ihmc.scs2.session.mcap.specs.records.Chunk;
 import us.ihmc.scs2.session.mcap.specs.records.Message;
 import us.ihmc.scs2.session.mcap.specs.records.Opcode;
 import us.ihmc.scs2.session.mcap.specs.records.Record;
 import us.ihmc.scs2.session.mcap.specs.records.Schema;
+import us.ihmc.scs2.session.mcap.specs.records.Statistics;
 import us.ihmc.scs2.sharedMemory.tools.SharedMemoryTools;
 import us.ihmc.scs2.simulation.robot.Robot;
 import us.ihmc.yoVariables.registry.YoNamespace;
@@ -32,6 +35,7 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Predicate;
 
 public class MCAPLogFileReader
 {
@@ -59,7 +63,15 @@ public class MCAPLogFileReader
    private final MCAPConsoleLogManager consoleLogManager;
    private final TIntObjectHashMap<MCAPSchema> schemas = new TIntObjectHashMap<>();
    private final TIntObjectHashMap<Schema> rawSchemas = new TIntObjectHashMap<>();
-   private final TIntObjectHashMap<YoMCAPMessage> yoMessageMap = new TIntObjectHashMap<>();
+   private final TIntObjectHashMap<MCAPMessageDecoder> yoMessageMap = new TIntObjectHashMap<>();
+   /**
+    * Per-channel message counts from the file's {@link Statistics} record, used to skip building YoVariables for
+    * channels that never actually appear in the log (e.g. schemas with large/nested unbounded arrays can otherwise
+    * blow up into hundreds of thousands of never-updated variables). {@code null} if the file has no Statistics
+    * record, in which case no channel is skipped.
+    */
+   private final TIntLongHashMap channelMessageCounts = new TIntLongHashMap();
+   private boolean hasChannelMessageCounts = false;
    private final MCAPFrameTransformManager frameTransformManager;
    private final MCAPJointStateManager jointStateManager = new MCAPJointStateManager();
    private final MCAPOdometryManager odometryManager = new MCAPOdometryManager();
@@ -107,6 +119,8 @@ public class MCAPLogFileReader
       frameTransformManager = new MCAPFrameTransformManager(inertialFrame); // This is fast.
       mcapRegistry.addChild(frameTransformManager.getRegistry());
       LogTools.info("Created frame transform manager in {} ms.", TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTime));
+
+      loadStatistics();
 
       startTime = System.nanoTime();
       // Must run before loadSchemas()/loadChannels(), which exclude this schema from generic decoding: a real
@@ -180,6 +194,25 @@ public class MCAPLogFileReader
       return messageManager.getNumberOfEntries();
    }
 
+   /**
+    * Reads the file's {@link Statistics} record (if any) to find out, per channel, how many messages were actually
+    * recorded. Schemas can be declared (and channels opened) for topics that were never actually published to during
+    * the recording; building a full YoVariable tree for those wastes memory/UI performance for data that will never
+    * update, so {@link #loadChannels()} uses this to skip them entirely.
+    */
+   private void loadStatistics()
+   {
+      for (Record record : mcap.records())
+      {
+         if (record.op() != Opcode.STATISTICS)
+            continue;
+         Statistics statistics = (Statistics) record.body();
+         for (ChannelMessageCount count : statistics.channelMessageCounts())
+            channelMessageCounts.put(count.channelId(), count.messageCount());
+         hasChannelMessageCounts = true;
+      }
+   }
+
    private void loadSchemas() throws IOException
    {
       try
@@ -217,6 +250,8 @@ public class MCAPLogFileReader
                schemas.put(schema.id(), ROS2SchemaParser.loadSchema(schema));
             else if (schema.encoding().equalsIgnoreCase("omgidl"))
                schemas.put(schema.id(), OMGIDLSchemaParser.loadSchema(schema));
+            else if (schema.encoding().equalsIgnoreCase("protobuf"))
+               schemas.put(schema.id(), ProtobufSchemaParser.loadSchema(schema));
             else
                throw new UnsupportedOperationException("Unsupported encoding: " + schema.encoding());
          }
@@ -236,6 +271,15 @@ public class MCAPLogFileReader
          if (record.op() != Opcode.CHANNEL)
             continue;
          Channel channel = (Channel) record.body();
+
+         if (hasChannelMessageCounts && channelMessageCounts.get(channel.id()) == 0L)
+         {
+            // No point building a YoVariable tree for a channel that never actually appears in the log; some
+            // schemas (e.g. ROS2 messages with several unbounded array fields) can otherwise explode into hundreds
+            // of thousands of variables that would never be updated.
+            continue;
+         }
+
          if (frameTransformManager.hasMCAPFrameTransforms() && channel.schemaId() == frameTransformManager.getFrameTransformSchema().getId())
             continue;
 
@@ -259,10 +303,6 @@ public class MCAPLogFileReader
 
          try
          {
-            if (!"cdr".equalsIgnoreCase(channel.messageEncoding()))
-            {
-               throw new UnsupportedOperationException("Only CDR encoding is supported for now.");
-            }
             String topic = channel.topic();
             topic = topic.replace("/", YoTools.NAMESPACE_SEPERATOR_STRING);
             if (topic.startsWith(YoTools.NAMESPACE_SEPERATOR_STRING))
@@ -271,7 +311,21 @@ public class MCAPLogFileReader
             }
             YoNamespace namespace = new YoNamespace(topic).prepend(mcapRegistry.getNamespace());
             YoRegistry channelRegistry = SharedMemoryTools.ensurePathExists(mcapRegistry, namespace);
-            YoMCAPMessage newMessage = YoMCAPMessage.newMessage(schema, channel.id(), channelRegistry);
+
+            MCAPMessageDecoder newMessage;
+            if ("cdr".equalsIgnoreCase(channel.messageEncoding()))
+               newMessage = YoMCAPMessage.newMessage(schema, channel.id(), channelRegistry);
+            else if ("protobuf".equalsIgnoreCase(channel.messageEncoding()) && schema instanceof MCAPProtobufSchema protobufSchema)
+            {
+               // A sample message is needed to resolve protobuf `map` fields' key sets (see YoMCAPProtobufMessage);
+               // the descriptor alone can't tell us which keys to build YoVariables for.
+               Message sampleMessage = MCAPJointStateManager.findFirstMessage(mcap, chunkBuffer, channel.id());
+               byte[] sampleMessageData = sampleMessage == null ? null : sampleMessage.messageData();
+               newMessage = YoMCAPProtobufMessage.newMessage(protobufSchema, channel.id(), channelRegistry, sampleMessageData);
+            }
+            else
+               throw new UnsupportedOperationException("Unsupported message encoding: " + channel.messageEncoding());
+
             if (channelRegistry.getNumberOfVariablesDeep() > 15000)
             {
                LogTools.warn("Message registry has more than 15000 variables, schema {}, topic {}. This may cause performance issues.",
@@ -348,7 +402,7 @@ public class MCAPLogFileReader
             if (wasOdometry)
                continue;
 
-            YoMCAPMessage yoMCAPMessage = yoMessageMap.get(message.channelId());
+            MCAPMessageDecoder yoMCAPMessage = yoMessageMap.get(message.channelId());
 
             if (yoMCAPMessage == null)
             {
@@ -361,7 +415,7 @@ public class MCAPLogFileReader
          {
             e.printStackTrace();
 
-            YoMCAPMessage yoMCAPMessage = yoMessageMap.get(message.channelId());
+            MCAPMessageDecoder yoMCAPMessage = yoMessageMap.get(message.channelId());
             if (yoMCAPMessage != null)
             {
                LogTools.error("Failed to read message. Channel ID {}, schema name: {}. Exporting message data & schema to file.",
@@ -471,17 +525,66 @@ public class MCAPLogFileReader
       return frameTransformManager;
    }
 
+   /**
+    * Tries each robot-state-driving strategy in priority order, returning the first one that can actually cover the
+    * whole robot - not just the first one that superficially applies (a strategy "applying" and "actually covering
+    * every joint" aren't the same thing, see {@link #tryFrameTransformBasedUpdater}). Falls back to {@code null} if
+    * none of them do, e.g. an MCAP file with no robot-state channel this reader knows how to interpret at all.
+    */
    public RobotStateUpdater createRobotStateUpdater(Robot robot)
    {
-      if (frameTransformManager.hasMCAPFrameTransforms())
-      {
-         return new MCAPFrameTransformBasedRobotStateUpdater(robot, frameTransformManager, jointStateManager, odometryManager, currentTimestamp);
-      }
+      RobotStateUpdater updater;
+      updater = tryFrameTransformBasedUpdater(robot);
 
-      for (YoMCAPMessage yoMCAPMessage : yoMessageMap.valueCollection())
+      if (updater != null)
+         return updater;
+
+      updater = tryControllerStateBasedUpdater(robot);
+      if (updater != null)
+         return updater;
+
+      updater = tryMujocoBasedUpdater(robot);
+      if (updater != null)
+         return updater;
+
+      // We return null if we don't have any valid robot updater, have to check if this is null wherever this is used
+      return null;
+   }
+
+   private RobotStateUpdater tryFrameTransformBasedUpdater(Robot robot)
+   {
+      if (!frameTransformManager.hasMCAPFrameTransforms())
+         return null;
+
+      // hasMCAPFrameTransforms() only reflects that a /tf-shaped schema exists in the file, not that any
+      // transforms were actually published (e.g. a /tf_static-only file with an empty /tf channel) - only commit
+      // to this strategy if it actually resolved every joint, otherwise fall through to the others.
+      MCAPFrameTransformBasedRobotStateUpdater updater = new MCAPFrameTransformBasedRobotStateUpdater(robot,
+                                                                                                       frameTransformManager,
+                                                                                                       jointStateManager,
+                                                                                                       odometryManager,
+                                                                                                       currentTimestamp);
+      return updater.coversAllJoints() ? updater : null;
+   }
+
+   private RobotStateUpdater tryControllerStateBasedUpdater(Robot robot)
+   {
+      YoMCAPProtobufMessage message = findFirstDecoder(YoMCAPProtobufMessage.class, candidate -> MCAPControllerStateBasedRobotStateUpdater.isRobotControllerStateMessage(robot, candidate));
+      return message == null ? null : new MCAPControllerStateBasedRobotStateUpdater(robot, message);
+   }
+
+   private RobotStateUpdater tryMujocoBasedUpdater(Robot robot)
+   {
+      YoMCAPMessage message = findFirstDecoder(YoMCAPMessage.class, candidate -> MCAPMujocoBasedRobotStateUpdater.isRobotMujocoStateMessage(robot, candidate));
+      return message == null ? null : new MCAPMujocoBasedRobotStateUpdater(robot, message);
+   }
+
+   private <T extends MCAPMessageDecoder> T findFirstDecoder(Class<T> decoderType, Predicate<T> predicate)
+   {
+      for (MCAPMessageDecoder messageDecoder : yoMessageMap.valueCollection())
       {
-         if (MCAPMujocoBasedRobotStateUpdater.isRobotMujocoStateMessage(robot, yoMCAPMessage))
-            return new MCAPMujocoBasedRobotStateUpdater(robot, yoMCAPMessage);
+         if (decoderType.isInstance(messageDecoder) && predicate.test(decoderType.cast(messageDecoder)))
+            return decoderType.cast(messageDecoder);
       }
 
       return null;

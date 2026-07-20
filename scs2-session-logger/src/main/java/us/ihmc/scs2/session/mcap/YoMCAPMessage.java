@@ -22,7 +22,7 @@ import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
-public final class YoMCAPMessage
+public final class YoMCAPMessage implements MCAPMessageDecoder
 {
    private final MCAPSchema schema;
    private final int channelId;
@@ -141,21 +141,25 @@ public final class YoMCAPMessage
       this.deserializer = deserializer;
    }
 
+   @Override
    public MCAPSchema getSchema()
    {
       return schema;
    }
 
+   @Override
    public YoRegistry getRegistry()
    {
       return registry;
    }
 
+   @Override
    public int getChannelId()
    {
       return channelId;
    }
 
+   @Override
    public void readMessage(Message message)
    {
       if (message.channelId() != channelId)
