@@ -40,9 +40,9 @@ public class MCAPJointStateManager
    private static final String VELOCITY_FIELD_NAME = "velocity";
 
    private final Map<String, Integer> jointNameToArrayIndex = new HashMap<>();
-   private YoMCAPMessage jointStateMessage;
+   private MCAPMessageDecoder jointStateMessage;
 
-   public void initialize(MCAP mcap, MCAPBufferedChunk chunkBuffer, TIntObjectHashMap<YoMCAPMessage> yoMessageMap) throws IOException
+   public void initialize(MCAP mcap, MCAPBufferedChunk chunkBuffer, TIntObjectHashMap<MCAPMessageDecoder> yoMessageMap) throws IOException
    {
       Schema matchedSchema = null;
       for (Record record : mcap.records())
@@ -116,7 +116,12 @@ public class MCAPJointStateManager
       return variable instanceof YoDouble ? (YoDouble) variable : null;
    }
 
-   private static Message findFirstMessage(MCAP mcap, MCAPBufferedChunk chunkBuffer, int channelId) throws IOException
+   /**
+    * Finds the first recorded {@link Message} on {@code channelId}, checking top-level records before falling back to
+    * scanning chunk bundles. Shared with {@link MCAPLogFileReader}, which uses it to resolve a sample message for
+    * protobuf {@code map} fields (see {@link YoMCAPProtobufMessage}).
+    */
+   static Message findFirstMessage(MCAP mcap, MCAPBufferedChunk chunkBuffer, int channelId) throws IOException
    {
       for (Record record : mcap.records())
       {

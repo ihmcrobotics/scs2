@@ -1,6 +1,7 @@
 package us.ihmc.scs2.sharedMemory;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -14,6 +15,7 @@ import org.junit.jupiter.api.Test;
 
 import us.ihmc.scs2.sharedMemory.tools.SharedMemoryRandomTools;
 import us.ihmc.scs2.sharedMemory.tools.SharedMemoryTools;
+import us.ihmc.yoVariables.registry.YoNamespace;
 import us.ihmc.yoVariables.registry.YoRegistry;
 import us.ihmc.yoVariables.variable.YoBoolean;
 import us.ihmc.yoVariables.variable.YoDouble;
@@ -259,6 +261,132 @@ public class YoRegistryBufferTest
             assertEquals(linkedRegistry.getVariables().size(), registry.getVariables().size());
          }
       }
+   }
+
+   /**
+    * Reproduces a robot model being replaced mid-session: a registry (with a linked variable, and a nested
+    * sub-registry of its own) is removed from the backend root registry via {@link YoRegistry#removeChild} and a
+    * same-named replacement is added later. Before the fix, {@link LinkedYoRegistry} only reacted to additions, so
+    * the old, now-disconnected mirror registry/variable lingered forever and blocked the replacement's variable from
+    * ever being duplicated into the mirror (the add-handling only duplicates a variable "if it doesn't already
+    * exist").
+    */
+   @Test
+   public void testLinkedYoRegistryHandlesRegistryRemovalAndSameNamedReplacement()
+   {
+      YoRegistry rootRegistry = new YoRegistry("root");
+      YoRegistry robotRegistry = new YoRegistry("robot");
+      rootRegistry.addChild(robotRegistry);
+      YoDouble q = new YoDouble("q", robotRegistry);
+      q.set(1.5);
+
+      YoBufferProperties bufferProperties = new YoBufferProperties(0, 8);
+      YoRegistryBuffer yoRegistryBuffer = new YoRegistryBuffer(rootRegistry, bufferProperties);
+      LinkedYoRegistry linkedRootRegistry = yoRegistryBuffer.newLinkedYoRegistry();
+
+      YoRegistry mirrorRobotRegistry = linkedRootRegistry.getRootRegistry().findRegistry(robotRegistry.getNamespace());
+      assertNotNull(mirrorRobotRegistry);
+      YoVariable mirrorQ = mirrorRobotRegistry.getVariable("q");
+      assertNotNull(mirrorQ);
+
+      LinkedYoVariable<?> linkedQ = linkedRootRegistry.linkYoVariable(mirrorQ, new Object());
+      assertTrue(linkedQ.isActive());
+
+      // Simulate the old robot being replaced.
+      rootRegistry.removeChild(robotRegistry);
+
+      assertNull(linkedRootRegistry.getRootRegistry().findRegistry(robotRegistry.getNamespace()));
+      assertFalse(linkedQ.isActive());
+
+      // A same-named replacement is added later, with a variable of the same name too.
+      YoRegistry newRobotRegistry = new YoRegistry("robot");
+      rootRegistry.addChild(newRobotRegistry);
+      new YoDouble("q", newRobotRegistry).set(2.5);
+
+      YoRegistry mirrorNewRobotRegistry = linkedRootRegistry.getRootRegistry().findRegistry(newRobotRegistry.getNamespace());
+      assertNotNull(mirrorNewRobotRegistry);
+      assertNotNull(mirrorNewRobotRegistry.getVariable("q"));
+   }
+
+   /**
+    * {@code Robot.destroy()} (used when replacing a robot mid-session, e.g. {@code MCAPLogSession}) calls
+    * {@link YoRegistry#destroy()}, not {@link YoRegistry#removeChild}: it detaches the whole subtree from its
+    * parent first (firing one "registry removed" event for the subtree root), then destroys each variable
+    * individually - including ones nested in sub-registries - which fires a separate "variable removed" event per
+    * variable {@code from within} that same detach. By that point the variable's own registry link is already
+    * severed, so the removal handling must not depend on the removed variable's/registry's own
+    * {@code getNamespace()} (confirmed to reproduce the exact NPE this test guards against, using
+    * {@code getTargetParentRegistry()} instead fixed it).
+    */
+   @Test
+   public void testLinkedYoRegistryHandlesWholeRegistryDestroy()
+   {
+      YoRegistry rootRegistry = new YoRegistry("root");
+      YoRegistry robotRegistry = new YoRegistry("robot");
+      rootRegistry.addChild(robotRegistry);
+      new YoDouble("q_pelvis", robotRegistry).set(1.5);
+      YoRegistry nestedRegistry = new YoRegistry("nested");
+      robotRegistry.addChild(nestedRegistry);
+      new YoDouble("q_nested", nestedRegistry).set(2.5);
+
+      YoBufferProperties bufferProperties = new YoBufferProperties(0, 8);
+      YoRegistryBuffer yoRegistryBuffer = new YoRegistryBuffer(rootRegistry, bufferProperties);
+      LinkedYoRegistry linkedRootRegistry = yoRegistryBuffer.newLinkedYoRegistry();
+
+      assertNotNull(linkedRootRegistry.getRootRegistry().findRegistry(nestedRegistry.getNamespace()));
+
+      // Capture namespaces before destroy() - it clears the registries' own parent linkage, so their getNamespace()
+      // is no longer reliable afterward (same reason the fix looks up the *parent*'s namespace, not the removed
+      // registry's/variable's own).
+      YoNamespace robotNamespace = robotRegistry.getNamespace();
+      YoNamespace nestedNamespace = nestedRegistry.getNamespace();
+
+      // Must not throw (this is exactly Robot.destroy()'s call sequence).
+      robotRegistry.destroy();
+
+      assertNull(linkedRootRegistry.getRootRegistry().findRegistry(robotNamespace));
+      assertNull(linkedRootRegistry.getRootRegistry().findRegistry(nestedNamespace));
+   }
+
+   /**
+    * {@link YoRegistryBuffer#registerNewYoVariable} keys its buffer map by full name string, so without removal
+    * handling a same-named replacement variable is silently skipped ("already registered") and permanently bound to
+    * the old, destroyed variable's buffer. This reproduces that with the exact {@code Robot.destroy()} sequence
+    * (whole-registry {@code destroy()}, not just {@code removeChild}), and also exercises
+    * {@link LinkedYoRegistry#linkYoVariable} being called with a now-stale reference to the old variable (mirroring
+    * a UI control that captured it before the replacement) - it must return {@code null} instead of throwing.
+    */
+   @Test
+   public void testYoRegistryBufferRebindsSameNamedReplacementAfterWholeRegistryDestroy()
+   {
+      YoRegistry rootRegistry = new YoRegistry("root");
+      YoRegistry robotRegistry = new YoRegistry("robot");
+      rootRegistry.addChild(robotRegistry);
+      YoDouble oldQ = new YoDouble("q", robotRegistry);
+      oldQ.set(1.5);
+
+      YoBufferProperties bufferProperties = new YoBufferProperties(0, 8);
+      YoRegistryBuffer yoRegistryBuffer = new YoRegistryBuffer(rootRegistry, bufferProperties);
+      LinkedYoRegistry linkedRootRegistry = yoRegistryBuffer.newLinkedYoRegistry();
+
+      assertNotNull(yoRegistryBuffer.findYoVariableBuffer(oldQ));
+
+      robotRegistry.destroy();
+
+      // A stale reference to the destroyed variable must not resolve to a buffer anymore, and linking it must fail
+      // gracefully rather than NPE (mirrors a UI control built before the replacement, still holding onto it).
+      assertNull(yoRegistryBuffer.findYoVariableBuffer(oldQ));
+      assertNull(linkedRootRegistry.linkYoVariable(oldQ, new Object()));
+
+      // A same-named replacement must get its own, independent buffer entry.
+      YoRegistry newRobotRegistry = new YoRegistry("robot");
+      rootRegistry.addChild(newRobotRegistry);
+      YoDouble newQ = new YoDouble("q", newRobotRegistry);
+      newQ.set(2.5);
+
+      YoVariableBuffer<?> newBuffer = yoRegistryBuffer.findYoVariableBuffer(newQ);
+      assertNotNull(newBuffer);
+      assertTrue(newQ == newBuffer.getYoVariable());
    }
 
    private static void assertBufferCurrentValueEquals(int currentIndex, YoVariable expectedValue, YoVariableBuffer<?> yoVariableBuffer)

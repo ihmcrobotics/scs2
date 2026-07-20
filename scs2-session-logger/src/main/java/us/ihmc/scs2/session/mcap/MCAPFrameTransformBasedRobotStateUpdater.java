@@ -24,12 +24,25 @@ import java.util.List;
 public class MCAPFrameTransformBasedRobotStateUpdater implements RobotStateUpdater
 {
    private final List<Runnable> jointStateUpdaters = new ArrayList<>();
+   private final boolean coversAllJoints;
 
    public MCAPFrameTransformBasedRobotStateUpdater(Robot robot, MCAPFrameTransformManager frameTransformManager, MCAPJointStateManager jointStateManager,
                                                     MCAPOdometryManager odometryManager, YoLong currentTimestamp)
    {
+      // Counts how many joints *should* end up with a working updater below, so it can be compared against how many
+      // actually did (see coversAllJoints below). Only OneDoFJointBasics/SixDoFJointBasics are ever driven by /tf in
+      // the first place, so other joint types (e.g. fixed joints) are skipped and don't count either way.
+      int attemptedJointCount = 0;
+
       for (JointBasics joint : robot.getAllJoints())
       {
+         if (!(joint instanceof OneDoFJointBasics) && !(joint instanceof SixDoFJointBasics))
+            continue;
+         attemptedJointCount++;
+
+         // Pre-existing behavior: a joint whose /tf transform can't be found is silently skipped rather than
+         // failing construction outright, so jointStateUpdaters can end up smaller than attemptedJointCount -
+         // that gap is exactly what coversAllJoints() surfaces to the caller below.
          String successorName = joint.getSuccessor().getName();
          YoFoxGloveFrameTransform transform = frameTransformManager.getTransformFromSanitizedName(successorName);
          if (transform == null)
@@ -57,6 +70,31 @@ public class MCAPFrameTransformBasedRobotStateUpdater implements RobotStateUpdat
             jointStateUpdaters.add(new SixDoFJointStateUpdater(sixDoFJoint, transform, odometryManager, currentTimestamp));
          }
       }
+
+      // true only if every eligible joint above actually resolved a transform - a partial match (some joints
+      // updated, others silently skipped) is treated the same as a total miss, since a partially frozen robot is
+      // just as broken as a fully frozen one.
+      coversAllJoints = jointStateUpdaters.size() == attemptedJointCount;
+   }
+
+   /**
+    * @return {@code false} if any joint failed to resolve a {@code /tf} transform (e.g. the file's {@code /tf}
+    *       channel exists but was never actually published to) - {@link MCAPLogFileReader#createRobotStateUpdater}
+    *       uses this to fall back to another strategy instead of returning an updater that would leave the robot
+    *       frozen.
+    *       <p>
+    *       This is the fix for a real case: a log whose {@code /tf} channel existed but was mostly empty, which
+    *       used to make this class silently construct itself with almost no working joint updaters (a frozen
+    *       robot) with no way for the caller to know it had come up empty. {@code createRobotStateUpdater} now
+    *       reads this flag and falls through to {@link MCAPControllerStateBasedRobotStateUpdater} (or the mujoco-
+    *       based updater) instead - "try {@code /tf} first, but if it doesn't actually cover the robot, don't
+    *       settle for a frozen updater." This check is generic: it only counts joints against whatever {@link Robot}
+    *       was actually loaded, nothing here is tied to a specific robot definition.
+    *       </p>
+    */
+   public boolean coversAllJoints()
+   {
+      return coversAllJoints;
    }
 
    @Override
