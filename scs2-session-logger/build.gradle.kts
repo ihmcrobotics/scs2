@@ -23,6 +23,7 @@ mainDependencies {
    api("us.ihmc:jros2-parser:1.4.0")
    api("org.antlr:antlr4-runtime:4.13.1")
    api("com.github.vatbub:mslinks:1.0.6.2")
+   api("com.google.protobuf:protobuf-java:4.34.2")
    // Not using org.bytedeco:lz4-platform: it pulls in javacpp-platform, whose fixed javacpp:1.5.8
    // classifier list (incl. android-arm/x86, linux-armhf, linux/windows-x86 32-bit) gets bumped to
    // 1.5.11 by other native deps in this build (cuda/ffmpeg/openblas/opencv from ihmc-robot-data-logger),
