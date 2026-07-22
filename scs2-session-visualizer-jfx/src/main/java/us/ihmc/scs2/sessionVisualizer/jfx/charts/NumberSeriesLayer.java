@@ -118,6 +118,10 @@ public class NumberSeriesLayer extends ImageView
    private BufferedImage imageToRender = null;
    private IntegerProperty dataSizeProperty = new SimpleIntegerProperty(this, "dataSize", 0);
    private BooleanProperty updateIndexMarkerVisible = new SimpleBooleanProperty(this, "updateIndexMarkerVisible", false);
+   /** Set only when the X/Y axis bounds themselves change (pan/zoom/rescale), as opposed to other layout-affecting changes. */
+   private final BooleanProperty axisBoundsChangedProperty = new SimpleBooleanProperty(this, "axisBoundsChanged", false);
+   /** Region of {@link #imageToRender} that actually changed in the last {@link #updateImage()} call, consumed by {@link #render()}. */
+   private volatile Rectangle2D pendingDirtyRegion = null;
 
    public NumberSeriesLayer(ObjectProperty<FastAxisBase> xAxis,
                             ObjectProperty<FastAxisBase> yAxis,
@@ -135,16 +139,21 @@ public class NumberSeriesLayer extends ImageView
       legendNode.currentValueProperty().bind(numberSeries.currentValueProperty());
 
       InvalidationListener dirtyListener = (InvalidationListener) -> layoutChangedProperty.set(true);
+      InvalidationListener axisBoundsDirtyListener = (InvalidationListener) ->
+      {
+         layoutChangedProperty.set(true);
+         axisBoundsChangedProperty.set(true);
+      };
 
       ChangeListener<? super FastAxisBase> axisChangeListener = (o, oldAxis, newAxis) ->
       {
          if (oldAxis != null)
          {
-            oldAxis.lowerBoundProperty().removeListener(dirtyListener);
-            oldAxis.upperBoundProperty().removeListener(dirtyListener);
+            oldAxis.lowerBoundProperty().removeListener(axisBoundsDirtyListener);
+            oldAxis.upperBoundProperty().removeListener(axisBoundsDirtyListener);
          }
-         newAxis.lowerBoundProperty().addListener(dirtyListener);
-         newAxis.upperBoundProperty().addListener(dirtyListener);
+         newAxis.lowerBoundProperty().addListener(axisBoundsDirtyListener);
+         newAxis.upperBoundProperty().addListener(axisBoundsDirtyListener);
       };
       xAxis.addListener(axisChangeListener);
       yAxis.addListener(axisChangeListener);
@@ -191,7 +200,7 @@ public class NumberSeriesLayer extends ImageView
          setImage(new WritableImage(pixelBuffer));
       }
 
-      Rectangle2D dirtyRegion = new Rectangle2D(0, 0, width, height);
+      Rectangle2D dirtyRegion = pendingDirtyRegion != null ? pendingDirtyRegion : new Rectangle2D(0, 0, width, height);
       pixelBuffer.updateBuffer(b -> dirtyRegion);
 
       isRenderingImage.set(false);
@@ -230,6 +239,8 @@ public class NumberSeriesLayer extends ImageView
          clearImage = false;
       }
 
+      boolean useFullDirtyRect = !clearImage;
+
       List<Point2D> data = numberSeries.getData();
       dataSizeProperty.set(data.size());
 
@@ -239,7 +250,11 @@ public class NumberSeriesLayer extends ImageView
       {
          if (data.isEmpty())
             return false;
-         else if (!numberSeries.pollDirty() && !pollLayoutChanged())
+
+         boolean axisBoundsChanged = pollAxisBoundsChanged();
+         useFullDirtyRect = useFullDirtyRect || axisBoundsChanged;
+
+         if (!numberSeries.pollDirty() && !pollLayoutChanged())
             return false;
 
          xData = resize(xData, data.size());
@@ -247,6 +262,8 @@ public class NumberSeriesLayer extends ImageView
 
          if (clearImage)
             graphics.clearRect(0, 0, widthInt, heightInt);
+
+         int[] dirtyBounds = {Integer.MAX_VALUE, Integer.MAX_VALUE, Integer.MIN_VALUE, Integer.MIN_VALUE};
 
          graphics.setColor(toAWTColor(stroke.get()));
          graphics.setStroke(new BasicStroke((float) (strokeWidth.get()), BasicStroke.CAP_ROUND, BasicStroke.JOIN_MITER));
@@ -270,6 +287,7 @@ public class NumberSeriesLayer extends ImageView
          }
 
          drawMultiLine(graphics, data, xTransform, yTransform, xData, yData);
+         accumulateDirtyBounds(xData, yData, data.size(), dirtyBounds);
 
          if (updateIndexMarkerVisible.get())
          {
@@ -278,7 +296,10 @@ public class NumberSeriesLayer extends ImageView
             List<Point2D> markerData = Arrays.asList(new Point2D(numberSeries.bufferCurrentIndexProperty().get(), yAxis.get().getLowerBound()),
                                                      new Point2D(numberSeries.bufferCurrentIndexProperty().get(), yAxis.get().getUpperBound()));
             drawMultiLine(graphics, markerData, xTransform, yTransform, xData, yData);
+            accumulateDirtyBounds(xData, yData, markerData.size(), dirtyBounds);
          }
+
+         pendingDirtyRegion = computeDirtyRegion(useFullDirtyRect, dirtyBounds, strokeWidth.get(), widthInt, heightInt);
 
          return true;
       }
@@ -299,6 +320,54 @@ public class NumberSeriesLayer extends ImageView
       boolean ret = layoutChangedProperty.get();
       layoutChangedProperty.set(false);
       return ret;
+   }
+
+   private boolean pollAxisBoundsChanged()
+   {
+      boolean ret = axisBoundsChangedProperty.get();
+      axisBoundsChangedProperty.set(false);
+      return ret;
+   }
+
+   /**
+    * Folds the pixel coordinates just written to {@code xData}/{@code yData} (indices {@code 0} to {@code n - 1}) into the
+    * running dirty-region bounds {@code boundsInOut}, laid out as {@code {minX, minY, maxX, maxY}}. Package-private and
+    * static so it can be unit tested without constructing a {@link NumberSeriesLayer} or starting the JavaFX toolkit.
+    */
+   static void accumulateDirtyBounds(int[] xData, int[] yData, int n, int[] boundsInOut)
+   {
+      for (int i = 0; i < n; i++)
+      {
+         int x = xData[i];
+         int y = yData[i];
+         if (x < boundsInOut[0])
+            boundsInOut[0] = x;
+         if (x > boundsInOut[2])
+            boundsInOut[2] = x;
+         if (y < boundsInOut[1])
+            boundsInOut[1] = y;
+         if (y > boundsInOut[3])
+            boundsInOut[3] = y;
+      }
+   }
+
+   /**
+    * Reports the whole image as dirty when a full redraw was required (resize or axis rescale), otherwise reports just the
+    * bounding box of what was actually drawn this update ({@code bounds}, laid out as {@code {minX, minY, maxX, maxY}}),
+    * padded to cover stroke width/anti-aliasing bleed. Package-private and static for the same testability reason as
+    * {@link #accumulateDirtyBounds}.
+    */
+   static Rectangle2D computeDirtyRegion(boolean useFullDirtyRect, int[] bounds, double strokeWidth, int widthInt, int heightInt)
+   {
+      if (useFullDirtyRect || bounds[0] > bounds[2])
+         return new Rectangle2D(0, 0, widthInt, heightInt);
+
+      int margin = Math.max(2, (int) Math.ceil(strokeWidth));
+      int minX = Math.max(0, bounds[0] - margin);
+      int minY = Math.max(0, bounds[1] - margin);
+      int maxX = Math.min(widthInt, bounds[2] + margin);
+      int maxY = Math.min(heightInt, bounds[3] + margin);
+      return new Rectangle2D(minX, minY, Math.max(1, maxX - minX), Math.max(1, maxY - minY));
    }
 
    private static int[] resize(int[] in, int length)
