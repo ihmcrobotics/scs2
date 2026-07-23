@@ -2,6 +2,7 @@ package us.ihmc.scs2.sessionVisualizer.jfx.charts;
 
 import org.junit.jupiter.api.Test;
 import us.ihmc.scs2.sharedMemory.BufferSample;
+import us.ihmc.scs2.sharedMemory.interfaces.YoBufferPropertiesReadOnly;
 import us.ihmc.scs2.sharedMemory.tools.SharedMemoryTools;
 
 import java.util.Random;
@@ -11,6 +12,15 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+/**
+ * Covers the two building blocks of {@link YoVariableChartData}'s incremental min/max update
+ * ({@code canApplyIncrementally} and {@code incrementallyPatchValuesAndBounds}) plus the unchanged
+ * full-rebuild fallback ({@code rebuildEntireDataSet}), then closes with a randomized differential
+ * test that pits the incremental path against the full-rebuild path directly. The example-based tests
+ * pin individual edge cases with a readable failure message; the differential test at the bottom is
+ * what actually gives confidence the two paths always agree, since it can't be reasoned about by
+ * inspection the way a handful of hand-picked cases can.
+ */
 public class YoVariableChartDataIncrementalUpdateTest
 {
    private static BufferSample<double[]> sample(int from, double[] values, int size, int currentIndex, int inPoint, int outPoint)
@@ -19,7 +29,10 @@ public class YoVariableChartDataIncrementalUpdateTest
    }
 
    // ---------------------------------------------------------------------------------------------
-   // canApplyIncrementally
+   // canApplyIncrementally: the gate that decides whether a tick can skip the O(bufferSize) rebuild.
+   // A false positive here is the dangerous direction -- it would make the incremental path apply a
+   // patch that silently produces the wrong values/min/max with no exception to catch it, so these
+   // cases lean toward covering every way the "plain forward append" assumption can be violated.
    // ---------------------------------------------------------------------------------------------
 
    @Test
@@ -49,6 +62,9 @@ public class YoVariableChartDataIncrementalUpdateTest
    @Test
    public void testRejectsFirstCall()
    {
+      // No canonical dataset/deques exist yet (canonicalDataSetPresent=false), so there is nothing to
+      // patch incrementally regardless of what the sample looks like -- must always fall back to a
+      // full rebuild the very first time a variable is charted.
       BufferSample<double[]> newSample = sample(0, new double[] {1}, 10, 0, 0, 0);
       assertFalse(YoVariableChartData.canApplyIncrementally(-1, -1, -1, false, newSample));
    }
@@ -56,6 +72,8 @@ public class YoVariableChartDataIncrementalUpdateTest
    @Test
    public void testRejectsSizeChange()
    {
+      // Ring buffer capacity itself changed (10 -> 20). The old deques/values array are sized for the
+      // previous capacity and cannot be reused; only a full rebuild can re-prime them correctly.
       BufferSample<double[]> newSample = sample(5, new double[] {1}, 20, 5, 0, 5);
       assertFalse(YoVariableChartData.canApplyIncrementally(10, 0, 4, true, newSample));
    }
@@ -64,6 +82,7 @@ public class YoVariableChartDataIncrementalUpdateTest
    public void testRejectsGapBetweenAppliedOutPointAndNewSample()
    {
       // applied out-point is 4, but the new sample starts at 6 -- a gap, not a plain append.
+      // Incrementally patching would leave index 5 never written, silently keeping a stale value.
       BufferSample<double[]> newSample = sample(6, new double[] {1}, 10, 6, 0, 6);
       assertFalse(YoVariableChartData.canApplyIncrementally(10, 0, 4, true, newSample));
    }
@@ -72,6 +91,7 @@ public class YoVariableChartDataIncrementalUpdateTest
    public void testRejectsOverlapBetweenAppliedOutPointAndNewSample()
    {
       // applied out-point is 4, but the new sample starts at 3 -- overlaps already-applied data.
+      // Re-inserting index 4 as a "new" candidate would double-push it into the deques.
       BufferSample<double[]> newSample = sample(3, new double[] {1, 2}, 10, 4, 0, 4);
       assertFalse(YoVariableChartData.canApplyIncrementally(10, 0, 4, true, newSample));
    }
@@ -80,6 +100,8 @@ public class YoVariableChartDataIncrementalUpdateTest
    public void testRejectsBackwardCropJumpOfInPoint()
    {
       // applied in-point 5 moving "backward" to 3 -- looks like an implausibly large forward eviction.
+      // This shape shows up on a scrub/crop to an earlier position, not a live forward tick, and must
+      // not be treated as "a lot of ordinary eviction happened."
       BufferSample<double[]> newSample = sample(5, new double[] {1}, 10, 5, 3, 5);
       assertFalse(YoVariableChartData.canApplyIncrementally(10, 5, 4, true, newSample));
    }
@@ -88,12 +110,17 @@ public class YoVariableChartDataIncrementalUpdateTest
    public void testRejectsInPointJumpingFurtherThanSamplesArrived()
    {
       // Only 1 new sample arrived, but the in-point jumped forward by 3 -- more evicted than inserted.
+      // evictIfFront is only correct if called once per index that actually left the window in order;
+      // accepting this would desync the deques' notion of the active window from reality.
       BufferSample<double[]> newSample = sample(5, new double[] {1}, 10, 5, 8, 5);
       assertFalse(YoVariableChartData.canApplyIncrementally(10, 5, 4, true, newSample));
    }
 
    // ---------------------------------------------------------------------------------------------
-   // rebuildEntireDataSet reproduces today's (unchanged) getValueAt/updateBounds behavior
+   // rebuildEntireDataSet reproduces today's (unchanged) getValueAt/updateBounds behavior.
+   // This is the fallback path canApplyIncrementally routes to whenever the fast path is rejected
+   // above, so these pin its output against fixed, hand-computed expectations before it's reused as
+   // the "reference" oracle in the differential test below.
    // ---------------------------------------------------------------------------------------------
 
    @Test
@@ -161,12 +188,16 @@ public class YoVariableChartDataIncrementalUpdateTest
 
    // ---------------------------------------------------------------------------------------------
    // Differential/fuzz test: incremental path vs. always-full-rebuild, over identical random input.
+   // This is the real safety net for the optimization -- it doesn't just exercise canApplyIncrementally
+   // in isolation, it runs both algorithms tick-by-tick over the same randomized sample stream and
+   // asserts every value/min/max still matches, which is the only practical way to catch a subtle
+   // wraparound or eviction-ordering bug in the monotonic deque bookkeeping.
    // ---------------------------------------------------------------------------------------------
 
    @Test
    public void testIncrementalPathMatchesAlwaysRebuildingOverRandomTickSequence()
    {
-      Random random = new Random(42L);
+      Random random = new Random(42L); // fixed seed: failures must reproduce deterministically
 
       for (int trial = 0; trial < 5; trial++)
       {
@@ -178,6 +209,7 @@ public class YoVariableChartDataIncrementalUpdateTest
    private static void runDifferentialTrial(Random random, int bufferSize, int tickCount)
    {
       // "Incremental" state: canonical values array + deques, evolved via canApplyIncrementally/incrementallyPatchValuesAndBounds/rebuildEntireDataSet.
+      // These variables mirror exactly what YoVariableChartData.publishForCharts() carries across ticks.
       double[] incrementalValues = null;
       MonotonicIndexDeque maxCandidates = null;
       MonotonicIndexDeque minCandidates = null;
@@ -246,5 +278,43 @@ public class YoVariableChartDataIncrementalUpdateTest
       YoVariableChartData.DoubleArray wrapped = new YoVariableChartData.DoubleArray(size);
       System.arraycopy(values, 0, wrapped.values, 0, size);
       return wrapped;
+   }
+
+   /** Minimal, JavaFX-free {@link YoBufferPropertiesReadOnly} stub for constructing test {@code BufferSample}s. */
+   private static final class TestBufferProperties implements YoBufferPropertiesReadOnly
+   {
+      private final int size, currentIndex, inPoint, outPoint;
+
+      TestBufferProperties(int size, int currentIndex, int inPoint, int outPoint)
+      {
+         this.size = size;
+         this.currentIndex = currentIndex;
+         this.inPoint = inPoint;
+         this.outPoint = outPoint;
+      }
+
+      @Override
+      public int getSize()
+      {
+         return size;
+      }
+
+      @Override
+      public int getCurrentIndex()
+      {
+         return currentIndex;
+      }
+
+      @Override
+      public int getInPoint()
+      {
+         return inPoint;
+      }
+
+      @Override
+      public int getOutPoint()
+      {
+         return outPoint;
+      }
    }
 }
