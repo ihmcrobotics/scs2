@@ -4,6 +4,7 @@ import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.scene.Group;
 import javafx.scene.Node;
+import javafx.scene.paint.Color;
 import javafx.scene.paint.PhongMaterial;
 import javafx.scene.shape.DrawMode;
 import javafx.scene.shape.Shape3D;
@@ -17,6 +18,7 @@ import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.Tuple3DProperty;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 
 public class YoPointFX3D extends YoGraphicFX3D
 {
@@ -28,6 +30,17 @@ public class YoPointFX3D extends YoGraphicFX3D
    private final Scale scale = new Scale();
    private final PhongMaterial material = new PhongMaterial();
    private YoGraphicFXResource graphicResource;
+
+   /**
+    * Last values actually written to {@link #translate}/{@link #scale}/{@link #material}, so
+    * {@link #render()} can skip the JavaFX property writes when nothing changed since the last frame --
+    * writing a property still invalidates/dirties the node even when the new value equals the old one, and
+    * this method is called on every JavaFX pulse (up to 60Hz) for every plotted point graphic. {@code NaN}
+    * forces the first frame (and the frame right after the NaN-guard branch below) to always write.
+    */
+   private double lastTranslateX = Double.NaN, lastTranslateY = Double.NaN, lastTranslateZ = Double.NaN;
+   private double lastScale = Double.NaN;
+   private Color lastColor = null;
 
    public YoPointFX3D()
    {
@@ -81,19 +94,38 @@ public class YoPointFX3D extends YoGraphicFX3D
          scale.setX(0);
          scale.setY(0);
          scale.setZ(0);
+         // Cache must reflect this forced 0-scale, otherwise a later valid frame whose size happens to
+         // equal the pre-NaN cached size would wrongly skip re-applying the scale, leaving the point
+         // permanently invisible.
+         lastScale = 0;
          return;
       }
 
       Point3D positionInWorld = position.toPoint3DInWorld();
-      translate.setX(positionInWorld.getX());
-      translate.setY(positionInWorld.getY());
-      translate.setZ(positionInWorld.getZ());
+      if (positionInWorld.getX() != lastTranslateX)
+         translate.setX(lastTranslateX = positionInWorld.getX());
+      if (positionInWorld.getY() != lastTranslateY)
+         translate.setY(lastTranslateY = positionInWorld.getY());
+      if (positionInWorld.getZ() != lastTranslateZ)
+         translate.setZ(lastTranslateZ = positionInWorld.getZ());
+
       if (size == null)
          size = new SimpleDoubleProperty(0.1);
-      scale.setX(size.get());
-      scale.setY(size.get());
-      scale.setZ(size.get());
-      material.setDiffuseColor(color.get());
+      double sizeValue = size.get();
+      if (sizeValue != lastScale)
+      {
+         scale.setX(sizeValue);
+         scale.setY(sizeValue);
+         scale.setZ(sizeValue);
+         lastScale = sizeValue;
+      }
+
+      Color colorValue = color.get();
+      if (!Objects.equals(colorValue, lastColor))
+      {
+         material.setDiffuseColor(colorValue);
+         lastColor = colorValue;
+      }
    }
 
    public void setPosition(Tuple3DProperty position)
