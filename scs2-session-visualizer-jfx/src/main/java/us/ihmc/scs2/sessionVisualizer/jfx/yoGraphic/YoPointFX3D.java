@@ -32,14 +32,16 @@ public class YoPointFX3D extends YoGraphicFX3D
    private YoGraphicFXResource graphicResource;
 
    /**
-    * Last values actually written to {@link #translate}/{@link #scale}/{@link #material}, so
-    * {@link #render()} can skip the JavaFX property writes when nothing changed since the last frame --
-    * writing a property still invalidates/dirties the node even when the new value equals the old one, and
-    * this method is called on every JavaFX pulse (up to 60Hz) for every plotted point graphic. {@code NaN}
-    * forces the first frame (and the frame right after the NaN-guard branch below) to always write.
+    * Last {@link Color} actually written to {@link #material}'s diffuse color, so {@link #render()} can
+    * skip the write when the color hasn't changed since the last frame. Unlike {@link #translate}/
+    * {@link #scale} (plain {@code double} properties, which JavaFX's own {@code DoublePropertyBase}
+    * already no-ops on an unchanged value), {@code PhongMaterial}'s diffuse color property only skips
+    * its invalidation on reference equality, not {@link Object#equals}. {@link #color} is commonly a
+    * YoVariable-driven {@link us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.color.BaseColorFX} that
+    * allocates a brand-new {@code Color} object on every call to {@code get()} even when the underlying
+    * value hasn't changed, so without this cache the material would be marked dirty every JavaFX pulse
+    * regardless of whether the color actually changed.
     */
-   private double lastTranslateX = Double.NaN, lastTranslateY = Double.NaN, lastTranslateZ = Double.NaN;
-   private double lastScale = Double.NaN;
    private Color lastColor = null;
 
    public YoPointFX3D()
@@ -94,31 +96,19 @@ public class YoPointFX3D extends YoGraphicFX3D
          scale.setX(0);
          scale.setY(0);
          scale.setZ(0);
-         // Cache must reflect this forced 0-scale, otherwise a later valid frame whose size happens to
-         // equal the pre-NaN cached size would wrongly skip re-applying the scale, leaving the point
-         // permanently invisible.
-         lastScale = 0;
          return;
       }
 
       Point3D positionInWorld = position.toPoint3DInWorld();
-      if (positionInWorld.getX() != lastTranslateX)
-         translate.setX(lastTranslateX = positionInWorld.getX());
-      if (positionInWorld.getY() != lastTranslateY)
-         translate.setY(lastTranslateY = positionInWorld.getY());
-      if (positionInWorld.getZ() != lastTranslateZ)
-         translate.setZ(lastTranslateZ = positionInWorld.getZ());
+      translate.setX(positionInWorld.getX());
+      translate.setY(positionInWorld.getY());
+      translate.setZ(positionInWorld.getZ());
 
       if (size == null)
          size = new SimpleDoubleProperty(0.1);
-      double sizeValue = size.get();
-      if (sizeValue != lastScale)
-      {
-         scale.setX(sizeValue);
-         scale.setY(sizeValue);
-         scale.setZ(sizeValue);
-         lastScale = sizeValue;
-      }
+      scale.setX(size.get());
+      scale.setY(size.get());
+      scale.setZ(size.get());
 
       Color colorValue = color.get();
       if (!Objects.equals(colorValue, lastColor))
