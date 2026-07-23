@@ -82,6 +82,12 @@ class MonotonicIndexDeque
       return (head + size - 1) % indices.length;
    }
 
+   /**
+    * {@code <=}/{@code >=}, not {@code <}/{@code >}: on a tie the existing (older) entry is also
+    * dominated and gets popped, so the newer entry of an equal pair is what's kept at the back. That's
+    * what lets {@link #evictIfFront} work correctly for duplicate-heavy series (booleans, enums, a
+    * constant double) -- the surviving candidate is always the one that ages out last.
+    */
    private boolean dominated(double existing, double incoming)
    {
       return trackMax ? existing <= incoming : existing >= incoming;

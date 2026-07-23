@@ -5,6 +5,7 @@ import us.ihmc.euclid.tuple2D.Point2D;
 import us.ihmc.scs2.sessionVisualizer.jfx.charts.YoVariableChartData.ChartDataUpdate;
 import us.ihmc.scs2.sessionVisualizer.jfx.charts.YoVariableChartData.DoubleArray;
 import us.ihmc.scs2.sharedMemory.BufferSample;
+import us.ihmc.scs2.sharedMemory.interfaces.YoBufferPropertiesReadOnly;
 import us.ihmc.scs2.sharedMemory.tools.SharedMemoryTools;
 
 import java.util.Random;
@@ -20,10 +21,19 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  */
 public class ChartDataUpdateConsumerCatchUpTest
 {
+   // readUpdate's own eligibility check (canPatchIncrementally, in YoVariableChartData.ChartDataUpdate)
+   // is deliberately not unit-tested in isolation the way canApplyIncrementally is in
+   // YoVariableChartDataIncrementalUpdateTest. Instead every test here drives it end-to-end against an
+   // independent oracle (bruteForceApply), because the property that actually matters -- "an
+   // intermittently-polling consumer never falls behind or renders stale/wrong points" -- is a
+   // statement about sequences of calls, not about any single call.
+
    @Test
    public void testIntermittentConsumerMatchesAlwaysPollingReference()
    {
-      Random random = new Random(99L);
+      // Broad randomized coverage: varying buffer sizes, an SUT that misses about 1/3 of ticks, and
+      // occasional scrubs sprinkled in at random points relative to the SUT's skips.
+      Random random = new Random(99L); // fixed seed: failures must reproduce deterministically
       for (int trial = 0; trial < 8; trial++)
       {
          int bufferSize = 8 + random.nextInt(30);
@@ -31,7 +41,13 @@ public class ChartDataUpdateConsumerCatchUpTest
       }
    }
 
-   /** Narrow regression case: buffer is full and steady, consumer skips exactly across a single scrub tick. */
+   /**
+    * Narrow, deterministic regression case: buffer is full and steady, consumer skips exactly across a
+    * single scrub tick. This is the sharpest version of the hazard {@code structureGeneration} exists
+    * to guard against -- if that counter check were ever dropped or off-by-one, this is the test that
+    * would catch a consumer patching only the samples it thinks arrived and leaving the rest of the
+    * series stale after a rebuild it never saw.
+    */
    @Test
    public void testSkipAcrossSingleScrubStillMatches()
    {
@@ -72,6 +88,8 @@ public class ChartDataUpdateConsumerCatchUpTest
 
       NumberSeries referenceSeries = new NumberSeries("reference");
       NumberSeries sutSeries = new NumberSeries("sut");
+      // sutTotal/sutGeneration are exactly what a real caller is expected to persist between calls:
+      // the counters handed back by the previous readUpdate(), fed into the next one.
       long sutTotal = -1, sutGeneration = -1;
 
       for (int tick = 0; tick < tickCount; tick++)
@@ -82,7 +100,9 @@ public class ChartDataUpdateConsumerCatchUpTest
          // Reference: always polls, via an independent brute-force copy (not readUpdate's logic at all).
          bruteForceApply(update, referenceSeries);
 
-         // SUT: polls about 2/3 of ticks, via the real (possibly incremental) readUpdate.
+         // SUT: polls about 2/3 of ticks, via the real (possibly incremental) readUpdate. Only asserted
+         // on ticks it actually polls -- skipped ticks are exactly where staleness would accumulate
+         // unnoticed if readUpdate's catch-up logic were wrong.
          if (random.nextInt(3) != 0)
          {
             update.readUpdate(sutSeries, sutTotal, sutGeneration);
@@ -96,7 +116,10 @@ public class ChartDataUpdateConsumerCatchUpTest
    /**
     * Mirrors {@code YoVariableChartData.publishForCharts()}'s exact bookkeeping (canApplyIncrementally /
     * incrementallyPatchValuesAndBounds / rebuildEntireDataSet, plus the two new counters), for a single
-    * simulated variable.
+    * simulated variable. Reimplemented here rather than called directly because the real method is an
+    * instance method on {@code YoVariableChartData} wired into a live session/JavaFX pipeline; if its
+    * bookkeeping (when {@code structureGeneration} increments, in particular) ever changes, this class
+    * needs a matching update.
     */
    private static final class Producer
    {
@@ -132,7 +155,11 @@ public class ChartDataUpdateConsumerCatchUpTest
          return update;
       }
 
-      /** A discontinuous jump to an unrelated position -- simulates a same-size crop/scrub/resend. */
+      /**
+       * A discontinuous jump to an unrelated position -- simulates a same-size crop/scrub/resend.
+       * Forces a full rebuild (structureGeneration++), which is exactly the case a consumer must
+       * detect via the generation counter rather than assuming its own incremental patch still applies.
+       */
       ChartDataUpdate applyScrubTick(Random random)
       {
          int insertCount = 1 + random.nextInt(3);
@@ -214,5 +241,43 @@ public class ChartDataUpdateConsumerCatchUpTest
       DoubleArray wrapped = new DoubleArray(size);
       System.arraycopy(values, 0, wrapped.values, 0, size);
       return wrapped;
+   }
+
+   /** Minimal, JavaFX-free {@link YoBufferPropertiesReadOnly} stub for constructing test {@code BufferSample}s. */
+   private static final class TestBufferProperties implements YoBufferPropertiesReadOnly
+   {
+      private final int size, currentIndex, inPoint, outPoint;
+
+      TestBufferProperties(int size, int currentIndex, int inPoint, int outPoint)
+      {
+         this.size = size;
+         this.currentIndex = currentIndex;
+         this.inPoint = inPoint;
+         this.outPoint = outPoint;
+      }
+
+      @Override
+      public int getSize()
+      {
+         return size;
+      }
+
+      @Override
+      public int getCurrentIndex()
+      {
+         return currentIndex;
+      }
+
+      @Override
+      public int getInPoint()
+      {
+         return inPoint;
+      }
+
+      @Override
+      public int getOutPoint()
+      {
+         return outPoint;
+      }
    }
 }
