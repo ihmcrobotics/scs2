@@ -296,8 +296,8 @@ fun writeMcapLauncherProperties()
 fun jdkToolExecutable(toolName: String): String
 {
    val javaHome = System.getProperty("java.home") ?: return toolName
-   val candidate = File(javaHome, "bin/$toolName.exe")
-   return if (candidate.isFile) candidate.absolutePath else toolName
+   val candidates = listOf(File(javaHome, "bin/$toolName.exe"), File(javaHome, "bin/$toolName"))
+   return candidates.firstOrNull { it.isFile }?.absolutePath ?: toolName
 }
 
 fun jpackageExecutable() = jdkToolExecutable("jpackage")
@@ -482,4 +482,213 @@ tasks.register("packageWindowsMsiJlink") {
 
 tasks.register("buildWindowsPackagesJlink") {
    dependsOn("packageWindowsAppImageJlink", "packageWindowsMsiJlink")
+}
+
+// Stable bundle identifier for the macOS app. Must never change across releases: it's the macOS/PKG
+// analog of windowsUpgradeUuid above, and rotating it would make macOS (and users' Dock/Spotlight
+// entries) treat a new version as a different, unrelated app.
+val macPackageIdentifier = "us.ihmc.scs2.sessionvisualizer"
+val macDeploymentRoot = "${project.projectDir}/deployment/mac"
+val macStagingDir = "$macDeploymentRoot/staging"
+val macLaunchersDir = "$macDeploymentRoot/launchers"
+val macAppImageDir = "$macDeploymentRoot/app-image"
+val macDmgDir = "$macDeploymentRoot/dmg"
+val macAppImageJlinkDir = "$macDeploymentRoot/app-image-jlink"
+val macDmgJlinkDir = "$macDeploymentRoot/dmg-jlink"
+val macIcon = "${project.projectDir}/src/main/resources/icons/scs-icon.icns"
+
+// jpackage on macOS rejects an --app-version whose first component is zero (Info.plist versioning
+// requires a positive leading integer); windowsInstallerVersion()'s "0.33.1" is invalid here since this
+// project's semver major is currently always 0. Substitute the java-baseline prefix (stable across
+// releases) as the leading component instead, e.g. "17-0.33.1" -> "17.33.1".
+fun macInstallerVersion(): String
+{
+   val javaBaseline = ihmc.version.substringBefore("-")
+   val semverTail = ihmc.version.substringAfter("-").split(".").drop(1).joinToString(".")
+   return "$javaBaseline.$semverTail"
+}
+
+fun requireMacHost()
+{
+   if (!Os.isFamily(Os.FAMILY_MAC))
+      throw GradleException("macOS packaging tasks only run on macOS.")
+}
+
+fun writeMcapLauncherPropertiesMac()
+{
+   File(macLaunchersDir).mkdirs()
+   File("$macLaunchersDir/$mcapRepackAppExecutableName.properties").writeText(
+         """
+         main-jar=${windowsMainJar()}
+         main-class=$mcapRepackMainClass
+         icon=$macIcon
+         java-options=-Dprism.vsync=false
+         java-options=-Xmx2g
+         """.trimIndent()
+   )
+}
+
+fun jpackageArgsCommonMac(type: String, dest: String, runtimeImage: String? = null): List<String>
+{
+   val args = mutableListOf(
+         jpackageExecutable(),
+         "--type", type,
+         "--name", sessionVisualizerExecutableName,
+         "--app-version", macInstallerVersion(),
+         "--vendor", "IHMC",
+         "--description", "Simulation Construction Set 2 - Session Visualizer",
+         "--copyright", "IHMC",
+         "--input", "$macStagingDir/lib",
+         "--dest", dest,
+         "--main-jar", windowsMainJar(),
+         "--main-class", windowsMainClass,
+         "--icon", macIcon,
+         "--mac-package-identifier", macPackageIdentifier,
+         "--mac-package-name", "SCS2 Session Visualizer",
+         "--java-options", "-Dprism.vsync=false",
+         "--java-options", "-Xmx8g"
+   )
+   if (runtimeImage != null)
+      args += listOf("--runtime-image", runtimeImage)
+   args += listOf(
+         "--add-launcher",
+         "$mcapRepackAppExecutableName=$macLaunchersDir/$mcapRepackAppExecutableName.properties"
+   )
+   return args
+}
+
+/**
+ * Stages the installDist output for macOS packaging by copying it to a clean staging directory and
+ * removing native classifier jars for other platforms. Unlike Linux/Windows, there is no OpenCV/ZED
+ * native classifier to keep or drop here: the ZED SDK has no macOS build at all, so no mac-classified
+ * artifact for it is ever resolved in the first place (see MultiVideoDataReader's guard around
+ * ZEDSVOScrubber.findZEDSensorDatFiles for the corresponding runtime fallback).
+ */
+tasks.register("installDistMac") {
+   dependsOn("installDist")
+
+   doFirst {
+      requireMacHost()
+   }
+
+   doLast {
+      File(macStagingDir).deleteRecursively()
+      copy {
+         from("${project.projectDir}/build/install/scs2-session-visualizer-jfx/")
+         into(macStagingDir)
+      }
+      fileTree("$macStagingDir/lib").matching {
+         include("*-win.jar")
+         include("*-windows-*")
+         include("*-linux-*")
+         include("*-linux.jar")
+         include("*-android-*")
+         include("*-ios-*")
+      }.forEach(File::delete)
+   }
+}
+
+tasks.register("packageMacAppImage") {
+   dependsOn("installDistMac")
+
+   doFirst {
+      requireMacHost()
+      requireJdk17Plus()
+   }
+
+   doLast {
+      File(macAppImageDir).deleteRecursively()
+      File(macAppImageDir).mkdirs()
+      writeMcapLauncherPropertiesMac()
+      ihmc.exec(ProcessBuilder(jpackageArgsCommonMac("app-image", macAppImageDir)))
+   }
+}
+
+tasks.register("packageMacDmg") {
+   dependsOn("installDistMac")
+
+   doFirst {
+      requireMacHost()
+      requireJdk17Plus()
+   }
+
+   doLast {
+      File(macDmgDir).deleteRecursively()
+      File(macDmgDir).mkdirs()
+      writeMcapLauncherPropertiesMac()
+      ihmc.exec(ProcessBuilder(jpackageArgsCommonMac("dmg", macDmgDir)))
+   }
+}
+
+tasks.register("buildMacPackages") {
+   dependsOn("packageMacAppImage", "packageMacDmg")
+}
+
+/**
+ * Builds a trimmed JRE image for macOS using jlink, same module list and same JavaFX-stays-on-classpath
+ * reasoning as buildJlinkRuntime above.
+ */
+tasks.register("buildJlinkRuntimeMac") {
+   doFirst {
+      requireMacHost()
+      requireJdk17Plus()
+   }
+
+   doLast {
+      val javaHome = System.getProperty("java.home")
+            ?: throw GradleException("java.home system property is not set.")
+      val modulePath = "$javaHome/jmods"
+
+      File(jlinkRuntimeDir).deleteRecursively()
+
+      ihmc.exec(ProcessBuilder(
+            jlinkExecutable(),
+            "--module-path", modulePath,
+            "--add-modules", jlinkAddModules,
+            "--strip-debug",
+            "--no-man-pages",
+            "--no-header-files",
+            "--compress=2",
+            "--include-locales=en",
+            "--output", jlinkRuntimeDir
+      ))
+   }
+}
+
+tasks.register("packageMacAppImageJlink") {
+   dependsOn("installDistMac", "buildJlinkRuntimeMac")
+
+   doFirst {
+      requireMacHost()
+      requireJdk17Plus()
+   }
+
+   doLast {
+      File(macAppImageJlinkDir).deleteRecursively()
+      File(macAppImageJlinkDir).mkdirs()
+      writeMcapLauncherPropertiesMac()
+      ihmc.exec(ProcessBuilder(
+            jpackageArgsCommonMac("app-image", macAppImageJlinkDir, jlinkRuntimeDir)))
+   }
+}
+
+tasks.register("packageMacDmgJlink") {
+   dependsOn("installDistMac", "buildJlinkRuntimeMac")
+
+   doFirst {
+      requireMacHost()
+      requireJdk17Plus()
+   }
+
+   doLast {
+      File(macDmgJlinkDir).deleteRecursively()
+      File(macDmgJlinkDir).mkdirs()
+      writeMcapLauncherPropertiesMac()
+      ihmc.exec(ProcessBuilder(
+            jpackageArgsCommonMac("dmg", macDmgJlinkDir, jlinkRuntimeDir)))
+   }
+}
+
+tasks.register("buildMacPackagesJlink") {
+   dependsOn("packageMacAppImageJlink", "packageMacDmgJlink")
 }

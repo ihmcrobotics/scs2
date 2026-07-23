@@ -51,10 +51,21 @@ public class MultiVideoDataReader
          }
       }
 
-      for (File zedSensorDatFile : ZEDSVOScrubber.findZEDSensorDatFiles(dataDirectory))
+      try
       {
-         VideoDataReader reader = new ZEDSVOVideoDataReader(zedSensorDatFile);
-         readers.add(reader);
+         for (File zedSensorDatFile : ZEDSVOScrubber.findZEDSensorDatFiles(dataDirectory))
+         {
+            VideoDataReader reader = new ZEDSVOVideoDataReader(zedSensorDatFile);
+            readers.add(reader);
+         }
+      }
+      catch (Throwable t)
+      {
+         // The ZED SDK is not available on all platforms (e.g. macOS). ZEDSVOScrubber already checks a
+         // ZED_SDK_LOADED flag before returning any files, but a missing us.ihmc:zed native library can
+         // still throw an Error (UnsatisfiedLinkError, NoClassDefFoundError, ExceptionInInitializerError)
+         // out of that class's static initializer, which a plain "catch (Exception e)" would not catch.
+         System.err.println("Skipping ZED video data, ZED SDK unavailable: " + t.getMessage());
       }
    }
 
