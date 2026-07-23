@@ -52,6 +52,15 @@ public class YoVariableChartData
     * incrementally-tracked min/max. {@code -1} means "not yet initialized", forcing a full rebuild.
     */
    private int appliedSize = -1, appliedInPoint = -1, appliedOutPoint = -1;
+   /** Monotonic count of new samples ever applied to {@link #lastDataSet}, across this instance's whole lifetime. */
+   private long totalSamplesPublished = 0;
+   /**
+    * Bumped on every full rebuild (never on an incremental patch or bounds-only update). The sole
+    * correctness contract {@link ChartDataUpdate#readUpdate} relies on: if this differs from what a caller
+    * last observed, ring positions outside the naive "trailing N samples" window may have changed too
+    * (e.g. via a same-size buffer rotation), so a full repaint is required rather than a partial patch.
+    */
+   private long structureGeneration = 0;
    private final Queue<Object> callerIDs = new ConcurrentLinkedQueue<>();
    private final Map<Object, ChartDataUpdate> newChartDataUpdate = new ConcurrentHashMap<>();
 
@@ -209,6 +218,7 @@ public class YoVariableChartData
             lastDataSet.valueMax = minMax[1];
             appliedInPoint = newProperties.getInPoint();
             appliedOutPoint = newProperties.getOutPoint();
+            totalSamplesPublished += newBufferSample.getSampleLength();
             // Publish a snapshot, not the canonical array itself: lastDataSet.values keeps getting mutated
             // in place on future ticks, but a caller may still be reading a previously-published
             // ChartDataUpdate wrapping this same object on another thread.
@@ -227,6 +237,8 @@ public class YoVariableChartData
                appliedSize = newProperties.getSize();
                appliedInPoint = newProperties.getInPoint();
                appliedOutPoint = newProperties.getOutPoint();
+               totalSamplesPublished += newBufferSample.getSampleLength();
+               structureGeneration++;
             }
             // Safe to publish directly: freshly built, never shared with any caller yet.
             publishedDataSet = rebuilt;
@@ -241,7 +253,7 @@ public class YoVariableChartData
       else
          throw new IllegalStateException("Should not get here.");
 
-      ChartDataUpdate chartDataUpdate = new ChartDataUpdate(publishedDataSet, rawData.getBufferProperties());
+      ChartDataUpdate chartDataUpdate = new ChartDataUpdate(publishedDataSet, rawData.getBufferProperties(), totalSamplesPublished, structureGeneration);
       lastChartDataUpdate = chartDataUpdate;
 
       if (publishedDataSet != null)
@@ -458,30 +470,61 @@ public class YoVariableChartData
 
    public static class ChartDataUpdate
    {
-      private final DoubleArray dataSet;
+      /** Package-private (rather than private) so it's directly testable from same-package unit tests. */
+      final DoubleArray dataSet;
       private final YoBufferPropertiesReadOnly bufferProperties;
+      private final long totalSamplesPublished;
+      private final long structureGeneration;
 
-      public ChartDataUpdate(DoubleArray dataSet, YoBufferPropertiesReadOnly bufferProperties)
+      public ChartDataUpdate(DoubleArray dataSet, YoBufferPropertiesReadOnly bufferProperties, long totalSamplesPublished, long structureGeneration)
       {
          this.dataSet = dataSet;
          this.bufferProperties = bufferProperties;
+         this.totalSamplesPublished = totalSamplesPublished;
+         this.structureGeneration = structureGeneration;
       }
 
-      public void readUpdate(NumberSeries chartDataSet, int lastUpdateEndIndex)
+      /**
+       * Copies {@link #dataSet} into {@code chartDataSet}'s {@code Point2D} list, patching only the ring
+       * positions that changed since the caller's last call (tracked via {@code lastConsumedTotalSamples}/
+       * {@code lastConsumedStructureGeneration}, which the caller should persist from
+       * {@link #getTotalSamplesPublished()}/{@link #getStructureGeneration()} after each call) whenever that's
+       * provably safe, falling back to a full rewrite otherwise (first call, size change, a rebuild happened
+       * since last consumed, or more than a full buffer's worth of samples were missed).
+       */
+      public void readUpdate(NumberSeries chartDataSet, long lastConsumedTotalSamples, long lastConsumedStructureGeneration)
       {
          chartDataSet.getLock().writeLock().lock();
 
          try
          {
+            boolean sizeMatches = chartDataSet.getData().size() == dataSet.size;
+
             // Resizing the cart data
             while (chartDataSet.getData().size() < dataSet.size)
                chartDataSet.getData().add(new Point2D());
             while (chartDataSet.getData().size() > dataSet.size)
                chartDataSet.getData().remove(chartDataSet.getData().size() - 1);
 
-            for (int i = 0; i < dataSet.size; i++)
+            long newSamplesSinceLastConsumed = totalSamplesPublished - lastConsumedTotalSamples;
+            boolean canPatchIncrementally = sizeMatches
+                                             && structureGeneration == lastConsumedStructureGeneration
+                                             && newSamplesSinceLastConsumed >= 0
+                                             && newSamplesSinceLastConsumed < dataSet.size;
+
+            if (canPatchIncrementally)
             {
-               chartDataSet.getData().get(i).set(i, dataSet.values[i]);
+               int index = bufferProperties.getOutPoint();
+               for (int i = 0; i < newSamplesSinceLastConsumed; i++)
+               {
+                  chartDataSet.getData().get(index).set(index, dataSet.values[index]);
+                  index = SharedMemoryTools.decrement(index, 1, dataSet.size);
+               }
+            }
+            else
+            {
+               for (int i = 0; i < dataSet.size; i++)
+                  chartDataSet.getData().get(i).set(i, dataSet.values[i]);
             }
 
             chartDataSet.bufferCurrentIndexProperty().set(bufferProperties.getCurrentIndex());
@@ -495,9 +538,14 @@ public class YoVariableChartData
          }
       }
 
-      public int getUpdateEndIndex()
+      public long getTotalSamplesPublished()
       {
-         return bufferProperties.getOutPoint();
+         return totalSamplesPublished;
+      }
+
+      public long getStructureGeneration()
+      {
+         return structureGeneration;
       }
    }
 
