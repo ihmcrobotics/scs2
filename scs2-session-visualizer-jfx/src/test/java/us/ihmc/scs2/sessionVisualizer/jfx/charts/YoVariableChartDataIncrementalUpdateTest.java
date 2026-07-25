@@ -14,7 +14,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Covers the two building blocks of {@link YoVariableChartData}'s incremental min/max update
- * ({@code canApplyIncrementally} and {@code incrementallyPatchValuesAndBounds}) plus the unchanged
+ * ({@code applyIncrementalUpdate} and {@code incrementallyPatchValuesAndBounds}) plus the unchanged
  * full-rebuild fallback ({@code rebuildEntireDataSet}), then closes with a randomized differential
  * test that pits the incremental path against the full-rebuild path directly. The example-based tests
  * pin individual edge cases with a readable failure message; the differential test at the bottom is
@@ -29,7 +29,7 @@ public class YoVariableChartDataIncrementalUpdateTest
    }
 
    // ---------------------------------------------------------------------------------------------
-   // canApplyIncrementally: the gate that decides whether a tick can skip the O(bufferSize) rebuild.
+   // applyIncrementalUpdate: the gate that decides whether a tick can skip the O(bufferSize) rebuild.
    // A false positive here is the dangerous direction -- it would make the incremental path apply a
    // patch that silently produces the wrong values/min/max with no exception to catch it, so these
    // cases lean toward covering every way the "plain forward append" assumption can be violated.
@@ -40,7 +40,7 @@ public class YoVariableChartDataIncrementalUpdateTest
    {
       // size=10, applied window [0,4] (not yet full), 2 new samples appended, in-point unchanged.
       BufferSample<double[]> newSample = sample(5, new double[] {1, 2}, 10, 6, 0, 6);
-      assertTrue(YoVariableChartData.canApplyIncrementally(10, 0, 4, true, newSample));
+      assertTrue(YoVariableChartData.applyIncrementalUpdate(10, 0, 4, false, newSample));
    }
 
    @Test
@@ -48,7 +48,7 @@ public class YoVariableChartDataIncrementalUpdateTest
    {
       // size=10, applied window [5,4] (full, wrapped), 1 new sample evicts exactly 1 old one.
       BufferSample<double[]> newSample = sample(5, new double[] {9}, 10, 5, 6, 5);
-      assertTrue(YoVariableChartData.canApplyIncrementally(10, 5, 4, true, newSample));
+      assertTrue(YoVariableChartData.applyIncrementalUpdate(10, 5, 4, false, newSample));
    }
 
    @Test
@@ -56,17 +56,17 @@ public class YoVariableChartDataIncrementalUpdateTest
    {
       // size=10, applied window [5,4] (full), 3 new samples evict exactly 3 old ones.
       BufferSample<double[]> newSample = sample(5, new double[] {9, 9, 9}, 10, 7, 8, 7);
-      assertTrue(YoVariableChartData.canApplyIncrementally(10, 5, 4, true, newSample));
+      assertTrue(YoVariableChartData.applyIncrementalUpdate(10, 5, 4, false, newSample));
    }
 
    @Test
    public void testRejectsFirstCall()
    {
-      // No canonical dataset/deques exist yet (canonicalDataSetPresent=false), so there is nothing to
-      // patch incrementally regardless of what the sample looks like -- must always fall back to a
-      // full rebuild the very first time a variable is charted.
+      // No canonical dataset/deques exist yet (dataIsNull=true), so there is nothing to patch
+      // incrementally regardless of what the sample looks like -- must always fall back to a full
+      // rebuild the very first time a variable is charted.
       BufferSample<double[]> newSample = sample(0, new double[] {1}, 10, 0, 0, 0);
-      assertFalse(YoVariableChartData.canApplyIncrementally(-1, -1, -1, false, newSample));
+      assertFalse(YoVariableChartData.applyIncrementalUpdate(-1, -1, -1, true, newSample));
    }
 
    @Test
@@ -75,7 +75,7 @@ public class YoVariableChartDataIncrementalUpdateTest
       // Ring buffer capacity itself changed (10 -> 20). The old deques/values array are sized for the
       // previous capacity and cannot be reused; only a full rebuild can re-prime them correctly.
       BufferSample<double[]> newSample = sample(5, new double[] {1}, 20, 5, 0, 5);
-      assertFalse(YoVariableChartData.canApplyIncrementally(10, 0, 4, true, newSample));
+      assertFalse(YoVariableChartData.applyIncrementalUpdate(10, 0, 4, false, newSample));
    }
 
    @Test
@@ -84,7 +84,7 @@ public class YoVariableChartDataIncrementalUpdateTest
       // applied out-point is 4, but the new sample starts at 6 -- a gap, not a plain append.
       // Incrementally patching would leave index 5 never written, silently keeping a stale value.
       BufferSample<double[]> newSample = sample(6, new double[] {1}, 10, 6, 0, 6);
-      assertFalse(YoVariableChartData.canApplyIncrementally(10, 0, 4, true, newSample));
+      assertFalse(YoVariableChartData.applyIncrementalUpdate(10, 0, 4, false, newSample));
    }
 
    @Test
@@ -93,7 +93,7 @@ public class YoVariableChartDataIncrementalUpdateTest
       // applied out-point is 4, but the new sample starts at 3 -- overlaps already-applied data.
       // Re-inserting index 4 as a "new" candidate would double-push it into the deques.
       BufferSample<double[]> newSample = sample(3, new double[] {1, 2}, 10, 4, 0, 4);
-      assertFalse(YoVariableChartData.canApplyIncrementally(10, 0, 4, true, newSample));
+      assertFalse(YoVariableChartData.applyIncrementalUpdate(10, 0, 4, false, newSample));
    }
 
    @Test
@@ -103,7 +103,7 @@ public class YoVariableChartDataIncrementalUpdateTest
       // This shape shows up on a scrub/crop to an earlier position, not a live forward tick, and must
       // not be treated as "a lot of ordinary eviction happened."
       BufferSample<double[]> newSample = sample(5, new double[] {1}, 10, 5, 3, 5);
-      assertFalse(YoVariableChartData.canApplyIncrementally(10, 5, 4, true, newSample));
+      assertFalse(YoVariableChartData.applyIncrementalUpdate(10, 5, 4, false, newSample));
    }
 
    @Test
@@ -113,12 +113,12 @@ public class YoVariableChartDataIncrementalUpdateTest
       // evictIfFront is only correct if called once per index that actually left the window in order;
       // accepting this would desync the deques' notion of the active window from reality.
       BufferSample<double[]> newSample = sample(5, new double[] {1}, 10, 5, 8, 5);
-      assertFalse(YoVariableChartData.canApplyIncrementally(10, 5, 4, true, newSample));
+      assertFalse(YoVariableChartData.applyIncrementalUpdate(10, 5, 4, false, newSample));
    }
 
    // ---------------------------------------------------------------------------------------------
    // rebuildEntireDataSet reproduces today's (unchanged) getValueAt/updateBounds behavior.
-   // This is the fallback path canApplyIncrementally routes to whenever the fast path is rejected
+   // This is the fallback path applyIncrementalUpdate routes to whenever the fast path is rejected
    // above, so these pin its output against fixed, hand-computed expectations before it's reused as
    // the "reference" oracle in the differential test below.
    // ---------------------------------------------------------------------------------------------
@@ -188,7 +188,7 @@ public class YoVariableChartDataIncrementalUpdateTest
 
    // ---------------------------------------------------------------------------------------------
    // Differential/fuzz test: incremental path vs. always-full-rebuild, over identical random input.
-   // This is the real safety net for the optimization -- it doesn't just exercise canApplyIncrementally
+   // This is the real safety net for the optimization -- it doesn't just exercise applyIncrementalUpdate
    // in isolation, it runs both algorithms tick-by-tick over the same randomized sample stream and
    // asserts every value/min/max still matches, which is the only practical way to catch a subtle
    // wraparound or eviction-ordering bug in the monotonic deque bookkeeping.
@@ -208,13 +208,12 @@ public class YoVariableChartDataIncrementalUpdateTest
 
    private static void runDifferentialTrial(Random random, int bufferSize, int tickCount)
    {
-      // "Incremental" state: canonical values array + deques, evolved via canApplyIncrementally/incrementallyPatchValuesAndBounds/rebuildEntireDataSet.
+      // "Incremental" state: canonical dataset + deques, evolved via applyIncrementalUpdate/incrementallyPatchValuesAndBounds/rebuildEntireDataSet.
       // These variables mirror exactly what YoVariableChartData.publishForCharts() carries across ticks.
-      double[] incrementalValues = null;
+      YoVariableChartData.DoubleArray incrementalDataSet = null;
       MonotonicIndexDeque maxCandidates = null;
       MonotonicIndexDeque minCandidates = null;
       int appliedSize = -1, appliedInPoint = -1, appliedOutPoint = -1;
-      double incrementalMin = Double.NaN, incrementalMax = Double.NaN;
 
       // "Reference" state: always full-rebuild via rebuildEntireDataSet, no shortcuts.
       YoVariableChartData.DoubleArray referenceDataSet = null;
@@ -242,42 +241,28 @@ public class YoVariableChartDataIncrementalUpdateTest
                                                                        new MonotonicIndexDeque(bufferSize, false));
 
          // Incremental: pick the path exactly like publishForCharts() does.
-         if (YoVariableChartData.canApplyIncrementally(appliedSize, appliedInPoint, appliedOutPoint, incrementalValues != null, newSample))
+         if (YoVariableChartData.applyIncrementalUpdate(appliedSize, appliedInPoint, appliedOutPoint, incrementalDataSet == null, newSample))
          {
-            double[] minMax = YoVariableChartData.incrementallyPatchValuesAndBounds(incrementalValues, newSample, appliedInPoint, maxCandidates,
-                                                                                      minCandidates);
-            incrementalMin = minMax[0];
-            incrementalMax = minMax[1];
+            YoVariableChartData.incrementallyPatchValuesAndBounds(incrementalDataSet, newSample, appliedInPoint, maxCandidates, minCandidates);
          }
          else
          {
             maxCandidates = new MonotonicIndexDeque(bufferSize, true);
             minCandidates = new MonotonicIndexDeque(bufferSize, false);
-            YoVariableChartData.DoubleArray rebuilt = YoVariableChartData.rebuildEntireDataSet(
-                  incrementalValues == null ? null : wrap(incrementalValues, bufferSize), newSample, maxCandidates, minCandidates);
-            incrementalValues = rebuilt.values;
-            incrementalMin = rebuilt.valueMin;
-            incrementalMax = rebuilt.valueMax;
+            incrementalDataSet = YoVariableChartData.rebuildEntireDataSet(incrementalDataSet, newSample, maxCandidates, minCandidates);
          }
          appliedSize = bufferSize;
          appliedInPoint = newInPoint;
          appliedOutPoint = newOutPoint;
 
          String context = "bufferSize=" + bufferSize + " tick=" + tick;
-         assertArrayEquals(referenceDataSet.values, incrementalValues, 0.0, context);
-         assertEquals(referenceDataSet.valueMin, incrementalMin, 0.0, context);
-         assertEquals(referenceDataSet.valueMax, incrementalMax, 0.0, context);
+         assertArrayEquals(referenceDataSet.values, incrementalDataSet.values, 0.0, context);
+         assertEquals(referenceDataSet.valueMin, incrementalDataSet.valueMin, 0.0, context);
+         assertEquals(referenceDataSet.valueMax, incrementalDataSet.valueMax, 0.0, context);
 
          outPoint = newOutPoint;
          activeLength = newActiveLength;
       }
-   }
-
-   private static YoVariableChartData.DoubleArray wrap(double[] values, int size)
-   {
-      YoVariableChartData.DoubleArray wrapped = new YoVariableChartData.DoubleArray(size);
-      System.arraycopy(values, 0, wrapped.values, 0, size);
-      return wrapped;
    }
 
    /** Minimal, JavaFX-free {@link YoBufferPropertiesReadOnly} stub for constructing test {@code BufferSample}s. */

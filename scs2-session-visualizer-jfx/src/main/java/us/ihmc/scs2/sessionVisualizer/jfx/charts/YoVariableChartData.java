@@ -42,16 +42,9 @@ public class YoVariableChartData
    private DoubleArray lastDataSet;
    private ChartDataUpdate lastChartDataUpdate;
 
-   /** Sliding-window min/max candidate deques for {@link #lastDataSet}; {@code null} until the first rebuild. */
    private MonotonicIndexDeque maxCandidates, minCandidates;
-   /**
-    * Buffer state as of the last successfully-applied update (full rebuild or incremental patch).
-    * Deliberately separate from {@link #lastProperties}, which is written asynchronously by
-    * {@link #propertiesListener} from a different thread and can already be ahead of the
-    * {@link BufferSample} being processed here -- diffing against it directly would silently corrupt the
-    * incrementally-tracked min/max. {@code -1} means "not yet initialized", forcing a full rebuild.
-    */
-   private int appliedSize = -1, appliedInPoint = -1, appliedOutPoint = -1;
+   // Bookkeeping for the max and min candidates
+   private int previousSize = -1, previousInPoint = -1, previousOutPoint = -1;
    /** Monotonic count of new samples ever applied to {@link #lastDataSet}, across this instance's whole lifetime. */
    private long totalSamplesPublished = 0;
    /**
@@ -202,7 +195,7 @@ public class YoVariableChartData
       if (lastDataSet != null && newBufferSample.getBufferProperties().getSize() != lastDataSet.size)
       {
          lastDataSet = null;
-         appliedSize = -1; // Force a full rebuild (and fresh deques) on the next hasChartData tick.
+         previousSize = -1; // Force a full rebuild (and fresh deques) on the next hasChartData tick.
       }
 
       DoubleArray publishedDataSet;
@@ -210,33 +203,32 @@ public class YoVariableChartData
       if (hasChartData.get())
       {
          YoBufferPropertiesReadOnly newProperties = newBufferSample.getBufferProperties();
+         boolean incrementalUpdate = applyIncrementalUpdate(previousSize, previousInPoint, previousOutPoint, lastDataSet == null, newBufferSample);
 
-         if (canApplyIncrementally(appliedSize, appliedInPoint, appliedOutPoint, lastDataSet != null, newBufferSample))
+         if (incrementalUpdate)
          {
-            double[] minMax = incrementallyPatchValuesAndBounds(lastDataSet.values, newBufferSample, appliedInPoint, maxCandidates, minCandidates);
-            lastDataSet.valueMin = minMax[0];
-            lastDataSet.valueMax = minMax[1];
-            appliedInPoint = newProperties.getInPoint();
-            appliedOutPoint = newProperties.getOutPoint();
+            incrementallyPatchValuesAndBounds(lastDataSet, newBufferSample, previousInPoint, maxCandidates, minCandidates);
+            previousInPoint = newProperties.getInPoint();
+            previousOutPoint = newProperties.getOutPoint();
             totalSamplesPublished += newBufferSample.getSampleLength();
-            // Publish a snapshot, not the canonical array itself: lastDataSet.values keeps getting mutated
-            // in place on future ticks, but a caller may still be reading a previously-published
-            // ChartDataUpdate wrapping this same object on another thread.
-            publishedDataSet = lastDataSet.snapshot();
+
+            // Deep copy to the original data can change without this published data changing
+            publishedDataSet = lastDataSet.deepCopy();
          }
          else
          {
             MonotonicIndexDeque newMaxCandidates = new MonotonicIndexDeque(newProperties.getSize(), true);
             MonotonicIndexDeque newMinCandidates = new MonotonicIndexDeque(newProperties.getSize(), false);
             DoubleArray rebuilt = rebuildEntireDataSet(lastDataSet, newBufferSample, newMaxCandidates, newMinCandidates);
+
             if (rebuilt != null)
             {
                lastDataSet = rebuilt;
                maxCandidates = newMaxCandidates;
                minCandidates = newMinCandidates;
-               appliedSize = newProperties.getSize();
-               appliedInPoint = newProperties.getInPoint();
-               appliedOutPoint = newProperties.getOutPoint();
+               previousSize = newProperties.getSize();
+               previousInPoint = newProperties.getInPoint();
+               previousOutPoint = newProperties.getOutPoint();
                totalSamplesPublished += newBufferSample.getSampleLength();
                structureGeneration++;
             }
@@ -299,79 +291,74 @@ public class YoVariableChartData
    }
 
    /**
-    * Whether {@code newBufferSample} can be folded into the existing canonical dataset via the O(delta)
-    * incremental path ({@link #incrementallyPatchValuesAndBounds}) instead of a full O(bufferSize)
-    * {@link #rebuildEntireDataSet}. Requires a canonical dataset and primed deques to already exist for
-    * the current buffer size, the new sample range to abut exactly where the last applied update's
-    * out-point left off (a plain forward append, not a scrub/crop/gap), and the new in-point to be
-    * reachable by walking forward from {@code appliedInPoint} in no more steps than samples just arrived
-    * (i.e. eviction can never outpace insertion -- a backward/crop jump in the in-point would require an
-    * implausibly large number of forward steps to explain, and gets rejected here). Package-private and
-    * static so it is unit-testable without constructing a {@link YoVariableChartData} or the JavaFX
-    * toolkit, same as {@link #computeDirtyRegion} in {@link NumberSeriesLayer}.
+    * This checks whether the full update is required or not for the ChartData
+    * @return boolean for whether we can do the incremental update, or we have to do the full update
     */
-   static boolean canApplyIncrementally(int appliedSize, int appliedInPoint, int appliedOutPoint, boolean canonicalDataSetPresent,
+   static boolean applyIncrementalUpdate(int previousSize, int appliedInPoint, int appliedOutPoint, boolean dataIsNull,
                                          BufferSample<double[]> newBufferSample)
    {
-      if (!canonicalDataSetPresent || appliedSize < 0)
+      if (dataIsNull || previousSize < 0)
          return false;
 
       YoBufferPropertiesReadOnly newProperties = newBufferSample.getBufferProperties();
-      int size = newProperties.getSize();
-      if (size != appliedSize)
+      int newSize = newProperties.getSize();
+      if (previousSize != newSize)
          return false;
 
-      int expectedFrom = SharedMemoryTools.increment(appliedOutPoint, 1, size);
+      int expectedFrom = SharedMemoryTools.increment(appliedOutPoint, 1, newSize);
       if (newBufferSample.getFrom() != expectedFrom)
          return false;
+
       if (newBufferSample.getTo() != newProperties.getOutPoint())
          return false;
 
-      int evictionSteps = SharedMemoryTools.computeSubLength(appliedInPoint, newProperties.getInPoint(), size) - 1;
+      int evictionSteps = SharedMemoryTools.computeSubLength(appliedInPoint, newProperties.getInPoint(), newSize) - 1;
       return evictionSteps <= newBufferSample.getSampleLength();
    }
 
    /**
-    * Patches {@code values} and the two sliding-window deques in place for exactly what changed this
-    * tick: indices that aged out of the active window (evicted from the deques if they were still a
-    * candidate), then the newly-arrived sample range (written into {@code values} and pushed as new
-    * candidates), in that order. Caller must have already verified eligibility via
-    * {@link #canApplyIncrementally}.
-    *
-    * @return {@code {newMin, newMax}} read off the deque fronts after applying this tick's changes.
+    * Updates the values and the two sliding-window deques in place for exactly what changed this tick.
+    * Indices that aged out of the active window are removed, then the newly-arrived sample range is adde.
+    * Caller must have already verified eligibility via {@link #applyIncrementalUpdate}. Patches {@code previousData.valueMin}/{@code valueMax} in place.
     */
-   static double[] incrementallyPatchValuesAndBounds(double[] values, BufferSample<double[]> bufferSample, int appliedInPoint,
-                                                       MonotonicIndexDeque maxCandidates, MonotonicIndexDeque minCandidates)
+   static void incrementallyPatchValuesAndBounds(DoubleArray previousData, BufferSample<double[]> newBufferSample, int previousInPoint,
+                                                  MonotonicIndexDeque maxCandidates, MonotonicIndexDeque minCandidates)
    {
-      YoBufferPropertiesReadOnly bufferProperties = bufferSample.getBufferProperties();
+      double[] previousValues = previousData.values;
+      YoBufferPropertiesReadOnly bufferProperties = newBufferSample.getBufferProperties();
       int bufferSize = bufferProperties.getSize();
       int newInPoint = bufferProperties.getInPoint();
 
-      for (int evictIndex = appliedInPoint; evictIndex != newInPoint; evictIndex = SharedMemoryTools.increment(evictIndex, 1, bufferSize))
+      int evictionSteps = SharedMemoryTools.computeSubLength(previousInPoint, newInPoint, bufferSize) - 1;
+      int index = previousInPoint;
+      for (int i = 0; i < evictionSteps; i++)
       {
-         maxCandidates.evictIfFront(evictIndex);
-         minCandidates.evictIfFront(evictIndex);
+         maxCandidates.evictIfFront(index);
+         minCandidates.evictIfFront(index);
+         index = SharedMemoryTools.increment(index, 1, bufferSize);
       }
 
-      double[] sample = bufferSample.getSample();
-      int insertIndex = bufferSample.getFrom();
+      double[] sample = newBufferSample.getSample();
+      int insertIndex = newBufferSample.getFrom();
 
-      for (int i = 0; i < bufferSample.getSampleLength(); i++)
+      for (int i = 0; i < newBufferSample.getSampleLength(); i++)
       {
          double value = sample[i];
          if (!Double.isFinite(value))
             value = 0.0;
-         values[insertIndex] = value;
-         maxCandidates.pushCandidate(insertIndex, value, values);
-         minCandidates.pushCandidate(insertIndex, value, values);
+
+         previousValues[insertIndex] = value;
+         maxCandidates.pushCandidate(insertIndex, value, previousValues);
+         minCandidates.pushCandidate(insertIndex, value, previousValues);
          insertIndex = SharedMemoryTools.increment(insertIndex, 1, bufferSize);
       }
 
-      return new double[] {values[minCandidates.peekFrontIndex()], values[maxCandidates.peekFrontIndex()]};
+      previousData.valueMin = previousValues[minCandidates.peekFrontIndex()];
+      previousData.valueMax = previousValues[maxCandidates.peekFrontIndex()];
    }
 
    /**
-    * Full O(bufferSize) rebuild, used when {@link #canApplyIncrementally} says the incremental path
+    * Full O(bufferSize) rebuild, used when {@link #applyIncrementalUpdate} says the incremental path
     * doesn't apply (first load, buffer resize, or anything other than a plain forward append). Recomputes
     * every slot from scratch via the existing {@link #getValueAt} fallback logic, then primes
     * {@code maxCandidates}/{@code minCandidates} (assumed freshly constructed/cleared by the caller, sized
@@ -563,7 +550,7 @@ public class YoVariableChartData
       }
 
       /** Deep copy, used to publish a safe-to-read snapshot while the source keeps being mutated in place. */
-      DoubleArray snapshot()
+      DoubleArray deepCopy()
       {
          DoubleArray copy = new DoubleArray(size);
          System.arraycopy(values, 0, copy.values, 0, size);
