@@ -13,6 +13,7 @@ import us.ihmc.scs2.definition.yoGraphic.YoGraphicDefinition;
 import us.ihmc.scs2.definition.yoSlider.*;
 import us.ihmc.scs2.session.Session;
 import us.ihmc.scs2.session.SessionDataFilterParameters;
+import us.ihmc.scs2.sessionVisualizer.jfx.controllers.chart.ChartTable2D.ChartTable2DSize;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoComposite.search.SearchEngines;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.NewTerrainVisualRequest;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SecondaryWindowManager.NewWindowRequest;
@@ -67,6 +68,7 @@ public class SessionVisualizerMessagerAPI
    private static final TopicTheme Set = apiFactory.createTopicTheme("set");
    private static final TopicTheme Remove = apiFactory.createTopicTheme("remove");
    private static final TopicTheme Visible = apiFactory.createTopicTheme("visible");
+   private static final TopicTheme Resize = apiFactory.createTopicTheme("resize");
 
    public static final Topic<Boolean> DisableUserControls = APIRoot.child(User).child(Controls).topic(Disable);
    public static final Topic<SceneVideoRecordingRequest> SceneVideoRecordingRequest = APIRoot.child(Video).topic(Request);
@@ -164,6 +166,7 @@ public class SessionVisualizerMessagerAPI
       public static final Topic<Pair<Window, Boolean>> YoChartShowYAxis = APIRoot.child(YoChart).child(YAxis).topic(Show);
       public static final Topic<Pair<Window, File>> YoChartGroupSaveConfiguration = APIRoot.child(YoChart).child(Group).child(Configuration).topic(Save);
       public static final Topic<Pair<Window, File>> YoChartGroupLoadConfiguration = APIRoot.child(YoChart).child(Group).child(Configuration).topic(Load);
+      public static final Topic<Pair<Window, ChartTable2DSize>> YoChartGroupResize = APIRoot.child(YoChart).child(Group).topic(Resize);
 
       public static final Topic<ImmutablePair<String, YoChartConfigurationDefinition>> YoChartListAdd = APIRoot.child(YoChart).child(Group).topic(Add);
 

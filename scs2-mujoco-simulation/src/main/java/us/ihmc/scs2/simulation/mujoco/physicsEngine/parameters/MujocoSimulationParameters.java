@@ -22,6 +22,7 @@ public class MujocoSimulationParameters implements MujocoSimulationParametersBas
    private boolean useEllipticFrictionCone = false;
    private double frictionSlide = 1.0;
    private double timestep = 0.0;
+   private boolean filterParentCollisions = true;
 
    public static MujocoSimulationParameters defaultMujocoSimulationParameters()
    {
@@ -170,5 +171,17 @@ public class MujocoSimulationParameters implements MujocoSimulationParametersBas
    public void setTimestep(double timestep)
    {
       this.timestep = timestep;
+   }
+
+   @Override
+   public boolean getFilterParentCollisions()
+   {
+      return filterParentCollisions;
+   }
+
+   @Override
+   public void setFilterParentCollisions(boolean filterParentCollisions)
+   {
+      this.filterParentCollisions = filterParentCollisions;
    }
 }
