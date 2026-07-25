@@ -227,9 +227,6 @@ public class YoGroupFX implements YoGraphicFXItem
    @Override
    public void render()
    {
-      // visibleProperty tracks whether any descendant is visible (see setupVisibilityBindings); when
-      // false, the whole subtree is already invisible in the scene graph, so walking it to re-apply
-      // JavaFX property writes that can't produce any visible effect is pure waste.
       if (!visibleProperty.get())
          return;
 

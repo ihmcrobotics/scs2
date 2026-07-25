@@ -30,18 +30,6 @@ public class YoPointFX3D extends YoGraphicFX3D
    private final Scale scale = new Scale();
    private final PhongMaterial material = new PhongMaterial();
    private YoGraphicFXResource graphicResource;
-
-   /**
-    * Last {@link Color} actually written to {@link #material}'s diffuse color, so {@link #render()} can
-    * skip the write when the color hasn't changed since the last frame. Unlike {@link #translate}/
-    * {@link #scale} (plain {@code double} properties, which JavaFX's own {@code DoublePropertyBase}
-    * already no-ops on an unchanged value), {@code PhongMaterial}'s diffuse color property only skips
-    * its invalidation on reference equality, not {@link Object#equals}. {@link #color} is commonly a
-    * YoVariable-driven {@link us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.color.BaseColorFX} that
-    * allocates a brand-new {@code Color} object on every call to {@code get()} even when the underlying
-    * value hasn't changed, so without this cache the material would be marked dirty every JavaFX pulse
-    * regardless of whether the color actually changed.
-    */
    private Color lastColor = null;
 
    public YoPointFX3D()

@@ -12,13 +12,6 @@ import java.util.Random;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-/**
- * Differential test for {@link ChartDataUpdate#readUpdate}: a consumer that polls every tick (via an
- * independent brute-force reference copy, bypassing readUpdate's own logic entirely) must always match a
- * consumer that polls intermittently (via the real, possibly-incremental readUpdate), even when the
- * intermittent consumer's skips straddle a forced rebuild ("scrub") -- the scenario
- * {@code YoVariableChartData.structureGeneration} exists to guard against.
- */
 public class ChartDataUpdateConsumerCatchUpTest
 {
    // readUpdate's own eligibility check (canPatchIncrementally, in YoVariableChartData.ChartDataUpdate)
