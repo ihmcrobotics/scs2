@@ -469,7 +469,7 @@ public class YoVariableChartData
       /**
        * Copies {@link #dataSet} into {@code chartDataSet}'s {@code Point2D} list, patching only the ring
        * positions that changed since the caller's last call (tracked via {@code lastConsumedTotalSamples}/
-       * {@code lastConsumedStructureGeneration}, which the caller should persist from
+       * {@code lastConsumedRebuildCounter}, which the caller should persist from
        * {@link #getTotalSamplesPublished()}/{@link #getRebuildCounter()} after each call) whenever that's
        * provably safe, falling back to a full rewrite otherwise.
        */
@@ -488,12 +488,10 @@ public class YoVariableChartData
                chartDataSet.getData().remove(chartDataSet.getData().size() - 1);
 
             long newSamplesSinceLastConsumed = totalSamplesPublished - lastConsumedTotalSamples;
-            boolean canPatchIncrementally = sizeMatches
-                                             && rebuildCounter == lastConsumedRebuildCounter
-                                             && newSamplesSinceLastConsumed >= 0
-                                             && newSamplesSinceLastConsumed < dataSet.size;
 
-            if (canPatchIncrementally)
+            boolean updateIncrementally = canPatchIncrementally(sizeMatches, newSamplesSinceLastConsumed, lastConsumedRebuildCounter);
+
+            if (updateIncrementally)
             {
                int index = bufferProperties.getOutPoint();
                for (int i = 0; i < newSamplesSinceLastConsumed; i++)
@@ -527,6 +525,23 @@ public class YoVariableChartData
       public long getRebuildCounter()
       {
          return rebuildCounter;
+      }
+
+      /**
+       * Whether {@link #dataSet} can be folded into {@code chartDataSet} by patching just the trailing
+       * {@code newSamplesSinceLastConsumed} ring positions, instead of rewriting every point.
+       */
+      private boolean canPatchIncrementally(boolean sizeMatches, long newSamplesSinceLastConsumed, long lastConsumedRebuildCounter)
+      {
+         if (!sizeMatches)
+            return false; // chart series is a different length than last render; ring positions can't be assumed to line up.
+         if (rebuildCounter != lastConsumedRebuildCounter)
+            return false; // a full rebuild happened since the caller's last render; ring layout may have changed arbitrarily.
+         if (newSamplesSinceLastConsumed < 0)
+            return false; // totalSamplesPublished went backward -- should never happen, guards against stale/bogus caller state.
+         if (newSamplesSinceLastConsumed >= dataSet.size)
+            return false; // more new samples arrived than the buffer holds; "just patch the trailing window" no longer covers everything that changed.
+         return true;
       }
    }
 
