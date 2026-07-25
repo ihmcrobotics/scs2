@@ -25,6 +25,7 @@ import us.ihmc.yoVariables.registry.YoRegistry;
 import us.ihmc.yoVariables.tools.YoTools;
 import us.ihmc.yoVariables.variable.YoLong;
 
+import java.io.Closeable;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -37,7 +38,7 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 
-public class MCAPLogFileReader
+public class MCAPLogFileReader implements Closeable
 {
    public static final Set<String> SCHEMA_TO_IGNORE = Set.of("foxglove::Grid", "foxglove::SceneUpdate", "foxglove::FrameTransforms", "HandDeviceHealth");
    public static final Path SCS2_MCAP_DEBUG_HOME = SessionIOTools.SCS2_HOME.resolve("mcap-debug");
@@ -58,6 +59,7 @@ public class MCAPLogFileReader
    private final File mcapFile;
    private final YoRegistry mcapRegistry;
    private final MCAP mcap;
+   private final FileInputStream mcapFileInputStream;
    private final MCAPBufferedChunk chunkBuffer;
    private final MCAPMessageManager messageManager;
    private final MCAPConsoleLogManager consoleLogManager;
@@ -97,56 +99,101 @@ public class MCAPLogFileReader
       this.mcapRegistry = mcapRegistry;
       mcapRegistry.addChild(propertiesRegistry);
       long startTime = System.nanoTime();
-      FileInputStream mcapFileInputStream = new FileInputStream(mcapFile);
-      FileChannel mcapFileChannel = mcapFileInputStream.getChannel();
-      LogTools.info("Opened file channel in {} ms.", TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTime));
-      startTime = System.nanoTime();
-      mcap = new MCAP(mcapFileChannel); // On 10GB log file, this takes about 4-5 seconds.
-      LogTools.info("Created MCAP object in {} ms.", TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTime));
-      startTime = System.nanoTime();
-      chunkBuffer = new MCAPBufferedChunk(mcap, desiredLogDT); // On 10GB log file, this takes about 9 seconds.
-      LogTools.info("Created chunk buffer in {} ms.", TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTime));
 
-      startTime = System.nanoTime();
-      messageManager = new MCAPMessageManager(mcap, chunkBuffer, desiredLogDT); // On 10GB log file, this takes about 7 seconds.
-      LogTools.info("Created message manager in {} ms.", TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTime));
+      FileInputStream openedFileInputStream = null;
+      MCAP openedMcap = null;
+      try
+      {
+         openedFileInputStream = new FileInputStream(mcapFile);
+         this.mcapFileInputStream = openedFileInputStream;
+         FileChannel mcapFileChannel = openedFileInputStream.getChannel();
+         LogTools.info("Opened file channel in {} ms.", TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTime));
+         startTime = System.nanoTime();
+         openedMcap = new MCAP(mcapFileChannel); // On 10GB log file, this takes about 4-5 seconds.
+         this.mcap = openedMcap;
+         LogTools.info("Created MCAP object in {} ms.", TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTime));
+         startTime = System.nanoTime();
+         chunkBuffer = new MCAPBufferedChunk(mcap, desiredLogDT); // On 10GB log file, this takes about 9 seconds.
+         LogTools.info("Created chunk buffer in {} ms.", TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTime));
 
-      currentTimestamp.addListener(v -> chunkBuffer.preloadChunks(currentTimestamp.getValue(), TimeUnit.MILLISECONDS.toNanos(500)));
+         startTime = System.nanoTime();
+         messageManager = new MCAPMessageManager(mcap, chunkBuffer, desiredLogDT); // On 10GB log file, this takes about 7 seconds.
+         LogTools.info("Created message manager in {} ms.", TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTime));
 
-      initialTimestamp = messageManager.firstMessageTimestamp();
-      finalTimestamp = messageManager.lastMessageTimestamp();
-      startTime = System.nanoTime();
-      frameTransformManager = new MCAPFrameTransformManager(inertialFrame); // This is fast.
-      mcapRegistry.addChild(frameTransformManager.getRegistry());
-      LogTools.info("Created frame transform manager in {} ms.", TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTime));
+         currentTimestamp.addListener(v -> chunkBuffer.preloadChunks(currentTimestamp.getValue(), TimeUnit.MILLISECONDS.toNanos(500)));
 
-      loadStatistics();
+         initialTimestamp = messageManager.firstMessageTimestamp();
+         finalTimestamp = messageManager.lastMessageTimestamp();
+         startTime = System.nanoTime();
+         frameTransformManager = new MCAPFrameTransformManager(inertialFrame); // This is fast.
+         mcapRegistry.addChild(frameTransformManager.getRegistry());
+         LogTools.info("Created frame transform manager in {} ms.", TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTime));
 
-      startTime = System.nanoTime();
-      // Must run before loadSchemas()/loadChannels(), which exclude this schema from generic decoding: a real
-      // nav_msgs/Odometry message can't be generically decoded at all (PoseWithCovariance.pose nests a field also
-      // named "pose", which SCS2's YoRegistry namespace rules reject), so it's hand-parsed here instead.
-      odometryManager.initialize(mcap);
-      LogTools.info("Created odometry manager in {} ms.", TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTime));
+         loadStatistics();
 
-      startTime = System.nanoTime();
-      loadSchemas(); // On 10GB log file, this takes about 32 seconds.
-      LogTools.info("Loaded schemas in {} ms.", TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTime));
-      startTime = System.nanoTime();
-      loadChannels(); // This is fast.
-      LogTools.info("Loaded channels in {} ms.", TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTime));
+         startTime = System.nanoTime();
+         // Must run before loadSchemas()/loadChannels(), which exclude this schema from generic decoding: a real
+         // nav_msgs/Odometry message can't be generically decoded at all (PoseWithCovariance.pose nests a field also
+         // named "pose", which SCS2's YoRegistry namespace rules reject), so it's hand-parsed here instead.
+         odometryManager.initialize(mcap);
+         LogTools.info("Created odometry manager in {} ms.", TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTime));
 
-      startTime = System.nanoTime();
-      // Runs after loadChannels() (unlike frameTransformManager/odometryManager, which must run before schema
-      // loading to exclude their own schema from generic decoding) since this manager wants the opposite: for
-      // /joint_states to remain generically decoded, and to look up its already-built YoMCAPMessage from yoMessageMap.
-      jointStateManager.initialize(mcap, chunkBuffer, yoMessageMap);
-      LogTools.info("Created joint state manager in {} ms.", TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTime));
+         startTime = System.nanoTime();
+         loadSchemas(); // On 10GB log file, this takes about 32 seconds.
+         LogTools.info("Loaded schemas in {} ms.", TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTime));
+         startTime = System.nanoTime();
+         loadChannels(); // This is fast.
+         LogTools.info("Loaded channels in {} ms.", TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTime));
 
-      startTime = System.nanoTime();
-      // Doing this last to not slow down the loading.
-      consoleLogManager = new MCAPConsoleLogManager(mcap, chunkBuffer, desiredLogDT); // This is fast on the main thread, loading in a separate thread.
-      LogTools.info("Created console log manager in {} ms.", TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTime));
+         startTime = System.nanoTime();
+         // Runs after loadChannels() (unlike frameTransformManager/odometryManager, which must run before schema
+         // loading to exclude their own schema from generic decoding) since this manager wants the opposite: for
+         // /joint_states to remain generically decoded, and to look up its already-built YoMCAPMessage from yoMessageMap.
+         jointStateManager.initialize(mcap, chunkBuffer, yoMessageMap);
+         LogTools.info("Created joint state manager in {} ms.", TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTime));
+
+         startTime = System.nanoTime();
+         // Doing this last to not slow down the loading.
+         consoleLogManager = new MCAPConsoleLogManager(mcap, chunkBuffer, desiredLogDT); // This is fast on the main thread, loading in a separate thread.
+         LogTools.info("Created console log manager in {} ms.", TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTime));
+      }
+      catch (IOException | RuntimeException e)
+      {
+         // Close whatever was successfully opened so far before propagating - otherwise a malformed file leaks
+         // the fd/channel on every failed retry.
+         closeQuietly(openedMcap, openedFileInputStream);
+         throw e;
+      }
+   }
+
+   private static void closeQuietly(MCAP mcap, FileInputStream mcapFileInputStream)
+   {
+      try
+      {
+         if (mcap != null)
+            mcap.close();
+      }
+      catch (Exception e)
+      {
+         LogTools.error("Failed to close MCAP after a failed load: " + e.getMessage());
+      }
+
+      try
+      {
+         if (mcapFileInputStream != null)
+            mcapFileInputStream.close();
+      }
+      catch (IOException e)
+      {
+         LogTools.error("Failed to close MCAP file input stream after a failed load: " + e.getMessage());
+      }
+   }
+
+   @Override
+   public void close() throws IOException
+   {
+      mcap.close();
+      mcapFileInputStream.close();
    }
 
    public long getDesiredLogDT()
