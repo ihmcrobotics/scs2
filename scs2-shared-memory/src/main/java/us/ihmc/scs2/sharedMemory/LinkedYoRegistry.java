@@ -21,12 +21,16 @@ public class LinkedYoRegistry extends LinkedBuffer
    private final LinkedBufferArray linkedYoVariables = new LinkedBufferArray();
    private final Map<YoVariable, LinkedYoVariable> linkedYoVariableMap = new HashMap<>();
    private final List<PushRequestListener> listeners = new ArrayList<>();
-   private final PushRequestListener pushRequestForwarder = target -> listeners.forEach(listener -> listener.pushRequested(this));
+   // Assigned in the constructor (rather than here) since the lambda body reads the `lock` field, which isn't
+   // assigned yet at this point in field-initializer order.
+   private final PushRequestListener pushRequestForwarder;
 
    private YoRegistryChangedListener rootRegistryListener;
    private YoRegistryChangedListener bufferRootRegistryListener;
    private YoRegistry bufferRootRegistry;
 
+   // Only ever read/written while holding `lock` - the lock's own happens-before guarantee is what makes dispose()
+   // visible to every other method here, so this doesn't need to be volatile.
    private boolean isDisposed = false;
 
    LinkedYoRegistry(YoRegistry rootRegistry, YoRegistryBuffer yoRegistryBuffer)
@@ -34,6 +38,19 @@ public class LinkedYoRegistry extends LinkedBuffer
       this.rootRegistry = rootRegistry;
       this.yoRegistryBuffer = yoRegistryBuffer;
       lock = yoRegistryBuffer.getLock();
+      pushRequestForwarder = target ->
+      {
+         lock.lock();
+         try
+         {
+            listeners.forEach(listener -> listener.pushRequested(this));
+         }
+         finally
+         {
+            lock.unlock();
+         }
+      };
+
       setup();
    }
 
@@ -161,25 +178,33 @@ public class LinkedYoRegistry extends LinkedBuffer
 
    public <L extends LinkedYoVariable<T>, T extends YoVariable> L linkYoVariable(T variableToLink, Object initialUser)
    {
-      if (isDisposed)
-         return null;
-
-      LinkedYoVariable linkedYoVariable = linkedYoVariableMap.get(variableToLink);
-
-      if (linkedYoVariable == null)
+      lock.lock();
+      try
       {
-         YoVariableBuffer yoVariableBuffer = yoRegistryBuffer.findYoVariableBuffer(variableToLink);
-         // variableToLink can be a mirror variable that has since been destroy()'d (e.g. an old UI control still
-         // holding a reference to a robot's variable across a reload/replace) - it no longer resolves to a buffer,
-         // so there is nothing to link it to.
-         if (yoVariableBuffer == null)
+         if (isDisposed)
             return null;
-         linkedYoVariable = yoVariableBuffer.newLinkedYoVariable(variableToLink, initialUser);
-         linkedYoVariable.addPushRequestListener(pushRequestForwarder);
-         linkedYoVariables.add(linkedYoVariable);
-      }
 
-      return (L) linkedYoVariable;
+         LinkedYoVariable linkedYoVariable = linkedYoVariableMap.get(variableToLink);
+
+         if (linkedYoVariable == null)
+         {
+            YoVariableBuffer yoVariableBuffer = yoRegistryBuffer.findYoVariableBuffer(variableToLink);
+            // variableToLink can be a mirror variable that has since been destroy()'d (e.g. an old UI control still
+            // holding a reference to a robot's variable across a reload/replace) - it no longer resolves to a buffer,
+            // so there is nothing to link it to.
+            if (yoVariableBuffer == null)
+               return null;
+            linkedYoVariable = yoVariableBuffer.newLinkedYoVariable(variableToLink, initialUser);
+            linkedYoVariable.addPushRequestListener(pushRequestForwarder);
+            linkedYoVariables.add(linkedYoVariable);
+         }
+
+         return (L) linkedYoVariable;
+      }
+      finally
+      {
+         lock.unlock();
+      }
    }
 
    /** {@inheritDoc} */
@@ -187,12 +212,12 @@ public class LinkedYoRegistry extends LinkedBuffer
    @Override
    public void push()
    {
-      if (isDisposed)
-         return;
-
       lock.lock();
       try
       {
+         if (isDisposed)
+            return;
+
          linkedYoVariables.push();
       }
       finally
@@ -205,12 +230,11 @@ public class LinkedYoRegistry extends LinkedBuffer
    @Override
    public boolean pull()
    {
-      if (isDisposed)
-         return false;
-
       lock.lock();
       try
       {
+         if (isDisposed)
+            return false;
          return linkedYoVariables.pull();
       }
       finally
@@ -224,12 +248,11 @@ public class LinkedYoRegistry extends LinkedBuffer
    @Override
    boolean processPush(boolean writeBuffer)
    {
-      if (isDisposed)
-         return false;
-
       lock.lock();
       try
       {
+         if (isDisposed)
+            return false;
          return linkedYoVariables.processPush(writeBuffer);
       }
       finally
@@ -243,12 +266,11 @@ public class LinkedYoRegistry extends LinkedBuffer
    @Override
    void flushPush()
    {
-      if (isDisposed)
-         return;
-
       lock.lock();
       try
       {
+         if (isDisposed)
+            return;
          linkedYoVariables.flushPush();
       }
       finally
@@ -260,19 +282,33 @@ public class LinkedYoRegistry extends LinkedBuffer
    @Override
    void addPushRequestListener(PushRequestListener listener)
    {
-      if (isDisposed)
-         return;
-
-      listeners.add(listener);
+      lock.lock();
+      try
+      {
+         if (isDisposed)
+            return;
+         listeners.add(listener);
+      }
+      finally
+      {
+         lock.unlock();
+      }
    }
 
    @Override
    boolean removePushRequestListener(PushRequestListener listener)
    {
-      if (isDisposed)
-         return false;
-
-      return listeners.remove(listener);
+      lock.lock();
+      try
+      {
+         if (isDisposed)
+            return false;
+         return listeners.remove(listener);
+      }
+      finally
+      {
+         lock.unlock();
+      }
    }
 
    /** {@inheritDoc} */
@@ -280,12 +316,11 @@ public class LinkedYoRegistry extends LinkedBuffer
    @Override
    void prepareForPull()
    {
-      if (isDisposed)
-         return;
-
       lock.lock();
       try
       {
+         if (isDisposed)
+            return;
          linkedYoVariables.prepareForPull();
       }
       finally
@@ -299,13 +334,12 @@ public class LinkedYoRegistry extends LinkedBuffer
    @Override
    boolean hasRequestPending()
    {
-      if (isDisposed)
-         return false;
-
       lock.lock();
 
       try
       {
+         if (isDisposed)
+            return false;
          return linkedYoVariables.hasRequestPending();
       }
       finally
@@ -322,17 +356,25 @@ public class LinkedYoRegistry extends LinkedBuffer
    @Override
    public void dispose()
    {
-      if (isDisposed)
-         return;
+      lock.lock();
+      try
+      {
+         if (isDisposed)
+            return;
 
-      isDisposed = true;
-      linkedYoVariables.dispose();
-      linkedYoVariableMap.clear();
-      listeners.clear();
-      rootRegistry.removeListener(rootRegistryListener);
-      bufferRootRegistry.removeListener(bufferRootRegistryListener);
-      rootRegistryListener = null;
-      bufferRootRegistryListener = null;
-      bufferRootRegistry = null;
+         isDisposed = true;
+         linkedYoVariables.dispose();
+         linkedYoVariableMap.clear();
+         listeners.clear();
+         rootRegistry.removeListener(rootRegistryListener);
+         bufferRootRegistry.removeListener(bufferRootRegistryListener);
+         rootRegistryListener = null;
+         bufferRootRegistryListener = null;
+         bufferRootRegistry = null;
+      }
+      finally
+      {
+         lock.unlock();
+      }
    }
 }
