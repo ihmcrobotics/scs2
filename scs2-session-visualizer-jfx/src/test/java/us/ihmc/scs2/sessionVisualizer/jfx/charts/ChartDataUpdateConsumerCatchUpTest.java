@@ -114,7 +114,7 @@ public class ChartDataUpdateConsumerCatchUpTest
    }
 
    /**
-    * Mirrors {@code YoVariableChartData.publishForCharts()}'s exact bookkeeping (canApplyIncrementally /
+    * Mirrors {@code YoVariableChartData.publishForCharts()}'s exact bookkeeping (applyIncrementalUpdate /
     * incrementallyPatchValuesAndBounds / rebuildEntireDataSet, plus the two new counters), for a single
     * simulated variable. Reimplemented here rather than called directly because the real method is an
     * instance method on {@code YoVariableChartData} wired into a live session/JavaFX pipeline; if its
@@ -124,7 +124,7 @@ public class ChartDataUpdateConsumerCatchUpTest
    private static final class Producer
    {
       private final int bufferSize;
-      private double[] values;
+      private DoubleArray canonicalDataSet;
       private MonotonicIndexDeque maxCandidates, minCandidates;
       private int appliedInPoint = -1, appliedOutPoint = -1;
       private long totalSamplesPublished = 0, structureGeneration = 0;
@@ -182,29 +182,25 @@ public class ChartDataUpdateConsumerCatchUpTest
 
       private ChartDataUpdate apply(BufferSample<double[]> sample, boolean forceRebuild)
       {
-         boolean canIncremental = !forceRebuild && values != null
-                                   && YoVariableChartData.canApplyIncrementally(bufferSize, appliedInPoint, appliedOutPoint, true, sample);
+         boolean canIncremental = !forceRebuild && canonicalDataSet != null
+                                   && YoVariableChartData.applyIncrementalUpdate(bufferSize, appliedInPoint, appliedOutPoint, false, sample);
 
          DoubleArray published;
          if (canIncremental)
          {
-            double[] minMax = YoVariableChartData.incrementallyPatchValuesAndBounds(values, sample, appliedInPoint, maxCandidates, minCandidates);
-            DoubleArray canonical = wrap(values, bufferSize);
-            canonical.valueMin = minMax[0];
-            canonical.valueMax = minMax[1];
+            YoVariableChartData.incrementallyPatchValuesAndBounds(canonicalDataSet, sample, appliedInPoint, maxCandidates, minCandidates);
             totalSamplesPublished += sample.getSampleLength();
-            published = canonical.snapshot();
+            // Publish a snapshot, not the canonical array itself -- mirrors YoVariableChartData.publishForCharts().
+            published = canonicalDataSet.deepCopy();
          }
          else
          {
             maxCandidates = new MonotonicIndexDeque(bufferSize, true);
             minCandidates = new MonotonicIndexDeque(bufferSize, false);
-            DoubleArray rebuilt = YoVariableChartData.rebuildEntireDataSet(values == null ? null : wrap(values, bufferSize), sample, maxCandidates,
-                                                                            minCandidates);
-            values = rebuilt.values;
+            canonicalDataSet = YoVariableChartData.rebuildEntireDataSet(canonicalDataSet, sample, maxCandidates, minCandidates);
             totalSamplesPublished += sample.getSampleLength();
             structureGeneration++;
-            published = rebuilt;
+            published = canonicalDataSet;
          }
 
          appliedInPoint = sample.getBufferProperties().getInPoint();
@@ -234,13 +230,6 @@ public class ChartDataUpdateConsumerCatchUpTest
          assertEquals(expected.getData().get(i).getX(), actual.getData().get(i).getX(), 0.0, context + " index=" + i);
          assertEquals(expected.getData().get(i).getY(), actual.getData().get(i).getY(), 0.0, context + " index=" + i);
       }
-   }
-
-   private static DoubleArray wrap(double[] values, int size)
-   {
-      DoubleArray wrapped = new DoubleArray(size);
-      System.arraycopy(values, 0, wrapped.values, 0, size);
-      return wrapped;
    }
 
    /** Minimal, JavaFX-free {@link YoBufferPropertiesReadOnly} stub for constructing test {@code BufferSample}s. */
