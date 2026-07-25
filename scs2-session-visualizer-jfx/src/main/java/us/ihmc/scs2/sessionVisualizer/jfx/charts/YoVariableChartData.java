@@ -358,13 +358,7 @@ public class YoVariableChartData
    }
 
    /**
-    * Full O(bufferSize) rebuild, used when {@link #applyIncrementalUpdate} says the incremental path
-    * doesn't apply (first load, buffer resize, or anything other than a plain forward append). Recomputes
-    * every slot from scratch via the existing {@link #getValueAt} fallback logic, then primes
-    * {@code maxCandidates}/{@code minCandidates} (assumed freshly constructed/cleared by the caller, sized
-    * to the current buffer size) in the same pass -- replacing the old separate full rescan in
-    * {@link #updateBounds} with equivalent deque-based bookkeeping, so subsequent ticks can use the
-    * incremental path immediately.
+    * Full O(bufferSize) rebuild of everything as we couldn't do an incremental update.
     */
    static DoubleArray rebuildEntireDataSet(DoubleArray previousDataSet, BufferSample<double[]> bufferSample, MonotonicIndexDeque maxCandidates,
                                             MonotonicIndexDeque minCandidates)
