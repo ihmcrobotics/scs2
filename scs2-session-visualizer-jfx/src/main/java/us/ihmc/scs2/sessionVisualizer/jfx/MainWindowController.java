@@ -181,6 +181,12 @@ public class MainWindowController extends ObservedAnimationTimer implements Visu
             controller.setChartConfiguration(change.getValue());
          }
       });
+
+      messager.addFXTopicListener(topics.getYoChartGroupResize(), m ->
+      {
+         if (m.getKey() == null) // No window specified, apply to the main window.
+            yoChartGroupPanelController.resize(m.getValue());
+      });
    }
 
    public void setupViewport3D(Pane viewportPane)

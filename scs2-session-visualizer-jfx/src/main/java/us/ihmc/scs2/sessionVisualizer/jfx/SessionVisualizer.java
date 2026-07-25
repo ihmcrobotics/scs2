@@ -41,6 +41,7 @@ import us.ihmc.scs2.session.SessionDataFilterParameters;
 import us.ihmc.scs2.session.SessionPropertiesHelper;
 import us.ihmc.scs2.sessionVisualizer.jfx.Camera3DRequest.CameraControlRequest;
 import us.ihmc.scs2.sessionVisualizer.jfx.Camera3DRequest.FocalPointRequest;
+import us.ihmc.scs2.sessionVisualizer.jfx.controllers.chart.ChartTable2D.ChartTable2DSize;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoGraphic.YoGraphicFXControllerTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.MultiSessionManager;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.ReferenceFrameManager;
@@ -488,6 +489,12 @@ public class SessionVisualizer
       public void addYoChart(String groupName, Collection<String> variableNames)
       {
          submitMessage(getTopics().getYoChartListAdd(), YoChartConfigurationDefinition.newYoVariableChartList(groupName, variableNames));
+      }
+
+      @Override
+      public void resizeYoChartGroup(int numberOfRows, int numberOfColumns)
+      {
+         submitMessage(getTopics().getYoChartGroupResize(), new Pair<>(null, new ChartTable2DSize(numberOfRows, numberOfColumns)));
       }
 
       @Override
