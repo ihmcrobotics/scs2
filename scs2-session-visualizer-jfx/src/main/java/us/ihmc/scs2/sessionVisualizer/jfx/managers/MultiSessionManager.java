@@ -26,6 +26,7 @@ import us.ihmc.scs2.sessionVisualizer.jfx.SCSGuiConfiguration;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerIOTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerTopics;
 import us.ihmc.scs2.sessionVisualizer.jfx.YoNameDisplay;
+import us.ihmc.scs2.sessionVisualizer.jfx.controllers.chart.ChartTable2D.ChartTable2DSize;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoComposite.entry.YoEntryTabPaneController;
 import us.ihmc.scs2.sessionVisualizer.jfx.session.OpenSessionControlsRequest;
 import us.ihmc.scs2.sessionVisualizer.jfx.session.SessionControlsController;
@@ -264,9 +265,21 @@ public class MultiSessionManager
       SCSGuiConfiguration configuration = SCSGuiConfiguration.defaultLoader(robotName, sessionName);
 
       if (configuration == null || configuration.exists())
+      {
          loadSessionConfiguration(configuration);
-      else // No default configuration, load the one from the robot.
-         loadSessionConfiguration(SCSGuiConfiguration.defaultLoader(robotName));
+      }
+      else
+      { // No default configuration, load the one from the robot.
+         configuration = SCSGuiConfiguration.defaultLoader(robotName);
+         loadSessionConfiguration(configuration);
+      }
+
+      if (configuration == null || !configuration.hasMainYoChartGroupConfiguration())
+      {
+         // No chart layout saved for this robot/session, start with a couple of blank charts instead of an empty grid.
+         // Submitted through the messager (instead of calling the controller directly) since this method isn't always called on the FX Application Thread.
+         toolkit.getMessager().submitMessage(toolkit.getTopics().getYoChartGroupResize(), new Pair<>(null, new ChartTable2DSize(1, 2)));
+      }
    }
 
    private void loadSessionConfiguration(SCSGuiConfiguration configuration)

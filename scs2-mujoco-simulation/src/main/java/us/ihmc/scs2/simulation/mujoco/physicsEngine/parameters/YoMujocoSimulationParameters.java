@@ -23,6 +23,7 @@ public class YoMujocoSimulationParameters implements MujocoSimulationParametersB
    private final YoBoolean useEllipticFrictionCone;
    private final YoDouble frictionSlide;
    private final YoDouble timestep;
+   private final YoBoolean filterParentCollisions;
 
    public YoMujocoSimulationParameters(String prefix, YoRegistry registry)
    {
@@ -38,6 +39,7 @@ public class YoMujocoSimulationParameters implements MujocoSimulationParametersB
       useEllipticFrictionCone = new YoBoolean(prefix + "UseEllipticFrictionCone", registry);
       frictionSlide = new YoDouble(prefix + "FrictionSlide", registry);
       timestep = new YoDouble(prefix + "Timestep", registry);
+      filterParentCollisions = new YoBoolean(prefix + "FilterParentCollisions", registry);
 
       set(MujocoSimulationParameters.defaultMujocoSimulationParameters());
    }
@@ -184,5 +186,17 @@ public class YoMujocoSimulationParameters implements MujocoSimulationParametersB
    public void setTimestep(double timestep)
    {
       this.timestep.set(timestep);
+   }
+
+   @Override
+   public boolean getFilterParentCollisions()
+   {
+      return filterParentCollisions.getValue();
+   }
+
+   @Override
+   public void setFilterParentCollisions(boolean filterParentCollisions)
+   {
+      this.filterParentCollisions.set(filterParentCollisions);
    }
 }

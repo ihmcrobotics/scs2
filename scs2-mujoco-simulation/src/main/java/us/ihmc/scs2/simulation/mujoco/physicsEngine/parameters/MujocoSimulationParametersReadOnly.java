@@ -29,4 +29,10 @@ public interface MujocoSimulationParametersReadOnly
    double getFrictionSlide();
 
    double getTimestep();
+
+   /**
+    * When true, MuJoCo filters contact between each body and its parent (adjacent link pairs in the
+    * kinematic tree). This prevents overlapping URDF collision meshes at joints from exploding.
+    */
+   boolean getFilterParentCollisions();
 }
