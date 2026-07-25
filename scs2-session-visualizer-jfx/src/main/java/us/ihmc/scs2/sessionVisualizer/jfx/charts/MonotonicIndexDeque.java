@@ -1,45 +1,45 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.charts;
 
+import java.util.ArrayDeque;
+import java.util.Deque;
+
 /**
- * Fixed-capacity circular deque of ring-buffer indices, maintained so that the entry at the front is
- * always the current extremum (max, or min, depending on {@code trackMax}) candidate over the set of
- * indices currently held. Backed by a single {@code int[]} sized to the ring buffer's capacity, so
- * steady-state push/pop is allocation-free. Pure index/array logic, no JavaFX or SCS2 buffer types,
- * so it is unit-testable in isolation without the JavaFX toolkit.
+ * Deque of indices, maintained so that the entry at the front is always the current extremum
+ * (max, or min, depending on {@code trackMax}) of the indices currently being held. Backed by an
+ * {@link ArrayDeque}, so this is not off the JavaFX application thread's allocation-free hot path
+ * -- boxing {@code Integer}s is an acceptable tradeoff here since this is not a realtime thread.
  */
 class MonotonicIndexDeque
 {
-   private final int[] indices;
+   private final Deque<Integer> indices = new ArrayDeque<>();
+   private final int ringBufferSize;
    private final boolean trackMax;
-   private int head;
-   private int size;
 
    MonotonicIndexDeque(int ringBufferSize, boolean trackMax)
    {
-      indices = new int[ringBufferSize];
+      this.ringBufferSize = ringBufferSize;
       this.trackMax = trackMax;
    }
 
    void clear()
    {
-      head = 0;
-      size = 0;
+      indices.clear();
    }
 
    boolean isEmpty()
    {
-      return size == 0;
+      return indices.isEmpty();
    }
 
    int size()
    {
-      return size;
+      return indices.size();
    }
 
    /** Ring-buffer index of the current extremum candidate. Caller must check {@link #isEmpty()} first. */
    int peekFrontIndex()
    {
-      return indices[head];
+      return indices.peekFirst();
    }
 
    /**
@@ -54,12 +54,11 @@ class MonotonicIndexDeque
     */
    void pushCandidate(int newIndex, double newValue, double[] values)
    {
-      while (size > 0 && dominated(values[indices[tailSlot()]], newValue))
-         size--;
-      if (size == indices.length)
+      while (!indices.isEmpty() && dominated(values[indices.peekLast()], newValue))
+         indices.removeLast();
+      if (indices.size() == ringBufferSize)
          throw new IllegalStateException("Deque capacity exceeded: more live candidates than ring buffer slots.");
-      indices[(head + size) % indices.length] = newIndex;
-      size++;
+      indices.addLast(newIndex);
    }
 
    /**
@@ -70,16 +69,8 @@ class MonotonicIndexDeque
     */
    void evictIfFront(int evictedIndex)
    {
-      if (size > 0 && indices[head] == evictedIndex)
-      {
-         head = (head + 1) % indices.length;
-         size--;
-      }
-   }
-
-   private int tailSlot()
-   {
-      return (head + size - 1) % indices.length;
+      if (!indices.isEmpty() && indices.peekFirst() == evictedIndex)
+         indices.removeFirst();
    }
 
    /**
