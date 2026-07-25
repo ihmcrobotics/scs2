@@ -867,7 +867,7 @@ public class YoChartPanelController extends ObservedAnimationTimer implements Vi
          {
             newData.readUpdate(series, lastConsumedTotalSamples, lastConsumedStructureGeneration);
             lastConsumedTotalSamples = newData.getTotalSamplesPublished();
-            lastConsumedStructureGeneration = newData.getStructureGeneration();
+            lastConsumedStructureGeneration = newData.getRebuildCounter();
          }
       }
 

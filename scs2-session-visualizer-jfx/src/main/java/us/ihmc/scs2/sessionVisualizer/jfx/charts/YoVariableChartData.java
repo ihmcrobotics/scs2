@@ -45,15 +45,16 @@ public class YoVariableChartData
    private MonotonicIndexDeque maxCandidates, minCandidates;
    // Bookkeeping for the max and min candidates
    private int previousSize = -1, previousInPoint = -1, previousOutPoint = -1;
+
    /** Monotonic count of new samples ever applied to {@link #lastDataSet}, across this instance's whole lifetime. */
    private long totalSamplesPublished = 0;
    /**
-    * Bumped on every full rebuild (never on an incremental patch or bounds-only update). The sole
-    * correctness contract {@link ChartDataUpdate#readUpdate} relies on: if this differs from what a caller
-    * last observed, ring positions outside the naive "trailing N samples" window may have changed too
-    * (e.g. via a same-size buffer rotation), so a full repaint is required rather than a partial patch.
+    * Bumped on every full rebuild, not on incremental rebuilds. If this differs from what a caller
+    * last observed, ring positions outside the naive "trailing N samples" window may have changed too,
+    * so a full repaint is required rather than a partial patch.
     */
-   private long structureGeneration = 0;
+   private long fullBufferRebuildCounter = 0;
+
    private final Queue<Object> callerIDs = new ConcurrentLinkedQueue<>();
    private final Map<Object, ChartDataUpdate> newChartDataUpdate = new ConcurrentHashMap<>();
 
@@ -230,7 +231,7 @@ public class YoVariableChartData
                previousInPoint = newProperties.getInPoint();
                previousOutPoint = newProperties.getOutPoint();
                totalSamplesPublished += newBufferSample.getSampleLength();
-               structureGeneration++;
+               fullBufferRebuildCounter++;
             }
             // Safe to publish directly: freshly built, never shared with any caller yet.
             publishedDataSet = rebuilt;
@@ -245,7 +246,7 @@ public class YoVariableChartData
       else
          throw new IllegalStateException("Should not get here.");
 
-      ChartDataUpdate chartDataUpdate = new ChartDataUpdate(publishedDataSet, rawData.getBufferProperties(), totalSamplesPublished, structureGeneration);
+      ChartDataUpdate chartDataUpdate = new ChartDataUpdate(publishedDataSet, rawData.getBufferProperties(), totalSamplesPublished, fullBufferRebuildCounter);
       lastChartDataUpdate = chartDataUpdate;
 
       if (publishedDataSet != null)
@@ -455,25 +456,24 @@ public class YoVariableChartData
       final DoubleArray dataSet;
       private final YoBufferPropertiesReadOnly bufferProperties;
       private final long totalSamplesPublished;
-      private final long structureGeneration;
+      private final long rebuildCounter;
 
-      public ChartDataUpdate(DoubleArray dataSet, YoBufferPropertiesReadOnly bufferProperties, long totalSamplesPublished, long structureGeneration)
+      public ChartDataUpdate(DoubleArray dataSet, YoBufferPropertiesReadOnly bufferProperties, long totalSamplesPublished, long rebuildCounter)
       {
          this.dataSet = dataSet;
          this.bufferProperties = bufferProperties;
          this.totalSamplesPublished = totalSamplesPublished;
-         this.structureGeneration = structureGeneration;
+         this.rebuildCounter = rebuildCounter;
       }
 
       /**
        * Copies {@link #dataSet} into {@code chartDataSet}'s {@code Point2D} list, patching only the ring
        * positions that changed since the caller's last call (tracked via {@code lastConsumedTotalSamples}/
        * {@code lastConsumedStructureGeneration}, which the caller should persist from
-       * {@link #getTotalSamplesPublished()}/{@link #getStructureGeneration()} after each call) whenever that's
-       * provably safe, falling back to a full rewrite otherwise (first call, size change, a rebuild happened
-       * since last consumed, or more than a full buffer's worth of samples were missed).
+       * {@link #getTotalSamplesPublished()}/{@link #getRebuildCounter()} after each call) whenever that's
+       * provably safe, falling back to a full rewrite otherwise.
        */
-      public void readUpdate(NumberSeries chartDataSet, long lastConsumedTotalSamples, long lastConsumedStructureGeneration)
+      public void readUpdate(NumberSeries chartDataSet, long lastConsumedTotalSamples, long lastConsumedRebuildCounter)
       {
          chartDataSet.getLock().writeLock().lock();
 
@@ -489,7 +489,7 @@ public class YoVariableChartData
 
             long newSamplesSinceLastConsumed = totalSamplesPublished - lastConsumedTotalSamples;
             boolean canPatchIncrementally = sizeMatches
-                                             && structureGeneration == lastConsumedStructureGeneration
+                                             && rebuildCounter == lastConsumedRebuildCounter
                                              && newSamplesSinceLastConsumed >= 0
                                              && newSamplesSinceLastConsumed < dataSet.size;
 
@@ -524,9 +524,9 @@ public class YoVariableChartData
          return totalSamplesPublished;
       }
 
-      public long getStructureGeneration()
+      public long getRebuildCounter()
       {
-         return structureGeneration;
+         return rebuildCounter;
       }
    }
 

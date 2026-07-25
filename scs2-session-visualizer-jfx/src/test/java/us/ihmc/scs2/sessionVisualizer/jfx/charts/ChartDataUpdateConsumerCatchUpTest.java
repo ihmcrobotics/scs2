@@ -66,7 +66,7 @@ public class ChartDataUpdateConsumerCatchUpTest
          bruteForceApply(update, referenceSeries);
          update.readUpdate(sutSeries, sutTotal, sutGeneration);
          sutTotal = update.getTotalSamplesPublished();
-         sutGeneration = update.getStructureGeneration();
+         sutGeneration = update.getRebuildCounter();
          assertPointsEqual(referenceSeries, sutSeries, "fill tick=" + tick);
       }
 
@@ -107,7 +107,7 @@ public class ChartDataUpdateConsumerCatchUpTest
          {
             update.readUpdate(sutSeries, sutTotal, sutGeneration);
             sutTotal = update.getTotalSamplesPublished();
-            sutGeneration = update.getStructureGeneration();
+            sutGeneration = update.getRebuildCounter();
             assertPointsEqual(referenceSeries, sutSeries, "bufferSize=" + bufferSize + " tick=" + tick);
          }
       }
