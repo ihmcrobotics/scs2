@@ -15,7 +15,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 public class ChartDataUpdateConsumerCatchUpTest
 {
    // readUpdate's own eligibility check (canPatchIncrementally, in YoVariableChartData.ChartDataUpdate)
-   // is deliberately not unit-tested in isolation the way canApplyIncrementally is in
+   // is deliberately not unit-tested in isolation the way applyIncrementalUpdate is in
    // YoVariableChartDataIncrementalUpdateTest. Instead every test here drives it end-to-end against an
    // independent oracle (bruteForceApply), because the property that actually matters -- "an
    // intermittently-polling consumer never falls behind or renders stale/wrong points" -- is a
@@ -36,7 +36,7 @@ public class ChartDataUpdateConsumerCatchUpTest
 
    /**
     * Narrow, deterministic regression case: buffer is full and steady, consumer skips exactly across a
-    * single scrub tick. This is the sharpest version of the hazard {@code structureGeneration} exists
+    * single scrub tick. This is the sharpest version of the hazard {@code fullBufferRebuildCounter} exists
     * to guard against -- if that counter check were ever dropped or off-by-one, this is the test that
     * would catch a consumer patching only the samples it thinks arrived and leaving the rest of the
     * series stale after a rebuild it never saw.
@@ -50,16 +50,16 @@ public class ChartDataUpdateConsumerCatchUpTest
 
       NumberSeries referenceSeries = new NumberSeries("reference");
       NumberSeries sutSeries = new NumberSeries("sut");
-      long sutTotal = -1, sutGeneration = -1;
+      long sutTotal = -1, sutRebuildCounter = -1;
 
       // Fill the buffer completely first, consumer polling every tick.
       for (int tick = 0; tick < bufferSize + 5; tick++)
       {
          ChartDataUpdate update = producer.applyContiguousTick(random);
          bruteForceApply(update, referenceSeries);
-         update.readUpdate(sutSeries, sutTotal, sutGeneration);
+         update.readUpdate(sutSeries, sutTotal, sutRebuildCounter);
          sutTotal = update.getTotalSamplesPublished();
-         sutGeneration = update.getRebuildCounter();
+         sutRebuildCounter = update.getRebuildCounter();
          assertPointsEqual(referenceSeries, sutSeries, "fill tick=" + tick);
       }
 
@@ -70,7 +70,7 @@ public class ChartDataUpdateConsumerCatchUpTest
       // Next normal tick: SUT polls now, must correctly catch up across the skipped scrub.
       ChartDataUpdate update = producer.applyContiguousTick(random);
       bruteForceApply(update, referenceSeries);
-      update.readUpdate(sutSeries, sutTotal, sutGeneration);
+      update.readUpdate(sutSeries, sutTotal, sutRebuildCounter);
 
       assertPointsEqual(referenceSeries, sutSeries, "post-scrub catch-up");
    }
@@ -81,9 +81,9 @@ public class ChartDataUpdateConsumerCatchUpTest
 
       NumberSeries referenceSeries = new NumberSeries("reference");
       NumberSeries sutSeries = new NumberSeries("sut");
-      // sutTotal/sutGeneration are exactly what a real caller is expected to persist between calls:
+      // sutTotal/sutRebuildCounter are exactly what a real caller is expected to persist between calls:
       // the counters handed back by the previous readUpdate(), fed into the next one.
-      long sutTotal = -1, sutGeneration = -1;
+      long sutTotal = -1, sutRebuildCounter = -1;
 
       for (int tick = 0; tick < tickCount; tick++)
       {
@@ -98,9 +98,9 @@ public class ChartDataUpdateConsumerCatchUpTest
          // unnoticed if readUpdate's catch-up logic were wrong.
          if (random.nextInt(3) != 0)
          {
-            update.readUpdate(sutSeries, sutTotal, sutGeneration);
+            update.readUpdate(sutSeries, sutTotal, sutRebuildCounter);
             sutTotal = update.getTotalSamplesPublished();
-            sutGeneration = update.getRebuildCounter();
+            sutRebuildCounter = update.getRebuildCounter();
             assertPointsEqual(referenceSeries, sutSeries, "bufferSize=" + bufferSize + " tick=" + tick);
          }
       }
@@ -111,8 +111,8 @@ public class ChartDataUpdateConsumerCatchUpTest
     * incrementallyPatchValuesAndBounds / rebuildEntireDataSet, plus the two new counters), for a single
     * simulated variable. Reimplemented here rather than called directly because the real method is an
     * instance method on {@code YoVariableChartData} wired into a live session/JavaFX pipeline; if its
-    * bookkeeping (when {@code structureGeneration} increments, in particular) ever changes, this class
-    * needs a matching update.
+    * bookkeeping (when {@code fullBufferRebuildCounter} increments, in particular) ever changes, this
+    * class needs a matching update.
     */
    private static final class Producer
    {
@@ -120,7 +120,7 @@ public class ChartDataUpdateConsumerCatchUpTest
       private DoubleArray canonicalDataSet;
       private MonotonicIndexDeque maxCandidates, minCandidates;
       private int appliedInPoint = -1, appliedOutPoint = -1;
-      private long totalSamplesPublished = 0, structureGeneration = 0;
+      private long totalSamplesPublished = 0, fullBufferRebuildCounter = 0;
       private int outPoint = -1, activeLength = 0;
 
       Producer(int bufferSize)
@@ -150,8 +150,8 @@ public class ChartDataUpdateConsumerCatchUpTest
 
       /**
        * A discontinuous jump to an unrelated position -- simulates a same-size crop/scrub/resend.
-       * Forces a full rebuild (structureGeneration++), which is exactly the case a consumer must
-       * detect via the generation counter rather than assuming its own incremental patch still applies.
+       * Forces a full rebuild (fullBufferRebuildCounter++), which is exactly the case a consumer must
+       * detect via the rebuild counter rather than assuming its own incremental patch still applies.
        */
       ChartDataUpdate applyScrubTick(Random random)
       {
@@ -192,14 +192,14 @@ public class ChartDataUpdateConsumerCatchUpTest
             minCandidates = new MonotonicIndexDeque(bufferSize, false);
             canonicalDataSet = YoVariableChartData.rebuildEntireDataSet(canonicalDataSet, sample, maxCandidates, minCandidates);
             totalSamplesPublished += sample.getSampleLength();
-            structureGeneration++;
+            fullBufferRebuildCounter++;
             published = canonicalDataSet;
          }
 
          appliedInPoint = sample.getBufferProperties().getInPoint();
          appliedOutPoint = sample.getBufferProperties().getOutPoint();
 
-         return new ChartDataUpdate(published, sample.getBufferProperties(), totalSamplesPublished, structureGeneration);
+         return new ChartDataUpdate(published, sample.getBufferProperties(), totalSamplesPublished, fullBufferRebuildCounter);
       }
    }
 
