@@ -20,8 +20,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Drives a robot's state from a decoded {@code persona_proto.ControllerState} protobuf channel (see
- * {@link YoMCAPProtobufMessage}), for files where the standard {@code /tf}/{@code /joint_states} channels are
+ * Drives a robot's state from a decoded protobuf channel (see {@link YoMCAPProtobufMessage}) whose message shape
+ * matches a robot controller state - a {@code robot_state} field with {@code floating_base_state} and
+ * {@code joint_states} sub-messages - for files where the standard {@code /tf}/{@code /joint_states} channels are
  * empty and this is the only channel carrying complete robot state.
  * <p>
  * Reads the root pose/twist from {@code robot_state.floating_base_state} and each one-DoF joint's
@@ -31,13 +32,8 @@ import java.util.List;
  */
 public class MCAPControllerStateBasedRobotStateUpdater implements RobotStateUpdater
 {
-   private static final String CONTROLLER_STATE_SCHEMA_NAME = "persona_proto.ControllerState";
-
    public static boolean isRobotControllerStateMessage(Robot robot, YoMCAPProtobufMessage message)
    {
-      if (!CONTROLLER_STATE_SCHEMA_NAME.equals(message.getDescriptor().getFullName()))
-         return false;
-
       YoRegistry jointStates = jointStatesRegistry(message);
       if (jointStates == null || floatingBaseStateRegistry(message) == null)
          return false;
