@@ -230,6 +230,19 @@ public class MCAPBufferedFileChannelInput implements MCAPDataInput
       }
    }
 
+   @Override
+   public void close()
+   {
+      try
+      {
+         fileChannel.close();
+      }
+      catch (IOException e)
+      {
+         throw new RuntimeException(e);
+      }
+   }
+
    // For testing purpose
    long _pos()
    {

@@ -62,6 +62,10 @@ public interface MCAPDataInput
 
    ByteBuffer getDecompressedByteBuffer(long offset, int compressedLength, int uncompressedLength, Compression compression, boolean direct);
 
+   default void close()
+   {
+   }
+
    static MCAPDataInput wrap(FileChannel fileChannel)
    {
       return new MCAPBufferedFileChannelInput(fileChannel);
