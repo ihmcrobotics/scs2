@@ -13,19 +13,7 @@ public class FrameNode
    private final Affine nodePose = new Affine();
 
    /**
-    * Deep copy of the transform last actually applied to {@link #nodePose}, so {@link #updatePose()} can
-    * skip the write when {@link #referenceFrame}'s transform-to-root hasn't changed since -- common even
-    * while a robot is actively moving, since most ticks only a subset of joints change and the rest of the
-    * kinematic tree (and any frame not downstream of a moving joint) holds still. {@code null} forces the
-    * first call to always apply.
-    * <p>
-    * This early-return is about avoiding allocation, not redundant with what {@link Affine}'s own
-    * per-component setters (e.g. {@code setMxx}) already skip. Those setters no-op the JavaFX
-    * invalidation when a component is unchanged, but only for {@link #nodePose} itself -- they can't
-    * avoid work that happens before any per-component comparison. Without this check, every call would
-    * still allocate a throwaway {@code Affine} (via
-    * {@code JavaFXMissingTools.createRigidBodyTransformToAffine}) and populate its 12 fields just to
-    * find out nothing needed to change, every JavaFX pulse, for every {@link FrameNode} in the scene.
+    * Deep copy of the transform last actually
     */
    private RigidBodyTransform lastAppliedTransform;
 
