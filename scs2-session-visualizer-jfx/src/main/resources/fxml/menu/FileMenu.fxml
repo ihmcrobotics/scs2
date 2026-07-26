@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import de.jensd.fx.glyphs.octicons.OctIconView?>
 <?import javafx.scene.control.Menu?>
 <?import javafx.scene.control.MenuItem?>
 <?import org.kordamp.ikonli.javafx.FontIcon?>
@@ -90,12 +89,12 @@
         </MenuItem>
         <MenuItem fx:id="closeMenuItem" onAction="#close" text="Close">
             <graphic>
-                <OctIconView>
+                <FontIcon>
                     <styleClass>
                         <String fx:value="close-icon-view"/>
                         <String fx:value="menu-item-icon-view"/>
                     </styleClass>
-                </OctIconView>
+                </FontIcon>
             </graphic>
         </MenuItem>
     </items>

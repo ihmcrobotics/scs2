@@ -168,13 +168,13 @@
 .double-precision-icon-view {
     -fx-fill: black;
     -glyph-name: NUMERIC;
-    -fx-icon-code: "fa-numeric";
+    -fx-icon-code: "mdi2n-numeric";
 }
 
 .close-icon-view {
     -fx-fill: -default-pale-red;
     -glyph-name: SIGN_IN;
-    -fx-icon-code: "fa-sign-in";
+    -fx-icon-code: "oct-sign-in-16";
 }
 
 .playback-realtime-rate-icon-view {
@@ -225,7 +225,7 @@
 .create-icon-view {
     -fx-fill: -default-pale-blue;
     -glyph-name: ALPHA;
-    -fx-icon-code: "fa-alpha";
+    -fx-icon-code: "mdi2a-alpha";
 }
 
 .load-icon-view {
@@ -643,7 +643,8 @@
 .alias-cleanup-icon-view {
     -fx-fill: rgb(138, 62, 189);
     -glyph-name: BROOM;
-    -fx-icon-code: "fa-broom";
+    -fx-icon-code: "mdi2b-broom";
+    -fx-icon-size: 24;
 }
 
 /*******************************************************************************

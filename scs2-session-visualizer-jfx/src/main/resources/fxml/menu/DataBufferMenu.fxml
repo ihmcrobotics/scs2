@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <?import com.jfoenix.controls.JFXTextField?>
-<?import de.jensd.fx.glyphs.materialdesignicons.MaterialDesignIconView?>
 <?import javafx.scene.control.CheckMenuItem?>
 <?import javafx.scene.control.CustomMenuItem?>
 <?import javafx.scene.control.Label?>
@@ -70,12 +69,12 @@
             <content>
                 <HBox alignment="CENTER" spacing="5.0">
                     <children>
-                        <MaterialDesignIconView>
+                        <FontIcon>
                             <styleClass>
                                 <String fx:value="double-precision-icon-view"/>
                                 <String fx:value="menu-item-icon-view"/>
                             </styleClass>
-                        </MaterialDesignIconView>
+                        </FontIcon>
                         <Label text="Number precision:" textFill="#000000fc"/>
                         <Spinner fx:id="numberPrecisionSpinner" prefWidth="70.0"/>
                     </children>
