@@ -33,7 +33,13 @@ mainDependencies {
    api("us.ihmc:euclid:0.22.5")
    api("us.ihmc:euclid-shape:0.22.5")
    api("us.ihmc:euclid-frame:0.22.5")
-   api("us.ihmc:ihmc-video-codecs:2.1.6")
+   val ffmpegVersion = "7.1-1.5.11"
+   api("org.bytedeco:javacv:1.5.11")
+   api("org.bytedeco:ffmpeg:$ffmpegVersion")
+   api("org.bytedeco:ffmpeg:$ffmpegVersion:linux-arm64")
+   api("org.bytedeco:ffmpeg:$ffmpegVersion:linux-x86_64")
+   api("org.bytedeco:ffmpeg:$ffmpegVersion:macosx-arm64")
+   api("org.bytedeco:ffmpeg:$ffmpegVersion:windows-x86_64")
    api("us.ihmc:ihmc-javafx-extensions:17-0.2.2")
    api("us.ihmc:ihmc-messager-javafx:0.2.1")
 

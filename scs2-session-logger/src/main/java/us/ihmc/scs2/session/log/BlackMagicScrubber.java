@@ -1,8 +1,9 @@
 package us.ihmc.scs2.session.log;
 
 import logger_msgs.Camera;
-import us.ihmc.codecs.demuxer.MP4VideoDemuxer;
-import us.ihmc.codecs.generated.YUVPicture;
+import org.bytedeco.javacv.Frame;
+import us.ihmc.robotDataLogger.logger.MagewellDemuxer;
+import us.ihmc.robotDataLogger.logger.MagewellMuxer;
 
 import java.io.File;
 import java.io.IOException;
@@ -16,9 +17,8 @@ public class BlackMagicScrubber
    private final TimestampScrubber timestampScrubber;
    private final String name;
 
-   private final MP4VideoDemuxer demuxer;
+   private final MagewellDemuxer demuxer;
 
-   private final File videoFile;
    private final Camera camera;
    private long videoTimestamp;
    private long currentRobotTimestamp;
@@ -34,20 +34,20 @@ public class BlackMagicScrubber
          System.err.println("Video data is using timestamps instead of frame numbers. Falling back to seeking based on timestamp.");
       }
 
-      videoFile = new File(dataDirectory, camera.getVideoFileAsString());
+      File videoFile = new File(dataDirectory, camera.getVideoFileAsString());
 
       if (!videoFile.exists())
       {
          throw new IOException("Cannot find video: " + videoFile);
       }
 
-      demuxer = new MP4VideoDemuxer(videoFile);
+      demuxer = new MagewellDemuxer(videoFile);
 
       File timestampFile = new File(dataDirectory, camera.getTimestampFileAsString());
       this.timestampScrubber = new TimestampScrubber(timestampFile, hasTimeBase, interlaced);
    }
 
-   public YUVPicture readVideoFrame(long queryRobotTimestamp) throws IOException
+   public Frame readVideoFrame(long queryRobotTimestamp)
    {
       videoTimestamp = timestampScrubber.getVideoTimestampFromRobotTimestamp(queryRobotTimestamp);
       currentRobotTimestamp = timestampScrubber.getCurrentRobotTimestamp();
@@ -57,42 +57,71 @@ public class BlackMagicScrubber
       return demuxer.getNextFrame(); // Increment frame index after getting frame.
    }
 
-   public void cropVideo(File outputFile, File timestampFile, long startTimestamp, long endTimestamp, ProgressConsumer monitor) throws IOException
+   public void cropVideo(File outputFile, File timestampFile, long startTimestamp, long endTimestamp, ProgressConsumer progressConsumer) throws IOException
    {
       long startVideoTimestamp = timestampScrubber.getVideoTimestampFromRobotTimestamp(startTimestamp);
       long endVideoTimestamp = timestampScrubber.getVideoTimestampFromRobotTimestamp(endTimestamp);
 
-      int framerate = VideoConverter.cropBlackMagicVideo(videoFile, outputFile, startVideoTimestamp, endVideoTimestamp, monitor);
+      long[] robotTimestampsForCroppedLog = timestampScrubber.getCroppedRobotTimestamps(startTimestamp, endTimestamp);
+      long[] videoTimestampsForCroppedLog = new long[robotTimestampsForCroppedLog.length];
+      int i = 0;
+
+      // This stuff is used to print to SCS2 so the user knows how the cropped log is going, progress wise
+      long startFrame = getFrameAtTimestamp(startVideoTimestamp, demuxer); // This also moves the stream to the startFrame
+      long endFrame = getFrameAtTimestamp(endVideoTimestamp, demuxer);
+      long numberOfFrames = endFrame - startFrame;
+      int frameRate = (int) demuxer.getFrameRate();
+
+      demuxer.seekToPTS(startVideoTimestamp);
 
       PrintWriter timestampWriter = new PrintWriter(timestampFile);
-      timestampWriter.println(1);
-      timestampWriter.println(framerate);
+      timestampWriter.println(1 + "\n" + frameRate);
 
-      long pts = 0;
-      /*
-       * PTS gets reordered to be monotonically increasing starting from 0
-       */
-      for (int i = 0; i < timestampScrubber.getRobotTimestampsLength(); i++)
+      MagewellMuxer muxer = new MagewellMuxer(outputFile, demuxer.getImageWidth(), demuxer.getImageHeight());
+      muxer.start();
+
+      Frame frame;
+      while (i < videoTimestampsForCroppedLog.length && (frame = demuxer.getNextFrame()) != null && demuxer.getFrameNumber() <= endFrame)
       {
-         long robotTimestamp = timestampScrubber.getRobotTimestampAtIndex(i);
+         // Skip non-video packets (audio, timecode) that grabFrame() returns from multi-stream MP4s.
+         if (frame.image == null || frame.imageWidth <= 0 || frame.imageHeight <= 0)
+            continue;
 
-         if (robotTimestamp >= startTimestamp && robotTimestamp <= endTimestamp)
+         // Use the frame's original PTS (relative to the crop start) so playback speed matches the source
+         // recording, regardless of how fast this machine happens to decode/encode during cropping.
+         long videoTimestamp = demuxer.getCurrentPTS() - startVideoTimestamp;
+         muxer.recordFrame(frame, videoTimestamp);
+         videoTimestampsForCroppedLog[i] = muxer.getTimeStamp();
+         i++;
+
+         if (progressConsumer != null)
          {
-            timestampWriter.print(robotTimestamp);
-            timestampWriter.print(" ");
-            timestampWriter.println(pts);
-            pts++;
-         }
-         else if (robotTimestamp > endTimestamp)
-         {
-            break;
+            progressConsumer.info("frame %d/%d".formatted(demuxer.getFrameNumber() - startFrame, numberOfFrames));
+            progressConsumer.progress((double) (demuxer.getFrameNumber() - startFrame) / (double) numberOfFrames);
          }
       }
 
+      // i may be less than videoTimestampsForCroppedLog.length if the demuxer ran out of frames before reaching
+      // endFrame (e.g. seeking landed short on an old, keyframe-less recording); only pair up what was actually written.
+      int framesWritten = i;
+      for (i = 0; i < framesWritten; i++)
+      {
+         timestampWriter.print(robotTimestampsForCroppedLog[i]);
+         timestampWriter.print(" ");
+         timestampWriter.println(videoTimestampsForCroppedLog[i]);
+      }
+
+      muxer.close();
       timestampWriter.close();
    }
 
-   public MP4VideoDemuxer getDemuxer()
+   private static long getFrameAtTimestamp(long endCameraTimestamp, MagewellDemuxer demuxer)
+   {
+      demuxer.seekToPTS(endCameraTimestamp);
+      return demuxer.getFrameNumber();
+   }
+
+   public MagewellDemuxer getDemuxer()
    {
       return demuxer;
    }
