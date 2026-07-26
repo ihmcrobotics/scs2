@@ -70,147 +70,159 @@ import java.util.jar.JarFile;
  */
 public class DefinitionIOTools
 {
-   private static final JAXBContext definitionContext;
-
-   // Load all the resources in the classpath to ensure they are available for the JAXB context.
-   static
+   /**
+    * Initialization-on-demand holder: building this {@link JAXBContext} scans ~100 bound classes via
+    * reflection and costs a measurable chunk of startup time. It's only actually needed the first time
+    * something is loaded/saved as XML, so it shouldn't be paid on every application launch.
+    */
+   private static class DefinitionContextHolder
    {
-      try
+      private static final JAXBContext INSTANCE = createDefinitionContext();
+
+      private static JAXBContext createDefinitionContext()
       {
-         List<Class<?>> classesToBeBound = new ArrayList<>();
-         classesToBeBound.add(CollisionShapeDefinition.class);
-         classesToBeBound.add(TerrainObjectDefinition.class);
+         try
+         {
+            List<Class<?>> classesToBeBound = new ArrayList<>();
+            classesToBeBound.add(CollisionShapeDefinition.class);
+            classesToBeBound.add(TerrainObjectDefinition.class);
 
-         // GeometryDefinitions
-         classesToBeBound.add(GeometryDefinition.class);
-         classesToBeBound.add(ArcTorus3DDefinition.class);
-         classesToBeBound.add(Box3DDefinition.class);
-         classesToBeBound.add(Capsule3DDefinition.class);
-         classesToBeBound.add(Cone3DDefinition.class);
-         //         classesToBeBound.add(ConvexPolytope3DDefinition.class); TODO Figure this one out
-         classesToBeBound.add(Cylinder3DDefinition.class);
-         classesToBeBound.add(Ellipsoid3DDefinition.class);
-         classesToBeBound.add(ExtrudedPolygon2DDefinition.class);
-         //         classesToBeBound.add(ExtrusionDefinition.class); TODO Figure this one out
-         classesToBeBound.add(HemiEllipsoid3DDefinition.class);
-         classesToBeBound.add(ModelFileGeometryDefinition.class);
-         classesToBeBound.add(Point3DDefinition.class);
-         classesToBeBound.add(Polygon2DDefinition.class);
-         classesToBeBound.add(Polygon3DDefinition.class);
-         classesToBeBound.add(PyramidBox3DDefinition.class);
-         classesToBeBound.add(Ramp3DDefinition.class);
-         classesToBeBound.add(Sphere3DDefinition.class);
-         classesToBeBound.add(STPBox3DDefinition.class);
-         classesToBeBound.add(STPCapsule3DDefinition.class);
-         //         classesToBeBound.add(STPConvexPolytope3DDefinition.class); TODO Figure this one out
-         classesToBeBound.add(STPCylinder3DDefinition.class);
-         classesToBeBound.add(STPRamp3DDefinition.class);
-         classesToBeBound.add(Tetrahedron3DDefinition.class);
-         classesToBeBound.add(Torus3DDefinition.class);
-         classesToBeBound.add(TriangleMesh3DDefinition.class);
-         classesToBeBound.add(TruncatedCone3DDefinition.class);
+            // GeometryDefinitions
+            classesToBeBound.add(GeometryDefinition.class);
+            classesToBeBound.add(ArcTorus3DDefinition.class);
+            classesToBeBound.add(Box3DDefinition.class);
+            classesToBeBound.add(Capsule3DDefinition.class);
+            classesToBeBound.add(Cone3DDefinition.class);
+            //         classesToBeBound.add(ConvexPolytope3DDefinition.class); TODO Figure this one out
+            classesToBeBound.add(Cylinder3DDefinition.class);
+            classesToBeBound.add(Ellipsoid3DDefinition.class);
+            classesToBeBound.add(ExtrudedPolygon2DDefinition.class);
+            //         classesToBeBound.add(ExtrusionDefinition.class); TODO Figure this one out
+            classesToBeBound.add(HemiEllipsoid3DDefinition.class);
+            classesToBeBound.add(ModelFileGeometryDefinition.class);
+            classesToBeBound.add(Point3DDefinition.class);
+            classesToBeBound.add(Polygon2DDefinition.class);
+            classesToBeBound.add(Polygon3DDefinition.class);
+            classesToBeBound.add(PyramidBox3DDefinition.class);
+            classesToBeBound.add(Ramp3DDefinition.class);
+            classesToBeBound.add(Sphere3DDefinition.class);
+            classesToBeBound.add(STPBox3DDefinition.class);
+            classesToBeBound.add(STPCapsule3DDefinition.class);
+            //         classesToBeBound.add(STPConvexPolytope3DDefinition.class); TODO Figure this one out
+            classesToBeBound.add(STPCylinder3DDefinition.class);
+            classesToBeBound.add(STPRamp3DDefinition.class);
+            classesToBeBound.add(Tetrahedron3DDefinition.class);
+            classesToBeBound.add(Torus3DDefinition.class);
+            classesToBeBound.add(TriangleMesh3DDefinition.class);
+            classesToBeBound.add(TruncatedCone3DDefinition.class);
 
-         // SensorDefinitions
-         classesToBeBound.add(SensorDefinition.class);
-         classesToBeBound.add(CameraSensorDefinition.class);
-         classesToBeBound.add(IMUSensorDefinition.class);
-         classesToBeBound.add(LidarSensorDefinition.class);
-         classesToBeBound.add(WrenchSensorDefinition.class);
+            // SensorDefinitions
+            classesToBeBound.add(SensorDefinition.class);
+            classesToBeBound.add(CameraSensorDefinition.class);
+            classesToBeBound.add(IMUSensorDefinition.class);
+            classesToBeBound.add(LidarSensorDefinition.class);
+            classesToBeBound.add(WrenchSensorDefinition.class);
 
-         // Key robot points
-         classesToBeBound.add(KinematicPointDefinition.class);
-         classesToBeBound.add(ExternalWrenchPointDefinition.class);
-         classesToBeBound.add(GroundContactPointDefinition.class);
+            // Key robot points
+            classesToBeBound.add(KinematicPointDefinition.class);
+            classesToBeBound.add(ExternalWrenchPointDefinition.class);
+            classesToBeBound.add(GroundContactPointDefinition.class);
 
-         // RobotDefinition
-         classesToBeBound.add(RobotDefinition.class);
-         classesToBeBound.add(RobotStateDefinition.class);
-         classesToBeBound.add(RigidBodyDefinition.class);
-         classesToBeBound.add(JointDefinition.class);
-         classesToBeBound.add(FixedJointDefinition.class);
-         classesToBeBound.add(OneDoFJointDefinition.class);
-         classesToBeBound.add(CrossFourBarJointDefinition.class);
-         classesToBeBound.add(PrismaticJointDefinition.class);
-         classesToBeBound.add(RevoluteJointDefinition.class);
-         classesToBeBound.add(PlanarJointDefinition.class);
-         classesToBeBound.add(SixDoFJointDefinition.class);
-         classesToBeBound.add(SphericalJointDefinition.class);
+            // RobotDefinition
+            classesToBeBound.add(RobotDefinition.class);
+            classesToBeBound.add(RobotStateDefinition.class);
+            classesToBeBound.add(RigidBodyDefinition.class);
+            classesToBeBound.add(JointDefinition.class);
+            classesToBeBound.add(FixedJointDefinition.class);
+            classesToBeBound.add(OneDoFJointDefinition.class);
+            classesToBeBound.add(CrossFourBarJointDefinition.class);
+            classesToBeBound.add(PrismaticJointDefinition.class);
+            classesToBeBound.add(RevoluteJointDefinition.class);
+            classesToBeBound.add(PlanarJointDefinition.class);
+            classesToBeBound.add(SixDoFJointDefinition.class);
+            classesToBeBound.add(SphericalJointDefinition.class);
 
-         // JointState
-         classesToBeBound.add(JointState.class);
-         classesToBeBound.add(OneDoFJointState.class);
-         classesToBeBound.add(SixDoFJointState.class);
-         classesToBeBound.add(SphericalJointState.class);
-         classesToBeBound.add(PlanarJointState.class);
+            // JointState
+            classesToBeBound.add(JointState.class);
+            classesToBeBound.add(OneDoFJointState.class);
+            classesToBeBound.add(SixDoFJointState.class);
+            classesToBeBound.add(SphericalJointState.class);
+            classesToBeBound.add(PlanarJointState.class);
 
-         // Visuals
-         classesToBeBound.add(PaintDefinition.class);
-         classesToBeBound.add(ColorDefinition.class);
-         classesToBeBound.add(YoColorRGBADoubleDefinition.class);
-         classesToBeBound.add(YoColorRGBAIntDefinition.class);
-         classesToBeBound.add(YoColorRGBASingleDefinition.class);
-         classesToBeBound.add(MaterialDefinition.class);
-         classesToBeBound.add(MaterialScriptDefinition.class);
-         classesToBeBound.add(TextureDefinition.class);
-         classesToBeBound.add(VisualDefinition.class);
+            // Visuals
+            classesToBeBound.add(PaintDefinition.class);
+            classesToBeBound.add(ColorDefinition.class);
+            classesToBeBound.add(YoColorRGBADoubleDefinition.class);
+            classesToBeBound.add(YoColorRGBAIntDefinition.class);
+            classesToBeBound.add(YoColorRGBASingleDefinition.class);
+            classesToBeBound.add(MaterialDefinition.class);
+            classesToBeBound.add(MaterialScriptDefinition.class);
+            classesToBeBound.add(TextureDefinition.class);
+            classesToBeBound.add(VisualDefinition.class);
 
-         // YoGraphicDefinition
-         classesToBeBound.add(YoGraphic2DDefinition.class);
-         classesToBeBound.add(YoGraphic3DDefinition.class);
-         classesToBeBound.add(YoGraphicArrow3DDefinition.class);
-         classesToBeBound.add(YoGraphicBox3DDefinition.class);
-         classesToBeBound.add(YoGraphicCapsule3DDefinition.class);
-         classesToBeBound.add(YoGraphicCone3DDefinition.class);
-         classesToBeBound.add(YoGraphicConvexPolytope3DDefinition.class);
-         classesToBeBound.add(YoGraphicCoordinateSystem3DDefinition.class);
-         classesToBeBound.add(YoGraphicCylinder3DDefinition.class);
-         classesToBeBound.add(YoGraphicDefinition.class);
-         classesToBeBound.add(YoGraphicEllipsoid3DDefinition.class);
-         classesToBeBound.add(YoGraphicGroupDefinition.class);
-         classesToBeBound.add(YoGraphicLine2DDefinition.class);
-         classesToBeBound.add(YoGraphicListDefinition.class);
-         classesToBeBound.add(YoGraphicPoint2DDefinition.class);
-         classesToBeBound.add(YoGraphicPoint3DDefinition.class);
-         classesToBeBound.add(YoGraphicPointcloud2DDefinition.class);
-         classesToBeBound.add(YoGraphicPointcloud3DDefinition.class);
-         classesToBeBound.add(YoGraphicPolygon2DDefinition.class);
-         classesToBeBound.add(YoGraphicPolygonExtruded3DDefinition.class);
-         classesToBeBound.add(YoGraphicPolynomial3DDefinition.class);
-         classesToBeBound.add(YoGraphicRamp3DDefinition.class);
-         classesToBeBound.add(YoGraphicSTPBox3DDefinition.class);
-         classesToBeBound.add(YoGraphicRobotDefinition.class);
-         classesToBeBound.add(YoListDefinition.class);
+            // YoGraphicDefinition
+            classesToBeBound.add(YoGraphic2DDefinition.class);
+            classesToBeBound.add(YoGraphic3DDefinition.class);
+            classesToBeBound.add(YoGraphicArrow3DDefinition.class);
+            classesToBeBound.add(YoGraphicBox3DDefinition.class);
+            classesToBeBound.add(YoGraphicCapsule3DDefinition.class);
+            classesToBeBound.add(YoGraphicCone3DDefinition.class);
+            classesToBeBound.add(YoGraphicConvexPolytope3DDefinition.class);
+            classesToBeBound.add(YoGraphicCoordinateSystem3DDefinition.class);
+            classesToBeBound.add(YoGraphicCylinder3DDefinition.class);
+            classesToBeBound.add(YoGraphicDefinition.class);
+            classesToBeBound.add(YoGraphicEllipsoid3DDefinition.class);
+            classesToBeBound.add(YoGraphicGroupDefinition.class);
+            classesToBeBound.add(YoGraphicLine2DDefinition.class);
+            classesToBeBound.add(YoGraphicListDefinition.class);
+            classesToBeBound.add(YoGraphicPoint2DDefinition.class);
+            classesToBeBound.add(YoGraphicPoint3DDefinition.class);
+            classesToBeBound.add(YoGraphicPointcloud2DDefinition.class);
+            classesToBeBound.add(YoGraphicPointcloud3DDefinition.class);
+            classesToBeBound.add(YoGraphicPolygon2DDefinition.class);
+            classesToBeBound.add(YoGraphicPolygonExtruded3DDefinition.class);
+            classesToBeBound.add(YoGraphicPolynomial3DDefinition.class);
+            classesToBeBound.add(YoGraphicRamp3DDefinition.class);
+            classesToBeBound.add(YoGraphicSTPBox3DDefinition.class);
+            classesToBeBound.add(YoGraphicRobotDefinition.class);
+            classesToBeBound.add(YoListDefinition.class);
 
-         // YoCompositeDefinition
-         classesToBeBound.add(YoCompositeDefinition.class);
-         classesToBeBound.add(YoTuple2DDefinition.class);
-         classesToBeBound.add(YoTuple3DDefinition.class);
-         classesToBeBound.add(YoOrientation3DDefinition.class);
-         classesToBeBound.add(YoQuaternionDefinition.class);
-         classesToBeBound.add(YoYawPitchRollDefinition.class);
+            // YoCompositeDefinition
+            classesToBeBound.add(YoCompositeDefinition.class);
+            classesToBeBound.add(YoTuple2DDefinition.class);
+            classesToBeBound.add(YoTuple3DDefinition.class);
+            classesToBeBound.add(YoOrientation3DDefinition.class);
+            classesToBeBound.add(YoQuaternionDefinition.class);
+            classesToBeBound.add(YoYawPitchRollDefinition.class);
 
-         // YoVariableDefinition
-         classesToBeBound.add(YoRegistryDefinition.class);
-         classesToBeBound.add(YoVariableDefinition.class);
-         classesToBeBound.add(YoBooleanDefinition.class);
-         classesToBeBound.add(YoDoubleDefinition.class);
-         classesToBeBound.add(YoIntegerDefinition.class);
-         classesToBeBound.add(YoLongDefinition.class);
-         classesToBeBound.add(YoEnumDefinition.class);
+            // YoVariableDefinition
+            classesToBeBound.add(YoRegistryDefinition.class);
+            classesToBeBound.add(YoVariableDefinition.class);
+            classesToBeBound.add(YoBooleanDefinition.class);
+            classesToBeBound.add(YoDoubleDefinition.class);
+            classesToBeBound.add(YoIntegerDefinition.class);
+            classesToBeBound.add(YoLongDefinition.class);
+            classesToBeBound.add(YoEnumDefinition.class);
 
-         // YoEquationDefinition
-         classesToBeBound.add(YoEquationDefinition.class);
-         classesToBeBound.add(EquationAliasDefinition.class);
-         classesToBeBound.add(YoEquationListDefinition.class);
+            // YoEquationDefinition
+            classesToBeBound.add(YoEquationDefinition.class);
+            classesToBeBound.add(EquationAliasDefinition.class);
+            classesToBeBound.add(YoEquationListDefinition.class);
 
-         classesToBeBound.add(SessionInformationDefinition.class);
+            classesToBeBound.add(SessionInformationDefinition.class);
 
-         definitionContext = JAXBContext.newInstance(classesToBeBound.toArray(new Class[classesToBeBound.size()]));
+            return JAXBContext.newInstance(classesToBeBound.toArray(new Class[classesToBeBound.size()]));
+         }
+         catch (JAXBException e)
+         {
+            throw new RuntimeException(e);
+         }
       }
-      catch (JAXBException e)
-      {
-         throw new RuntimeException(e);
-      }
+   }
+
+   private static JAXBContext definitionContext()
+   {
+      return DefinitionContextHolder.INSTANCE;
    }
 
    public static void loadResources()
@@ -278,7 +290,7 @@ public class DefinitionIOTools
    {
       try (inputStream)
       {
-         Unmarshaller unmarshaller = definitionContext.createUnmarshaller();
+         Unmarshaller unmarshaller = definitionContext().createUnmarshaller();
          return (YoGraphicListDefinition) unmarshaller.unmarshal(inputStream);
       }
    }
@@ -310,7 +322,7 @@ public class DefinitionIOTools
    {
       try (outputStream)
       {
-         Marshaller marshaller = definitionContext.createMarshaller();
+         Marshaller marshaller = definitionContext().createMarshaller();
          marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE);
          marshaller.marshal(definition, outputStream);
       }
@@ -364,7 +376,7 @@ public class DefinitionIOTools
    {
       try (inputStream)
       {
-         Unmarshaller unmarshaller = definitionContext.createUnmarshaller();
+         Unmarshaller unmarshaller = definitionContext().createUnmarshaller();
          RobotDefinition loadedRobot = (RobotDefinition) unmarshaller.unmarshal(inputStream);
          connectKinematicsRecursive(loadedRobot.getRootBodyDefinition());
          return loadedRobot;
@@ -402,7 +414,7 @@ public class DefinitionIOTools
    {
       try (outputStream)
       {
-         Marshaller marshaller = definitionContext.createMarshaller();
+         Marshaller marshaller = definitionContext().createMarshaller();
          marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE);
          marshaller.marshal(definition, outputStream);
       }
@@ -419,7 +431,7 @@ public class DefinitionIOTools
    {
       try (inputStream)
       {
-         Unmarshaller unmarshaller = definitionContext.createUnmarshaller();
+         Unmarshaller unmarshaller = definitionContext().createUnmarshaller();
          return (TerrainObjectDefinition) unmarshaller.unmarshal(inputStream);
       }
    }
@@ -456,7 +468,7 @@ public class DefinitionIOTools
    {
       try (outputStream)
       {
-         Marshaller marshaller = definitionContext.createMarshaller();
+         Marshaller marshaller = definitionContext().createMarshaller();
          marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE);
          marshaller.marshal(definition, outputStream);
       }
@@ -472,7 +484,7 @@ public class DefinitionIOTools
    {
       try (inputStream)
       {
-         Unmarshaller unmarshaller = definitionContext.createUnmarshaller();
+         Unmarshaller unmarshaller = definitionContext().createUnmarshaller();
          return (RobotStateDefinition) unmarshaller.unmarshal(inputStream);
       }
    }
@@ -487,7 +499,7 @@ public class DefinitionIOTools
    {
       try (outputStream)
       {
-         Marshaller marshaller = definitionContext.createMarshaller();
+         Marshaller marshaller = definitionContext().createMarshaller();
          marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE);
          marshaller.marshal(definition, outputStream);
       }
@@ -503,7 +515,7 @@ public class DefinitionIOTools
    {
       try (inputStream)
       {
-         Unmarshaller unmarshaller = definitionContext.createUnmarshaller();
+         Unmarshaller unmarshaller = definitionContext().createUnmarshaller();
          return (YoEquationListDefinition) unmarshaller.unmarshal(inputStream);
       }
    }
@@ -529,7 +541,7 @@ public class DefinitionIOTools
    {
       try (outputStream)
       {
-         Marshaller marshaller = definitionContext.createMarshaller();
+         Marshaller marshaller = definitionContext().createMarshaller();
          marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE);
          marshaller.marshal(definition, outputStream);
       }
@@ -545,7 +557,7 @@ public class DefinitionIOTools
    {
       try (inputStream)
       {
-         Unmarshaller unmarshaller = definitionContext.createUnmarshaller();
+         Unmarshaller unmarshaller = definitionContext().createUnmarshaller();
          return (SessionInformationDefinition) unmarshaller.unmarshal(inputStream);
       }
    }
@@ -560,7 +572,7 @@ public class DefinitionIOTools
    {
       try (outputStream)
       {
-         Marshaller marshaller = definitionContext.createMarshaller();
+         Marshaller marshaller = definitionContext().createMarshaller();
          marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE);
          marshaller.marshal(definition, outputStream);
       }
