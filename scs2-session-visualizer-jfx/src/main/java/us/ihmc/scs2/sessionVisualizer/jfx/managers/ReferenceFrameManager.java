@@ -75,6 +75,28 @@ public class ReferenceFrameManager implements Manager
 
       frameChangedListener = change ->
       {
+         // A session frame was removed (e.g. a robot being destroyed during a reload) - tear down the shadow
+         // copy this manager keeps for it (see duplicateReferenceFrame/unregisterSessionFrameNow) so a
+         // same-named frame re-added later doesn't collide with a stale leftover.
+         if (change.wasRemoved())
+         {
+            // Capture the name synchronously: once this listener call returns, the frame is disabled and
+            // most of its accessors (incl. getNameId()) start throwing.
+            ReferenceFrame removedFrame = change.getTarget();
+            String removedFrameNameId;
+            try
+            {
+               removedFrameNameId = removedFrame.getNameId();
+            }
+            catch (RuntimeException e)
+            {
+               return;
+            }
+
+            backgroundExecutorManager.queueTaskToExecuteInBackground(this, () -> unregisterSessionFrameNow(removedFrameNameId));
+            return;
+         }
+
          if (!change.wasAdded())
             return;
 
@@ -224,6 +246,36 @@ public class ReferenceFrameManager implements Manager
 
          framesToRegister.poll();
       }
+
+      refreshReferenceFramesNow();
+   }
+
+   /**
+    * Tears down the shadow copy (see {@link #duplicateReferenceFrame(ReferenceFrame)}) of a session frame that was
+    * removed from the session's frame tree (e.g. a robot being replaced or removed).
+    * <p>
+    * Without this, the shadow frame under {@link #worldFrame} is never detached, so a session frame that gets
+    * re-added later under the same name (e.g. reloading a robot with the same name) either silently reuses the
+    * stale shadow frame, or, if the timing of the shadow-tree registration races with a fresh registration, can
+    * result in two shadow frames sharing the same full name, which crashes {@link YoCompositeTools#computeUniqueNames}.
+    * </p>
+    */
+   private void unregisterSessionFrameNow(String removedFrameNameId)
+   {
+      ReferenceFrameWrapper wrapper = getReferenceFrameFromFullname(removedFrameNameId);
+      if (wrapper == null)
+         return;
+
+      List<ReferenceFrameWrapper> subtree = wrapper.collectSubtree();
+
+      for (ReferenceFrameWrapper descendant : subtree)
+      {
+         fullnameToReferenceFrameMap.remove(descendant.getFullName());
+         undefinedFrames.remove(descendant);
+      }
+
+      if (wrapper.isDefined() && !wrapper.isRootFrame())
+         wrapper.getReferenceFrame().remove();
 
       refreshReferenceFramesNow();
    }

@@ -1,240 +1,22 @@
 package us.ihmc.scs2.session.mcap.encoding;
 
-import net.jpountz.lz4.LZ4Exception;
-import net.jpountz.lz4.LZ4Factory;
-import net.jpountz.lz4.LZ4SafeDecompressor;
-import net.jpountz.xxhash.StreamingXXHash32;
-import net.jpountz.xxhash.XXHash32;
-import net.jpountz.xxhash.XXHashFactory;
+import org.bytedeco.javacpp.Pointer;
+import org.bytedeco.javacpp.SizeTPointer;
+import org.bytedeco.lz4.LZ4FDecompressionContext;
+import org.bytedeco.lz4.global.lz4;
 
-import java.io.InputStream;
 import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-import java.util.BitSet;
-import java.util.Locale;
 
 /**
- * This class is a modified version of the original LZ4FrameInputStream from the lz4-java project.
+ * Decodes LZ4 frame-format streams, backed by bytedeco's JNI bindings to the reference liblz4 implementation ({@code lz4frame.h}).
  * <p>
- * This version allows to decode a byte array into another byte array, without using any {@link InputStream}.
+ * Because this calls into the real reference decompressor rather than a from-scratch Java port, it transparently supports frames written with
+ * either independent or dependent (linked) blocks -- e.g. MCAP bags recorded by tools other than SCS2, such as {@code ros2 bag record}, which
+ * default to linked blocks.
  * </p>
  */
 public class LZ4FrameDecoder
 {
-
-   static final String PREMATURE_EOS = "Stream ended prematurely";
-   static final String NOT_SUPPORTED = "Stream unsupported";
-   static final String BLOCK_HASH_MISMATCH = "Block checksum mismatch";
-   static final String DESCRIPTOR_HASH_MISMATCH = "Stream frame descriptor corrupted";
-   static final int MAGIC_SKIPPABLE_BASE = 0x184D2A50;
-
-   static final int MAGIC = 0x184D2204;
-   static final int LZ4_MAX_HEADER_LENGTH = 4 + // magic
-                                            1 + // FLG
-                                            1 + // BD
-                                            8 + // Content Size
-                                            1; // HC
-   static final int INTEGER_BYTES = Integer.SIZE >>> 3; // or Integer.BYTES in Java 1.8
-   static final int LZ4_FRAME_INCOMPRESSIBLE_MASK = 0x80000000;
-
-   private final LZ4SafeDecompressor decompressor;
-   private final XXHash32 checksum;
-   private final byte[] headerArray = new byte[LZ4_MAX_HEADER_LENGTH];
-   private final ByteBuffer headerBuffer = ByteBuffer.wrap(headerArray).order(ByteOrder.LITTLE_ENDIAN);
-   private byte[] compressedBuffer;
-   private byte[] rawBuffer = null;
-   private int maxBlockSize = -1;
-   private long expectedContentSize = -1L;
-   private long totalContentSize = 0L;
-   private boolean firstFrameHeaderRead = false;
-
-   private FrameInfo frameInfo = null;
-
-   /**
-    * Creates a new decoder that will decompress data using fastest instances of
-    * {@link LZ4SafeDecompressor} and {@link XXHash32}. This instance will decompress all concatenated
-    * frames in their sequential order.
-    *
-    * @see LZ4Factory#fastestInstance()
-    * @see XXHashFactory#fastestInstance()
-    */
-   public LZ4FrameDecoder()
-   {
-      this(LZ4Factory.fastestInstance().safeDecompressor(), XXHashFactory.fastestInstance().hash32());
-   }
-
-   /**
-    * Creates a new decoder that will decompress data using the LZ4 algorithm.
-    *
-    * @param decompressor the decompressor to use
-    * @param checksum     the hash function to use
-    */
-   public LZ4FrameDecoder(LZ4SafeDecompressor decompressor, XXHash32 checksum)
-   {
-      this.decompressor = decompressor;
-      this.checksum = checksum;
-   }
-
-   /**
-    * Try and load in the next valid frame info. This will skip over skippable frames.
-    *
-    * @return True if a frame was loaded. False if there are no more frames in the stream.
-    */
-   private boolean nextFrameInfo(ByteBuffer in)
-   {
-      while (true)
-      {
-         if (in.remaining() < INTEGER_BYTES)
-            throw new IllegalStateException(PREMATURE_EOS);
-
-         int magic = in.getInt();
-
-         if (magic == MAGIC)
-         {
-            readHeader(in);
-            return true;
-         }
-         else if ((magic >>> 4) == (MAGIC_SKIPPABLE_BASE >>> 4))
-         {
-            skippableFrame(in);
-         }
-         else
-         {
-            throw new IllegalStateException(NOT_SUPPORTED);
-         }
-      }
-   }
-
-   private void skippableFrame(ByteBuffer in)
-   {
-      int skipSize = in.getInt();
-      in.position(in.position() + skipSize);
-      firstFrameHeaderRead = true;
-   }
-
-   /**
-    * Reads the frame descriptor from the underlying {@link InputStream}.
-    *
-    * @param in
-    */
-   private void readHeader(ByteBuffer in)
-   {
-      headerBuffer.rewind();
-
-      byte flgByte = in.get();
-      byte bdByte = in.get();
-
-      FLG flg = FLG.fromByte(flgByte);
-      headerBuffer.put(flgByte);
-      BD bd = BD.fromByte(bdByte);
-      headerBuffer.put(bdByte);
-
-      this.frameInfo = new FrameInfo(flg, bd);
-
-      if (flg.isEnabled(FLG.Bits.CONTENT_SIZE))
-      {
-         expectedContentSize = in.getLong();
-         headerBuffer.putLong(expectedContentSize);
-      }
-      totalContentSize = 0L;
-
-      // check stream descriptor hash
-      byte hash = (byte) ((checksum.hash(headerArray, 0, headerBuffer.position(), 0) >> 8) & 0xFF);
-      byte expectedHash = in.get();
-
-      if (hash != expectedHash)
-         throw new IllegalStateException(DESCRIPTOR_HASH_MISMATCH);
-
-      maxBlockSize = frameInfo.getBD().getBlockMaximumSize();
-      compressedBuffer = new byte[maxBlockSize]; // Reused during different compressions
-      rawBuffer = new byte[maxBlockSize];
-      firstFrameHeaderRead = true;
-   }
-
-   /**
-    * Decompress (if necessary) buffered data, optionally computes and validates a XXHash32 checksum,
-    * and writes the result to a buffer.
-    */
-   private ByteBuffer readBlock(ByteBuffer in, ByteBuffer out)
-   {
-      int blockSize = in.getInt();
-      final boolean compressed = (blockSize & LZ4_FRAME_INCOMPRESSIBLE_MASK) == 0;
-      blockSize &= ~LZ4_FRAME_INCOMPRESSIBLE_MASK;
-
-      // Check for EndMark
-      if (blockSize == 0)
-      {
-         if (frameInfo.isEnabled(FLG.Bits.CONTENT_CHECKSUM))
-         {
-            final int contentChecksum = in.getInt();
-            if (contentChecksum != frameInfo.currentStreamHash())
-               throw new IllegalStateException("Content checksum mismatch");
-         }
-         if (frameInfo.isEnabled(FLG.Bits.CONTENT_SIZE) && expectedContentSize != totalContentSize)
-            throw new IllegalStateException("Size check mismatch");
-         frameInfo.finish();
-         return null;
-      }
-
-      final byte[] tmpBuffer; // Use a temporary buffer, potentially one used for compression
-      if (compressed)
-      {
-         tmpBuffer = compressedBuffer;
-      }
-      else
-      {
-         tmpBuffer = rawBuffer;
-      }
-      if (blockSize > maxBlockSize)
-      {
-         throw new IllegalStateException(String.format(Locale.ROOT, "Block size %s exceeded max: %s", blockSize, maxBlockSize));
-      }
-
-      in.get(tmpBuffer, 0, blockSize);
-
-      // verify block checksum
-      if (frameInfo.isEnabled(FLG.Bits.BLOCK_CHECKSUM))
-      {
-         final int hashCheck = in.getInt();
-         if (hashCheck != checksum.hash(tmpBuffer, 0, blockSize, 0))
-            throw new IllegalStateException(BLOCK_HASH_MISMATCH);
-      }
-
-      final int currentBufferSize;
-
-      if (compressed)
-      {
-         try
-         {
-            currentBufferSize = decompressor.decompress(tmpBuffer, 0, blockSize, rawBuffer, 0, rawBuffer.length);
-         }
-         catch (LZ4Exception e)
-         {
-            throw new IllegalStateException(e);
-         }
-      }
-      else
-      {
-         currentBufferSize = blockSize;
-      }
-      if (frameInfo.isEnabled(FLG.Bits.CONTENT_CHECKSUM))
-         frameInfo.updateStreamHash(rawBuffer, 0, currentBufferSize);
-
-      totalContentSize += currentBufferSize;
-      if (out != null)
-      { // Could check if capacity is big enough, but might just crash to avoid sneaky surprise of a buffer swap.
-         out.put(rawBuffer, 0, currentBufferSize);
-         return out;
-      }
-      else
-      {
-         ByteBuffer blockOut = ByteBuffer.wrap(rawBuffer);
-         blockOut.limit(currentBufferSize);
-         blockOut.position(0);
-         return blockOut;
-      }
-   }
-
    public byte[] decode(byte[] in, byte[] out)
    {
       return decode(in, 0, in.length, out, 0);
@@ -242,8 +24,10 @@ public class LZ4FrameDecoder
 
    public byte[] decode(byte[] in, int inOffset, int inLength, byte[] out, int outOffset)
    {
-      ByteBuffer result = decode(ByteBuffer.wrap(in, inOffset, inLength), out == null ? null : ByteBuffer.wrap(out, outOffset, out.length - outOffset));
-      return result == null ? null : result.array();
+      ByteBuffer inBuffer = ByteBuffer.wrap(in);
+      ByteBuffer outBuffer = out == null ? null : ByteBuffer.wrap(out);
+      ByteBuffer result = decode(inBuffer, inOffset, inLength, outBuffer, outOffset);
+      return result.array();
    }
 
    public ByteBuffer decode(ByteBuffer in, ByteBuffer out)
@@ -253,56 +37,41 @@ public class LZ4FrameDecoder
 
    public ByteBuffer decode(ByteBuffer in, int inOffset, int inLength, ByteBuffer out, int outOffset)
    {
+      // Temporarily narrow the view to exactly [inOffset, inOffset + inLength) so decompress() only ever sees this one frame's bytes,
+      // then restore the caller's original limit -- this method must not permanently mutate the buffer it was handed beyond position.
       int limitPrev = in.limit();
       in.position(inOffset);
       in.limit(inOffset + inLength);
-      in.order(ByteOrder.LITTLE_ENDIAN);
-      if (out != null)
-         out.position(outOffset);
-
-      ByteBuffer whenOutIsNull = null;
 
       try
       {
-         while (in.hasRemaining())
-         {
-            if (!firstFrameHeaderRead || frameInfo.isFinished())
-            {
-               if (!nextFrameInfo(in))
-                  throw new IllegalStateException("Could not find the Frame Descriptor!");
-            }
-            ByteBuffer blockOut = readBlock(in, out);
+         // Native calls need a real memory address, which only a direct buffer has; toDirect() copies in only if 'in' isn't already direct.
+         ByteBuffer srcDirect = LZ4NativeUtil.toDirect(in);
 
-            if (blockOut == null)
-               break; // Reached the end
+         // We don't know the decompressed size up front (LZ4 frames don't have to declare it), so decompress() grows its own scratch buffer
+         // as needed. When the caller gave us an output buffer we can at least size the first allocation to fit, avoiding a resize in the
+         // common case; otherwise just guess generously off the compressed size.
+         final int guessAtDecompressedMultiplier = 3; // Decompressed size might be 3x compressed size (just a guess)
+         final int floorBufferSize = 64 * 1024; // This prevents starting with a really small buffer as our size guess
+         int sizeHint = out != null ? out.remaining() : Math.max(inLength * guessAtDecompressedMultiplier, floorBufferSize);
+         ByteBuffer decoded = decompress(srcDirect, sizeHint); // direct, flipped (position 0, limit = decoded length)
 
-            if (out == null)
-            {
-               if (whenOutIsNull == null)
-               {
-                  // Need to make a copy of the data as it will be reused for the next blocks.
-                  whenOutIsNull = ByteBuffer.allocate(blockOut.remaining());
-                  // whenOutIsNull.put(blockOut); <= apparently this does not perform a deep copy.
-                  whenOutIsNull.put(0, blockOut, 0, blockOut.limit());
-               }
-               else
-               {
-                  ByteBuffer extended = ByteBuffer.allocate(whenOutIsNull.remaining() + blockOut.remaining());
-                  extended.put(whenOutIsNull);
-                  extended.put(blockOut);
-                  whenOutIsNull = extended;
-               }
-            }
-         }
          if (out != null)
          {
+            // Match the old decoder's contract: write into the caller's buffer starting at outOffset, then flip so the caller reads from 0.
+            out.position(outOffset);
+            out.put(decoded);
             out.flip();
             return out;
          }
          else
          {
-            whenOutIsNull.flip();
-            return whenOutIsNull;
+            // No output buffer given: hand back a right-sized, heap-backed (non-direct) copy so callers can safely call ByteBuffer.array()
+            // on it, matching what byte[]-based decode(...) overloads above expect.
+            ByteBuffer result = ByteBuffer.allocate(decoded.remaining());
+            result.put(decoded);
+            result.flip();
+            return result;
          }
       }
       finally
@@ -311,203 +80,73 @@ public class LZ4FrameDecoder
       }
    }
 
-   static class FrameInfo
+   /**
+    * Runs the {@code LZ4F_decompress} streaming loop to completion. {@code srcDirect} must be a direct buffer positioned/limited to exactly the
+    * compressed frame bytes; its position is advanced as it's consumed.
+    * <p>
+    * Note this decodes exactly one LZ4 frame: if {@code srcDirect} contains additional bytes after the first frame's end mark (e.g. multiple
+    * concatenated frames), they are left unread. That's fine for MCAP, where a chunk's compressed payload is always exactly one frame, but it's a
+    * capability the old lz4-java-derived decoder had (it looped to decode concatenated frames) that this one doesn't.
+    * </p>
+    *
+    * @return a direct buffer, flipped, containing the decompressed bytes.
+    */
+   private static ByteBuffer decompress(ByteBuffer srcDirect, int initialCapacity)
    {
-      private final FLG flg;
-      private final BD bd;
-      private final StreamingXXHash32 streamHash;
-      private boolean finished = false;
+      // LZ4F_decompress is a streaming API: it's driven by repeatedly calling it, each call consuming some of the compressed input and
+      // producing some decompressed output, until it reports the frame is fully decoded. The decompression context (dctx) is where it
+      // keeps track of how far through the frame it is between calls.
+      LZ4FDecompressionContext dctx = new LZ4FDecompressionContext();
+      LZ4NativeUtil.checkError(lz4.LZ4F_createDecompressionContext(dctx, lz4.LZ4F_VERSION));
 
-      public FrameInfo(FLG flg, BD bd)
+      try
       {
-         this.flg = flg;
-         this.bd = bd;
-         this.streamHash = flg.isEnabled(FLG.Bits.CONTENT_CHECKSUM) ? XXHashFactory.fastestInstance().newStreamingHash32(0) : null;
-      }
+         final int OSMemoryPageSize = 4096; // Minimum buffer size for tons of I/O calls
+         ByteBuffer destination = ByteBuffer.allocateDirect(Math.max(initialCapacity, OSMemoryPageSize));
+         SizeTPointer destinationSize = new SizeTPointer(1); // in/out param: capacity offered in, bytes actually written out
+         SizeTPointer sourceSize = new SizeTPointer(1); // in/out param: bytes offered in, bytes actually consumed out
 
-      public boolean isEnabled(FLG.Bits bit)
-      {
-         return flg.isEnabled(bit);
-      }
-
-      public FLG getFLG()
-      {
-         return this.flg;
-      }
-
-      public BD getBD()
-      {
-         return this.bd;
-      }
-
-      public void updateStreamHash(byte[] buff, int off, int len)
-      {
-         this.streamHash.update(buff, off, len);
-      }
-
-      public int currentStreamHash()
-      {
-         return this.streamHash.getValue();
-      }
-
-      public void finish()
-      {
-         this.finished = true;
-      }
-
-      public boolean isFinished()
-      {
-         return this.finished;
-      }
-   }
-
-   public static class FLG
-   {
-      public static final int DEFAULT_VERSION = 1;
-
-      private final BitSet bitSet;
-      private final int version;
-
-      public enum Bits
-      {
-         RESERVED_0(0), RESERVED_1(1), CONTENT_CHECKSUM(2), CONTENT_SIZE(3), BLOCK_CHECKSUM(4), BLOCK_INDEPENDENCE(5);
-
-         private final int position;
-
-         Bits(int position)
+         long ret;
+         do
          {
-            this.position = position;
-         }
-      }
-
-      public FLG(int version, Bits... bits)
-      {
-         this.bitSet = new BitSet(8);
-         this.version = version;
-         if (bits != null)
-         {
-            for (Bits bit : bits)
+            if (!destination.hasRemaining())
             {
-               bitSet.set(bit.position);
+               // Ran out of room before the frame finished decoding -- double the scratch buffer and keep going from where we left off.
+               // This way we reach the end faster and faster if the destination is large
+               ByteBuffer grown = ByteBuffer.allocateDirect(destination.capacity() * 2);
+               destination.flip();
+               grown.put(destination);
+               destination = grown;
             }
+
+            destinationSize.put(destination.remaining());
+            sourceSize.put(srcDirect.remaining());
+
+            Pointer dstPointer = new Pointer(destination);
+            Pointer srcPointer = new Pointer(srcDirect);
+
+            // ret == 0 means the frame is fully decoded. ret > 0 is a hint (not a byte count to rely on) that more calls are needed;
+            // ret < 0 is only possible via the error encoding checked by checkError() below.
+            ret = lz4.LZ4F_decompress(dctx, dstPointer, destinationSize, srcPointer, sourceSize, null);
+            LZ4NativeUtil.checkError(ret);
+
+            destination.position(destination.position() + (int) destinationSize.get());
+            srcDirect.position(srcDirect.position() + (int) sourceSize.get());
+
+            // If a call consumes no input and produces no output while still claiming the frame isn't finished, we're not going to make
+            // any further progress -- almost always because the input was truncated/corrupt. Without this check we'd spin forever instead
+            // of failing, since destination still has room and sourceSize would keep reporting 0 available bytes on every subsequent call.
+            if (ret != 0 && destinationSize.get() == 0 && sourceSize.get() == 0)
+               throw new IllegalStateException("Truncated or corrupt LZ4 frame: input ended before the frame finished decoding");
          }
-         validate();
+         while (ret != 0);
+
+         destination.flip();
+         return destination;
       }
-
-      private FLG(int version, byte b)
+      finally
       {
-         this.bitSet = BitSet.valueOf(new byte[] {b});
-         this.version = version;
-         validate();
-      }
-
-      public static FLG fromByte(byte flg)
-      {
-         final byte versionMask = (byte) (flg & (3 << 6));
-         return new FLG(versionMask >>> 6, (byte) (flg ^ versionMask));
-      }
-
-      public byte toByte()
-      {
-         return (byte) (bitSet.toByteArray()[0] | ((version & 3) << 6));
-      }
-
-      private void validate()
-      {
-         if (bitSet.get(Bits.RESERVED_0.position))
-         {
-            throw new RuntimeException("Reserved0 field must be 0");
-         }
-         if (bitSet.get(Bits.RESERVED_1.position))
-         {
-            throw new RuntimeException("Reserved1 field must be 0");
-         }
-         if (!bitSet.get(Bits.BLOCK_INDEPENDENCE.position))
-         {
-            throw new RuntimeException("Dependent block stream is unsupported (BLOCK_INDEPENDENCE must be set)");
-         }
-         if (version != DEFAULT_VERSION)
-         {
-            throw new RuntimeException(String.format(Locale.ROOT, "Version %d is unsupported", version));
-         }
-      }
-
-      public boolean isEnabled(Bits bit)
-      {
-         return bitSet.get(bit.position);
-      }
-
-      public int getVersion()
-      {
-         return version;
-      }
-   }
-
-   public static class BD
-   {
-      private static final int RESERVED_MASK = 0x8F;
-
-      private final BLOCKSIZE blockSizeValue;
-
-      public BD(BLOCKSIZE blockSizeValue)
-      {
-         this.blockSizeValue = blockSizeValue;
-      }
-
-      public static BD fromByte(byte bd)
-      {
-         int blockMaximumSize = (bd >>> 4) & 7;
-         if ((bd & RESERVED_MASK) > 0)
-         {
-            throw new RuntimeException("Reserved fields must be 0");
-         }
-
-         return new BD(BLOCKSIZE.valueOf(blockMaximumSize));
-      }
-
-      // 2^(2n+8)
-      public int getBlockMaximumSize()
-      {
-         return 1 << ((2 * blockSizeValue.getIndicator()) + 8);
-      }
-
-      public byte toByte()
-      {
-         return (byte) ((blockSizeValue.getIndicator() & 7) << 4);
-      }
-   }
-
-   public static enum BLOCKSIZE
-   {
-      SIZE_64KB(4), SIZE_256KB(5), SIZE_1MB(6), SIZE_4MB(7);
-
-      private final int indicator;
-
-      BLOCKSIZE(int indicator)
-      {
-         this.indicator = indicator;
-      }
-
-      public int getIndicator()
-      {
-         return this.indicator;
-      }
-
-      public static BLOCKSIZE valueOf(int indicator)
-      {
-         switch (indicator)
-         {
-            case 7:
-               return SIZE_4MB;
-            case 6:
-               return SIZE_1MB;
-            case 5:
-               return SIZE_256KB;
-            case 4:
-               return SIZE_64KB;
-            default:
-               throw new IllegalArgumentException(String.format(Locale.ROOT, "Block size must be 4-7. Cannot use value of [%d]", indicator));
-         }
+         lz4.LZ4F_freeDecompressionContext(dctx);
       }
    }
 }
