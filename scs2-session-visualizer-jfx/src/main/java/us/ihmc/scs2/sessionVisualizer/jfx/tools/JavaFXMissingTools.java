@@ -483,12 +483,16 @@ public class JavaFXMissingTools
 
       if (!window.isShowing())
       {
-         // TODO Seems that on Ubuntu the changes done to the window position/size are not processed properly until the window is showing.
          // This may be related to the bug reported when using GTK3: https://github.com/javafxports/openjdk-jfx/pull/446, might be fixed in later version.
          window.addEventHandler(WindowEvent.WINDOW_SHOWN, e ->
          {
-            runLater(JavaFXMissingTools.class, () ->
+            runNFramesLater(5, () ->
             {
+               // The window may already have been hidden by the time this runs; bail out rather than act on stale state.
+               if (!window.isShowing() || window.getScene() == null)
+                  return;
+
+               window.sizeToScene();
                window.setX(owner.getX() + 0.5 * (owner.getWidth() - window.getWidth()));
                window.setY(owner.getY() + 0.5 * (owner.getHeight() - window.getHeight()));
             });
