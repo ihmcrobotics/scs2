@@ -22,7 +22,7 @@ import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
-public final class YoMCAPMessage
+public final class YoMCAPMessage implements MCAPMessageDecoder
 {
    private final MCAPSchema schema;
    private final int channelId;
@@ -52,6 +52,17 @@ public final class YoMCAPMessage
             throw new IllegalArgumentException("Field cannot be both a vector and an array: " + field + ", registry: " + messageRegistry);
 
          boolean isArrayOrVector = field.isArray() || field.isVector();
+
+         // ROS 2 constant-based enum fields are handled here, before the primitive-type lookup,
+         // because the field type is still a primitive (e.g. int8) but should be displayed as an enum.
+         if (field.getEnumSchema() != null)
+         {
+            if (!isArrayOrVector)
+               deserializers.add(createYoEnum(field, field.getEnumSchema(), messageRegistry));
+            else
+               deserializers.add(createYoEnumArray(field, field.getEnumSchema(), messageRegistry));
+            continue;
+         }
 
          Consumer<CDRDeserializer> deserializer;
          if (!isArrayOrVector)
@@ -130,21 +141,25 @@ public final class YoMCAPMessage
       this.deserializer = deserializer;
    }
 
+   @Override
    public MCAPSchema getSchema()
    {
       return schema;
    }
 
+   @Override
    public YoRegistry getRegistry()
    {
       return registry;
    }
 
+   @Override
    public int getChannelId()
    {
       return channelId;
    }
 
+   @Override
    public void readMessage(Message message)
    {
       if (message.channelId() != channelId)
@@ -189,17 +204,10 @@ public final class YoMCAPMessage
 
    private static Consumer<CDRDeserializer> createYoEnum(MCAPSchemaField field, MCAPSchema enumSchema, YoRegistry registry)
    {
-      String fieldName = field.getName();
-
-      return createYoEnum(fieldName, enumSchema, registry);
-   }
-
-   private static Consumer<CDRDeserializer> createYoEnum(String fieldName, MCAPSchema enumSchema, YoRegistry registry)
-   {
       if (!enumSchema.isEnum())
          throw new IllegalArgumentException("Schema is not an enum: " + enumSchema + ", registry: " + registry);
 
-      return createYoEnumConversionToolbox(enumSchema).createYoVariable(fieldName, registry);
+      return createYoEnumConversionToolbox(enumSchema, field.getType()).createYoVariable(field.getName(), registry);
    }
 
    /**
@@ -246,7 +254,7 @@ public final class YoMCAPMessage
 
       boolean isFixedSize = field.isArray();
 
-      YoConversionToolbox<YoEnum> conversion = createYoEnumConversionToolbox(enumSchema);
+      YoConversionToolbox<YoEnum> conversion = createYoEnumConversionToolbox(enumSchema, field.getType());
       return createFieldArray(conversion.yoType(),
                               conversion.yoBuilder(),
                               conversion.deserializer(),
@@ -334,14 +342,56 @@ public final class YoMCAPMessage
    public static final Map<String, YoConversionToolbox<?>> conversionMap;
 
    @SuppressWarnings("rawtypes")
-   private static YoConversionToolbox<YoEnum> createYoEnumConversionToolbox(MCAPSchema enumSchema)
+   private static YoConversionToolbox<YoEnum> createYoEnumConversionToolbox(MCAPSchema enumSchema, String primitiveType)
    {
+      long[] enumValues = enumSchema.getEnumValues();
+      BiConsumer<YoEnum, CDRDeserializer> readAndSet;
+      if (enumValues != null)
+      {
+         // ROS 2 enum: read the appropriate integer type and map the value to a YoEnum ordinal.
+         readAndSet = (v, cdr) ->
+         {
+            long rawValue = readEnumValue(cdr, primitiveType);
+            v.set(findOrdinal(enumValues, rawValue));
+         };
+      }
+      else
+      {
+         // OMG IDL enum: ordinals are 0-based and encoded as int32.
+         readAndSet = (v, cdr) -> v.set(cdr.read_int32());
+      }
+
       return new YoConversionToolbox<>("enum",
                                        YoEnum.class,
                                        (name, registry) -> new YoEnum<>(name, "", registry, true, enumSchema.getEnumConstants()),
-                                       (v, cdr1) -> v.set(cdr1.read_int32()),
-                                       // TODO Not sure if this is the right way to read an enum
+                                       readAndSet,
                                        v -> v.set(YoEnum.NULL_VALUE));
+   }
+
+   private static long readEnumValue(CDRDeserializer cdr, String primitiveType)
+   {
+      return switch (primitiveType)
+      {
+         case "int8", "byte", "char" -> cdr.read_int8();
+         case "uint8" -> cdr.read_uint8();
+         case "int16", "short" -> cdr.read_int16();
+         case "uint16" -> cdr.read_uint16();
+         case "int32", "long" -> cdr.read_int32();
+         case "uint32" -> cdr.read_uint32();
+         case "int64", "longlong" -> cdr.read_int64();
+         case "uint64", "unsignedlonglong" -> cdr.read_uint64();
+         default -> cdr.read_int32(); // fallback for OMG IDL enums where type is the IDL type name
+      };
+   }
+
+   private static int findOrdinal(long[] enumValues, long value)
+   {
+      for (int i = 0; i < enumValues.length; i++)
+      {
+         if (enumValues[i] == value)
+            return i;
+      }
+      return YoEnum.NULL_VALUE;
    }
 
    static

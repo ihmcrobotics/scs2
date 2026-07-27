@@ -3,6 +3,7 @@ package us.ihmc.scs2.sharedMemory;
 import us.ihmc.scs2.sharedMemory.interfaces.YoBufferPropertiesReadOnly;
 import us.ihmc.scs2.sharedMemory.tools.SharedMemoryTools;
 import us.ihmc.yoVariables.listener.YoRegistryChangedListener;
+import us.ihmc.yoVariables.registry.YoNamespace;
 import us.ihmc.yoVariables.registry.YoRegistry;
 import us.ihmc.yoVariables.variable.YoVariable;
 
@@ -39,6 +40,33 @@ public class YoRegistryBuffer
             registerNewYoVariable(change.getTargetVariable());
          if (change.wasRegistryAdded())
             registerNewYoVariables(change.getTargetRegistry().collectSubtreeVariables());
+
+         // A registry/variable removed on the backend side (e.g. a robot being replaced) must also drop its buffer
+         // entry here - otherwise a same-named replacement variable is silently skipped by registerNewYoVariable's
+         // "if the full name is already registered" guard, permanently reusing the old (now dead) variable's buffer.
+         //
+         // As with LinkedYoRegistry's equivalent fix: by the time this fires, the removed variable's own registry
+         // link (and so its getNamespace()) is already cleared, so the full name must be rebuilt from
+         // getTargetParentRegistry() (still attached, unaffected by the removal) instead of the removed
+         // variable's/registry's own state.
+         if (change.wasVariableRemoved())
+         {
+            YoRegistry parentRegistry = change.getTargetParentRegistry();
+            if (parentRegistry != null)
+               unregisterYoVariable(computeFullName(parentRegistry, change.getTargetVariable().getName()));
+         }
+
+         if (change.wasRegistryRemoved())
+         {
+            // The removed registry's own getNamespace() is just as unreliable here as a removed variable's (its
+            // parent link was already cleared too) - and that unreliability would otherwise cascade to every
+            // descendant's getNamespace() as well. So rebuild each descendant variable's full name structurally,
+            // walking .getChildren()/.getVariables() (untouched by the removal) from the one known-safe namespace
+            // (the still-attached parent's), instead of trusting .getNamespace() anywhere inside the removed subtree.
+            YoRegistry parentRegistry = change.getTargetParentRegistry();
+            if (parentRegistry != null)
+               unregisterSubtree(change.getTargetRegistry(), parentRegistry.getNamespace().append(change.getTargetRegistry().getName()));
+         }
       };
 
       this.rootRegistry.addListener(registryBufferUpdater);
@@ -67,6 +95,39 @@ public class YoRegistryBuffer
          yoVariableBuffers.add(yoVariableBuffer);
          yoVariableFullnameToBufferMap.put(fullName, yoVariableBuffer);
          registryMemorySize += yoVariableBuffer.getVariableMemorySize();
+      }
+      finally
+      {
+         lock.unlock();
+      }
+   }
+
+   private static String computeFullName(YoRegistry parentRegistry, String variableName)
+   {
+      return parentRegistry.getNamespace().append(variableName).getName();
+   }
+
+   private void unregisterSubtree(YoRegistry registry, YoNamespace registryNamespace)
+   {
+      for (YoVariable variable : registry.getVariables())
+         unregisterYoVariable(registryNamespace.append(variable.getName()).getName());
+      for (YoRegistry child : registry.getChildren())
+         unregisterSubtree(child, registryNamespace.append(child.getName()));
+   }
+
+   /**
+    * Only drops the full-name mapping - {@link YoVariableBufferList} is append-only (its {@code remove} methods all
+    * throw {@link UnsupportedOperationException}), so the old buffer stays in {@link #yoVariableBuffers} and keeps
+    * being read/written every tick, just no longer reachable by name. That's a harmless, bounded amount of waste
+    * (one extra buffer per removed variable, not per tick) - the actual bug this fixes is a *same-named replacement*
+    * variable being permanently skipped by {@link #registerNewYoVariable}'s "already registered" guard.
+    */
+   private void unregisterYoVariable(String fullName)
+   {
+      lock.lock();
+      try
+      {
+         yoVariableFullnameToBufferMap.remove(fullName);
       }
       finally
       {

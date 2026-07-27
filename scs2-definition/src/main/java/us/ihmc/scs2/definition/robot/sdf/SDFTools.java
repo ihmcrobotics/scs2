@@ -6,6 +6,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLClassLoader;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -260,6 +261,31 @@ public class SDFTools
             {
                resourceDirectories.add(newResource);
                return tryToConvertToPath(filename, resourceDirectories, resourceClassLoader);
+            }
+         }
+
+         // Last resort: the on-disk resource layout may not mirror the package structure declared in the URI
+         // (e.g. a flattened asset bundle). Progressively strip leading path segments and look for the
+         // remaining suffix under each resource directory, preferring the longest (most specific) match.
+         String[] pathSegments = Arrays.stream(uri.getPath().split("/")).filter(segment -> !segment.isEmpty()).toArray(String[]::new);
+
+         for (int start = 0; start < pathSegments.length; start++)
+         {
+            String suffix = String.join(File.separator, Arrays.copyOfRange(pathSegments, start, pathSegments.length));
+
+            for (String resourceDirectory : resourceDirectories)
+            {
+               String fullname = resourceDirectory + File.separator + suffix;
+               // Path relative to class root
+               if (resourceClassLoader.getResource(fullname) != null)
+               {
+                  return fullname;
+               }
+               // Absolute path
+               if (new File(fullname).exists())
+               {
+                  return fullname;
+               }
             }
          }
       }

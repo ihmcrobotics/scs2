@@ -18,10 +18,12 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static us.ihmc.scs2.session.mcap.MCAPMessageManager.round;
 
@@ -189,14 +191,63 @@ public class MCAPBufferedChunk
       return chunkBundles.length;
    }
 
+   /**
+    * Atomically claims responsibility for loading a value into {@code futureRef}, memoizer-style (Java Concurrency in Practice, Goetz,
+    * listing 5.19): if nobody has started yet, this installs a fresh, not-yet-completed future and returns it -- the caller is now on the
+    * hook to run the load and complete it. If someone else already started (or finished), this returns {@code null} and does nothing; the
+    * existing future (available via {@code futureRef.get()}) is the one to use instead.
+    */
+   private static <T> CompletableFuture<T> claim(AtomicReference<CompletableFuture<T>> futureRef)
+   {
+      CompletableFuture<T> newFuture = new CompletableFuture<>();
+      return futureRef.compareAndSet(null, newFuture) ? newFuture : null;
+   }
+
+   /** Joins a future, unwrapping a checked {@link IOException} cause so callers that declare {@code throws IOException} can keep doing so. */
+   private static <T> T awaitChecked(CompletableFuture<T> future) throws IOException
+   {
+      try
+      {
+         return future.join();
+      }
+      catch (CompletionException e)
+      {
+         Throwable cause = e.getCause();
+         if (cause instanceof IOException ioException)
+            throw ioException;
+         if (cause instanceof RuntimeException runtimeException)
+            throw runtimeException;
+         throw new RuntimeException(cause);
+      }
+   }
+
+   /** Joins a future for callers that don't declare any checked exception, matching how InterruptedException used to be handled inline. */
+   private static <T> T awaitUnchecked(CompletableFuture<T> future)
+   {
+      try
+      {
+         return future.join();
+      }
+      catch (CompletionException e)
+      {
+         Throwable cause = e.getCause();
+         throw cause instanceof RuntimeException runtimeException ? runtimeException : new RuntimeException(cause);
+      }
+   }
+
    public class ChunkBundle
    {
       private final int index;
       private final ChunkIndex chunkIndex;
-      private Records chunkRecords;
-      private TLongObjectHashMap<List<Message>> bundledMessages;
 
-      private volatile CountDownLatch chunkLoadedLatch, messagesLoadedLatch;
+      // Memoizer pattern (Java Concurrency in Practice, Goetz, listing 5.19): a chunk's records/messages are each loaded at most once, by
+      // whichever thread wins the compareAndSet in claim(...); any other thread that asks -- concurrently or later -- gets (and can join())
+      // that same future instead of redoing the work or racing on shared mutable state.
+      // This replaces a hand-rolled latch+field pair per value with a single object that carries "is it done", "what's the result", and "did it fail" together,
+      // which is what used to be maintained by hand (and got out of sync under concurrent access: two threads racing into the same TLongObjectHashMap.put() loop
+      // corrupted trove's internal table and threw out of rehash()).
+      private final AtomicReference<CompletableFuture<Records>> chunkRecordsFuture = new AtomicReference<>();
+      private final AtomicReference<CompletableFuture<TLongObjectHashMap<List<Message>>>> bundledMessagesFuture = new AtomicReference<>();
 
       private long lastLoadingRequestTime = Long.MIN_VALUE;
 
@@ -239,10 +290,11 @@ public class MCAPBufferedChunk
 
       private void unloadChunk()
       {
-         chunkRecords = null;
-         bundledMessages = null;
-         chunkLoadedLatch = null;
-         messagesLoadedLatch = null;
+         // Simple field resets, each independently atomic (AtomicReference.set()) -- no synchronized needed. A future object already handed
+         // out to another thread (e.g. one it's mid-join() on) stays valid and correct for that thread regardless of what these fields get
+         // reset to afterward; resetting them here only affects what the *next* request sees.
+         chunkRecordsFuture.set(null);
+         bundledMessagesFuture.set(null);
          loadedChunkBundles.remove(this);
          lastLoadingRequestTime = Long.MIN_VALUE;
       }
@@ -264,9 +316,32 @@ public class MCAPBufferedChunk
          if (recordRequestTime)
             lastLoadingRequestTime = System.nanoTime();
 
-         if (chunkRecords != null)
+         CompletableFuture<Records> claimedFuture = claim(chunkRecordsFuture);
+         CompletableFuture<Records> recordsFuture = claimedFuture != null ? claimedFuture : chunkRecordsFuture.get();
+
+         if (claimedFuture != null)
          {
-            if (createMessages && bundledMessages == null)
+            // Nobody was loading this chunk yet -- we are now responsible for it (and its messages, if requested).
+            freeUpChunkBundleSpots(1);
+            Runnable loadingTask = () -> runChunkLoad(claimedFuture, createMessages);
+
+            if (wait)
+               loadingTask.run();
+            else
+               executorService.submit(loadingTask);
+         }
+         else if (!wait && createMessages && recordsFuture != null && recordsFuture.isDone() && !recordsFuture.isCompletedExceptionally())
+         {
+            // The chunk itself is already loaded (by an earlier request), but nobody has necessarily started on the messages yet -- mirrors
+            // the old behavior of checking this on every request, not just the first one, without blocking since wait == false here.
+            startLoadingMessagesAsync();
+         }
+
+         if (wait)
+         {
+            if (recordsFuture != null)
+               awaitUnchecked(recordsFuture);
+            if (createMessages)
             {
                try
                {
@@ -277,113 +352,93 @@ public class MCAPBufferedChunk
                   throw new RuntimeException(e);
                }
             }
-            return;
-         }
-
-         if (chunkLoadedLatch == null)
-         {
-            chunkLoadedLatch = new CountDownLatch(1);
-            freeUpChunkBundleSpots(1);
-
-            Runnable loadingTask = () ->
-            {
-               try
-               {
-                  loadChunkNow();
-                  if (createMessages)
-                     loadMessagesNow();
-               }
-               catch (Exception e)
-               {
-                  e.printStackTrace();
-                  unloadChunk();
-               }
-               finally
-               {
-                  chunkLoadedLatch.countDown();
-                  chunkLoadedLatch = null;
-               }
-            };
-
-            if (wait)
-               loadingTask.run();
-            else
-               executorService.submit(loadingTask);
-         }
-
-         try
-         {
-            if (chunkLoadedLatch != null && wait)
-               chunkLoadedLatch.await();
-         }
-         catch (InterruptedException e)
-         {
-            throw new RuntimeException(e);
          }
       }
 
-      private void loadChunkNow() throws IOException
+      /**
+       * Runs on whichever thread ended up responsible for loading this chunk (the calling thread if wait == true, an executor thread
+       * otherwise): loads the chunk's records, then its messages if requested, unloading the chunk entirely on any failure so a later
+       * request retries from scratch instead of being stuck with a permanently-failed or partial state.
+       */
+      private void runChunkLoad(CompletableFuture<Records> future, boolean createMessages)
       {
-         if (chunkRecords == null)
+         try
          {
             ByteBuffer chunkBuffer = mcap.getDataInput().getByteBuffer(chunkIndex.chunkOffset(), (int) chunkIndex.chunkLength(), true);
-            chunkRecords = ((Chunk) new RecordDataInputBacked(MCAPDataInput.wrap(chunkBuffer), 0).body()).records();
-         }
+            Records records = ((Chunk) new RecordDataInputBacked(MCAPDataInput.wrap(chunkBuffer), 0).body()).records();
 
-         if (!loadedChunkBundles.contains(this))
-            loadedChunkBundles.add(this);
+            if (!loadedChunkBundles.contains(this))
+               loadedChunkBundles.add(this);
+
+            future.complete(records);
+
+            if (createMessages)
+               loadMessagesNow();
+         }
+         catch (Exception e)
+         {
+            e.printStackTrace();
+            future.completeExceptionally(e); // no-op if future.complete(records) above already succeeded -- only the messages step failed
+            unloadChunk();
+         }
       }
 
-      public void loadMessagesNow() throws IOException
+      /** Kicks off a message load if nobody has started one yet, without waiting for it to finish. */
+      private void startLoadingMessagesAsync()
       {
-         if (bundledMessages != null)
-            return;
+         CompletableFuture<TLongObjectHashMap<List<Message>>> claimedFuture = claim(bundledMessagesFuture);
+         if (claimedFuture != null)
+            executorService.submit(() -> runMessagesLoad(claimedFuture));
+      }
 
-         if (messagesLoadedLatch != null)
-         {
-            try
-            {
-               messagesLoadedLatch.await();
-            }
-            catch (InterruptedException e)
-            {
-               throw new RuntimeException(e);
-            }
-            return;
-         }
+      public TLongObjectHashMap<List<Message>> loadMessagesNow() throws IOException
+      {
+         CompletableFuture<TLongObjectHashMap<List<Message>>> claimedFuture = claim(bundledMessagesFuture);
+         CompletableFuture<TLongObjectHashMap<List<Message>>> future = claimedFuture != null ? claimedFuture : bundledMessagesFuture.get();
 
-         messagesLoadedLatch = new CountDownLatch(1);
+         if (claimedFuture != null)
+            runMessagesLoad(claimedFuture);
 
+         return awaitChecked(future);
+      }
+
+      private void runMessagesLoad(CompletableFuture<TLongObjectHashMap<List<Message>>> future)
+      {
          try
          {
-            if (bundledMessages == null)
-               bundledMessages = new TLongObjectHashMap<>();
+            // Built into a local variable that no other thread can see or touch until fully populated, then published to the future in one
+            // shot via complete(...) -- as opposed to mutating a shared field in place while other threads might be reading/writing it too.
+            TLongObjectHashMap<List<Message>> newBundledMessages = new TLongObjectHashMap<>();
 
-            for (Record record : chunkRecords)
+            for (Record record : chunkRecordsFuture.get().join())
             {
                if (record.op() != Opcode.MESSAGE)
                   continue;
 
                Message message = record.body();
-               List<Message> messages = bundledMessages.get(round(message.logTime(), desiredLogDT));
+               List<Message> messages = newBundledMessages.get(round(message.logTime(), desiredLogDT));
                if (messages == null)
                {
                   messages = new ArrayList<>();
-                  bundledMessages.put(round(message.logTime(), desiredLogDT), messages);
+                  newBundledMessages.put(round(message.logTime(), desiredLogDT), messages);
                }
                messages.add(message);
             }
+
+            future.complete(newBundledMessages);
          }
-         finally
+         catch (Exception e)
          {
-            messagesLoadedLatch.countDown();
-            messagesLoadedLatch = null;
+            future.completeExceptionally(e);
          }
       }
 
       public Records getChunkRecords()
       {
-         return chunkRecords;
+         CompletableFuture<Records> future = chunkRecordsFuture.get();
+         if (future == null || !future.isDone() || future.isCompletedExceptionally())
+            return null;
+         return future.getNow(null);
       }
 
       public long startTime()
@@ -398,21 +453,19 @@ public class MCAPBufferedChunk
 
       public List<Message> getMessages(long logTime)
       {
-         if (chunkRecords == null)
+         if (getChunkRecords() == null)
             return null;
 
-         if (bundledMessages == null)
+         TLongObjectHashMap<List<Message>> messages;
+         try
          {
-            try
-            {
-               loadMessagesNow();
-            }
-            catch (IOException e)
-            {
-               throw new RuntimeException(e);
-            }
+            messages = loadMessagesNow();
          }
-         return bundledMessages.get(round(logTime, desiredLogDT));
+         catch (IOException e)
+         {
+            throw new RuntimeException(e);
+         }
+         return messages.get(round(logTime, desiredLogDT));
       }
    }
 }
