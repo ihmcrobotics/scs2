@@ -183,6 +183,21 @@ public class MCAPLogSession extends Session
    }
 
    @Override
+   public void shutdownSession()
+   {
+      super.shutdownSession();
+
+      try
+      {
+         mcapLogFileReader.close();
+      }
+      catch (IOException e)
+      {
+         LogTools.error("Failed to close the MCAP log file reader: " + e.getMessage());
+      }
+   }
+
+   @Override
    protected double doSpecificRunTick()
    {
       if (mcapLogFileReader.incrementTimestamp())
