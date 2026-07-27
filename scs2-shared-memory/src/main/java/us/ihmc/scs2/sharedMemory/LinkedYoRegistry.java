@@ -76,6 +76,43 @@ public class LinkedYoRegistry extends LinkedBuffer
                      newBufferVariable2.duplicate(registry2);
                }
             }
+
+            // A registry/variable removed on the backend side (e.g. a robot being replaced) must also be removed
+            // from this mirror - otherwise it lingers here forever, disconnected from any backend updates, and its
+            // name permanently blocks a same-named replacement from ever being linked (the add-handling above only
+            // duplicates a variable "if it doesn't already exist").
+            //
+            // Note: by the time this listener runs, the removed variable/registry has already been detached from
+            // its parent (its own getNamespace()/getParent() are no longer reliable, and can even be null - e.g.
+            // when a whole registry subtree is destroy()'d, each of its variables individually fires a "variable
+            // removed" event from within that same detach). getTargetParentRegistry() is unaffected by this since
+            // it refers to the (still attached) former parent, so look the mirror up from there instead.
+            if (change.wasVariableRemoved())
+            {
+               YoRegistry backendParent = change.getTargetParentRegistry();
+               YoRegistry mirrorParent = backendParent == null ? null : rootRegistry.findRegistry(backendParent.getNamespace());
+               if (mirrorParent != null)
+               {
+                  YoVariable mirrorVariable = mirrorParent.getVariable(change.getTargetVariable().getName());
+                  if (mirrorVariable != null)
+                  {
+                     unlinkYoVariable(mirrorVariable);
+                     mirrorVariable.destroy();
+                  }
+               }
+            }
+
+            if (change.wasRegistryRemoved())
+            {
+               YoRegistry backendParent = change.getTargetParentRegistry();
+               YoRegistry mirrorParent = backendParent == null ? null : rootRegistry.findRegistry(backendParent.getNamespace());
+               YoRegistry mirrorRegistry = mirrorParent == null ? null : mirrorParent.getChild(change.getTargetRegistry().getName());
+               if (mirrorRegistry != null)
+               {
+                  mirrorRegistry.collectSubtreeVariables().forEach(this::unlinkYoVariable);
+                  mirrorParent.removeChild(mirrorRegistry);
+               }
+            }
          }
          finally
          {
@@ -102,6 +139,21 @@ public class LinkedYoRegistry extends LinkedBuffer
       rootRegistry.addListener(rootRegistryListener);
    }
 
+   /**
+    * Disposes and detaches the {@link LinkedYoVariable} (if any) previously created for {@code mirrorVariable} via
+    * {@link #linkYoVariable}, so it stops being tracked (and pulled/pushed) once the variable itself is about to be
+    * removed from this mirror.
+    */
+   private void unlinkYoVariable(YoVariable mirrorVariable)
+   {
+      LinkedYoVariable<?> linkedYoVariable = linkedYoVariableMap.get(mirrorVariable);
+      if (linkedYoVariable != null)
+      {
+         linkedYoVariables.remove(linkedYoVariable);
+         linkedYoVariable.dispose();
+      }
+   }
+
    public <L extends LinkedYoVariable<T>, T extends YoVariable> L linkYoVariable(T variableToLink)
    {
       return linkYoVariable(variableToLink, null);
@@ -117,6 +169,11 @@ public class LinkedYoRegistry extends LinkedBuffer
       if (linkedYoVariable == null)
       {
          YoVariableBuffer yoVariableBuffer = yoRegistryBuffer.findYoVariableBuffer(variableToLink);
+         // variableToLink can be a mirror variable that has since been destroy()'d (e.g. an old UI control still
+         // holding a reference to a robot's variable across a reload/replace) - it no longer resolves to a buffer,
+         // so there is nothing to link it to.
+         if (yoVariableBuffer == null)
+            return null;
          linkedYoVariable = yoVariableBuffer.newLinkedYoVariable(variableToLink, initialUser);
          linkedYoVariable.addPushRequestListener(pushRequestForwarder);
          linkedYoVariables.add(linkedYoVariable);
