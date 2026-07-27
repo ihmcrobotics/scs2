@@ -227,6 +227,9 @@ public class YoGroupFX implements YoGraphicFXItem
    @Override
    public void render()
    {
+      if (!visibleProperty.get())
+         return;
+
       yoGraphicFX2DSet.forEach(YoGraphicFX2D::render);
       yoGraphicFX3DSet.forEach(YoGraphicFX3D::render);
       children.forEach(YoGroupFX::render);
@@ -235,6 +238,9 @@ public class YoGroupFX implements YoGraphicFXItem
    @Override
    public void computeBackground()
    {
+      if (!visibleProperty.get())
+         return;
+
       try
       {
          yoGraphicFX2DSet.forEach(YoGraphicFX2D::computeBackground);

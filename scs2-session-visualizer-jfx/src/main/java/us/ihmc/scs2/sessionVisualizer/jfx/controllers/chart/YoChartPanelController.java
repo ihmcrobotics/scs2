@@ -857,15 +857,17 @@ public class YoChartPanelController extends ObservedAnimationTimer implements Vi
          series.updateLegend();
       }
 
-      private int lastUpdateEndIndex = -1;
+      private long lastConsumedTotalSamples = -1;
+      private long lastConsumedRebuildCounter = -1;
 
       public void updateChart()
       {
          ChartDataUpdate newData = chartData.pollChartData(callerID);
          if (newData != null)
          {
-            newData.readUpdate(series, lastUpdateEndIndex);
-            lastUpdateEndIndex = newData.getUpdateEndIndex();
+            newData.readUpdate(series, lastConsumedTotalSamples, lastConsumedRebuildCounter);
+            lastConsumedTotalSamples = newData.getTotalSamplesPublished();
+            lastConsumedRebuildCounter = newData.getRebuildCounter();
          }
       }
 

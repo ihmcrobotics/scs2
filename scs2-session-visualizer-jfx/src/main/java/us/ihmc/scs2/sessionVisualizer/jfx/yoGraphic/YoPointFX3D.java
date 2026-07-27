@@ -4,6 +4,7 @@ import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.scene.Group;
 import javafx.scene.Node;
+import javafx.scene.paint.Color;
 import javafx.scene.paint.PhongMaterial;
 import javafx.scene.shape.DrawMode;
 import javafx.scene.shape.Shape3D;
@@ -17,6 +18,7 @@ import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.Tuple3DProperty;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 
 public class YoPointFX3D extends YoGraphicFX3D
 {
@@ -28,6 +30,7 @@ public class YoPointFX3D extends YoGraphicFX3D
    private final Scale scale = new Scale();
    private final PhongMaterial material = new PhongMaterial();
    private YoGraphicFXResource graphicResource;
+   private Color lastColor = null;
 
    public YoPointFX3D()
    {
@@ -88,12 +91,19 @@ public class YoPointFX3D extends YoGraphicFX3D
       translate.setX(positionInWorld.getX());
       translate.setY(positionInWorld.getY());
       translate.setZ(positionInWorld.getZ());
+
       if (size == null)
          size = new SimpleDoubleProperty(0.1);
       scale.setX(size.get());
       scale.setY(size.get());
       scale.setZ(size.get());
-      material.setDiffuseColor(color.get());
+
+      Color colorValue = color.get();
+      if (!Objects.equals(colorValue, lastColor))
+      {
+         material.setDiffuseColor(colorValue);
+         lastColor = colorValue;
+      }
    }
 
    public void setPosition(Tuple3DProperty position)
