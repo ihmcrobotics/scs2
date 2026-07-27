@@ -41,6 +41,20 @@ public class YoVariableChartData
    private int lastUpdateEndIndex = -1;
    private DoubleArray lastDataSet;
    private ChartDataUpdate lastChartDataUpdate;
+
+   private MonotonicIndexDeque maxCandidates, minCandidates;
+   // Bookkeeping for the max and min candidates
+   private int previousSize = -1, previousInPoint = -1, previousOutPoint = -1;
+
+   /** Monotonic count of new samples ever applied to {@link #lastDataSet}, across this instance's whole lifetime. */
+   private long totalSamplesPublished = 0;
+   /**
+    * Bumped on every full rebuild, not on incremental rebuilds. If this differs from what a caller
+    * last observed, ring positions outside the naive "trailing N samples" window may have changed too,
+    * so a full repaint is required rather than a partial patch.
+    */
+   private long fullBufferRebuildCounter = 0;
+
    private final Queue<Object> callerIDs = new ConcurrentLinkedQueue<>();
    private final Map<Object, ChartDataUpdate> newChartDataUpdate = new ConcurrentHashMap<>();
 
@@ -180,25 +194,63 @@ public class YoVariableChartData
 
       @SuppressWarnings("unchecked") BufferSample<double[]> newBufferSample = bufferConverterFunction.apply(rawData);
       if (lastDataSet != null && newBufferSample.getBufferProperties().getSize() != lastDataSet.size)
+      {
          lastDataSet = null;
+         previousSize = -1; // Force a full rebuild (and fresh deques) on the next hasChartData tick.
+      }
 
-      DoubleArray dataSet;
+      DoubleArray publishedDataSet;
 
       if (hasChartData.get())
-         dataSet = updateDataSet(lastDataSet, newBufferSample);
+      {
+         YoBufferPropertiesReadOnly newProperties = newBufferSample.getBufferProperties();
+         boolean incrementalUpdate = applyIncrementalUpdate(previousSize, previousInPoint, previousOutPoint, lastDataSet == null, newBufferSample);
+
+         if (incrementalUpdate)
+         {
+            incrementallyPatchValuesAndBounds(lastDataSet, newBufferSample, previousInPoint, maxCandidates, minCandidates);
+            previousInPoint = newProperties.getInPoint();
+            previousOutPoint = newProperties.getOutPoint();
+            totalSamplesPublished += newBufferSample.getSampleLength();
+
+            // Deep copy to the original data can change without this published data changing
+            publishedDataSet = lastDataSet.deepCopy();
+         }
+         else
+         {
+            MonotonicIndexDeque newMaxCandidates = new MonotonicIndexDeque(newProperties.getSize(), true);
+            MonotonicIndexDeque newMinCandidates = new MonotonicIndexDeque(newProperties.getSize(), false);
+            DoubleArray rebuilt = rebuildEntireDataSet(lastDataSet, newBufferSample, newMaxCandidates, newMinCandidates);
+
+            if (rebuilt != null)
+            {
+               lastDataSet = rebuilt;
+               maxCandidates = newMaxCandidates;
+               minCandidates = newMinCandidates;
+               previousSize = newProperties.getSize();
+               previousInPoint = newProperties.getInPoint();
+               previousOutPoint = newProperties.getOutPoint();
+               totalSamplesPublished += newBufferSample.getSampleLength();
+               fullBufferRebuildCounter++;
+            }
+            // Safe to publish directly: freshly built, never shared with any caller yet.
+            publishedDataSet = rebuilt;
+         }
+      }
       else if (updateBounds)
-         dataSet = updateBounds(lastProperties, lastDataSet);
+      {
+         publishedDataSet = updateBounds(lastProperties, lastDataSet);
+         if (publishedDataSet != null)
+            lastDataSet = publishedDataSet;
+      }
       else
          throw new IllegalStateException("Should not get here.");
 
-      ChartDataUpdate chartDataUpdate = new ChartDataUpdate(dataSet, rawData.getBufferProperties());
+      ChartDataUpdate chartDataUpdate = new ChartDataUpdate(publishedDataSet, rawData.getBufferProperties(), totalSamplesPublished, fullBufferRebuildCounter);
       lastChartDataUpdate = chartDataUpdate;
 
-      if (dataSet != null)
-      {
+      if (publishedDataSet != null)
          callerIDs.forEach(callerID -> newChartDataUpdate.put(callerID, chartDataUpdate));
-         lastDataSet = dataSet;
-      }
 
       hasChartData.set(false);
    }
@@ -239,25 +291,107 @@ public class YoVariableChartData
       return !callerIDs.isEmpty();
    }
 
-   public static DoubleArray updateDataSet(DoubleArray lastDataSet, BufferSample<double[]> bufferSample)
+   /**
+    * This checks whether the full update is required or not for the ChartData
+    * @return boolean for whether we can do the incremental update, or we have to do the full update
+    */
+   static boolean applyIncrementalUpdate(int previousSize, int appliedInPoint, int appliedOutPoint, boolean dataIsNull,
+                                         BufferSample<double[]> newBufferSample)
    {
-      int sampleLength = bufferSample.getSampleLength();
+      if (dataIsNull || previousSize < 0)
+         return false;
+
+      YoBufferPropertiesReadOnly newProperties = newBufferSample.getBufferProperties();
+      int newSize = newProperties.getSize();
+      if (previousSize != newSize)
+         return false;
+
+      int expectedFrom = SharedMemoryTools.increment(appliedOutPoint, 1, newSize);
+      if (newBufferSample.getFrom() != expectedFrom)
+         return false;
+
+      if (newBufferSample.getTo() != newProperties.getOutPoint())
+         return false;
+
+      int evictionSteps = SharedMemoryTools.computeSubLength(appliedInPoint, newProperties.getInPoint(), newSize) - 1;
+      return evictionSteps <= newBufferSample.getSampleLength();
+   }
+
+   /**
+    * Updates the values and the two sliding-window deques in place for exactly what changed this tick.
+    * Indices that aged out of the active window are removed, then the newly-arrived sample range is adde.
+    * Caller must have already verified eligibility via {@link #applyIncrementalUpdate}. Patches {@code previousData.valueMin}/{@code valueMax} in place.
+    */
+   static void incrementallyPatchValuesAndBounds(DoubleArray previousData, BufferSample<double[]> newBufferSample, int previousInPoint,
+                                                  MonotonicIndexDeque maxCandidates, MonotonicIndexDeque minCandidates)
+   {
+      double[] previousValues = previousData.values;
+      YoBufferPropertiesReadOnly bufferProperties = newBufferSample.getBufferProperties();
+      int bufferSize = bufferProperties.getSize();
+      int newInPoint = bufferProperties.getInPoint();
+
+      int evictionSteps = SharedMemoryTools.computeSubLength(previousInPoint, newInPoint, bufferSize) - 1;
+      int index = previousInPoint;
+      for (int i = 0; i < evictionSteps; i++)
+      {
+         maxCandidates.evictIfFront(index);
+         minCandidates.evictIfFront(index);
+         index = SharedMemoryTools.increment(index, 1, bufferSize);
+      }
+
+      double[] sample = newBufferSample.getSample();
+      int insertIndex = newBufferSample.getFrom();
+
+      for (int i = 0; i < newBufferSample.getSampleLength(); i++)
+      {
+         double value = sample[i];
+         if (!Double.isFinite(value))
+            value = 0.0;
+
+         previousValues[insertIndex] = value;
+         maxCandidates.pushCandidate(insertIndex, value, previousValues);
+         minCandidates.pushCandidate(insertIndex, value, previousValues);
+         insertIndex = SharedMemoryTools.increment(insertIndex, 1, bufferSize);
+      }
+
+      previousData.valueMin = previousValues[minCandidates.peekFrontIndex()];
+      previousData.valueMax = previousValues[maxCandidates.peekFrontIndex()];
+   }
+
+   /**
+    * Full O(bufferSize) rebuild of everything as we couldn't do an incremental update.
+    */
+   static DoubleArray rebuildEntireDataSet(DoubleArray previousDataSet, BufferSample<double[]> bufferSample, MonotonicIndexDeque maxCandidates,
+                                            MonotonicIndexDeque minCandidates)
+   {
+      if (bufferSample == null || bufferSample.getSampleLength() == 0)
+         return null;
+
       YoBufferPropertiesReadOnly bufferProperties = bufferSample.getBufferProperties();
       int bufferSize = bufferProperties.getSize();
 
-      if (bufferSample == null || sampleLength == 0)
-         return null;
-
       DoubleArray dataSet = new DoubleArray(bufferSize);
 
-      dataSet.values[0] = getValueAt(0, lastDataSet, bufferSample);
+      for (int i = 0; i < bufferSize; i++)
+         dataSet.values[i] = getValueAt(i, previousDataSet, bufferSample);
 
-      for (int i = 1; i < bufferSize; i++)
+      maxCandidates.clear();
+      minCandidates.clear();
+
+      int index = bufferProperties.getInPoint();
+      maxCandidates.pushCandidate(index, dataSet.values[index], dataSet.values);
+      minCandidates.pushCandidate(index, dataSet.values[index], dataSet.values);
+
+      for (int i = 1; i < bufferProperties.getActiveBufferLength(); i++)
       {
-         dataSet.values[i] = getValueAt(i, lastDataSet, bufferSample);
+         index = SharedMemoryTools.increment(index, 1, bufferSize);
+         maxCandidates.pushCandidate(index, dataSet.values[index], dataSet.values);
+         minCandidates.pushCandidate(index, dataSet.values[index], dataSet.values);
       }
 
-      return updateBounds(bufferProperties, dataSet);
+      dataSet.valueMin = dataSet.values[minCandidates.peekFrontIndex()];
+      dataSet.valueMax = dataSet.values[maxCandidates.peekFrontIndex()];
+      return dataSet;
    }
 
    private static DoubleArray updateBounds(YoBufferPropertiesReadOnly bufferProperties, DoubleArray dataSet)
@@ -318,30 +452,58 @@ public class YoVariableChartData
 
    public static class ChartDataUpdate
    {
-      private final DoubleArray dataSet;
+      /** Package-private (rather than private) so it's directly testable from same-package unit tests. */
+      final DoubleArray dataSet;
       private final YoBufferPropertiesReadOnly bufferProperties;
+      private final long totalSamplesPublished;
+      private final long rebuildCounter;
 
-      public ChartDataUpdate(DoubleArray dataSet, YoBufferPropertiesReadOnly bufferProperties)
+      public ChartDataUpdate(DoubleArray dataSet, YoBufferPropertiesReadOnly bufferProperties, long totalSamplesPublished, long rebuildCounter)
       {
          this.dataSet = dataSet;
          this.bufferProperties = bufferProperties;
+         this.totalSamplesPublished = totalSamplesPublished;
+         this.rebuildCounter = rebuildCounter;
       }
 
-      public void readUpdate(NumberSeries chartDataSet, int lastUpdateEndIndex)
+      /**
+       * Copies {@link #dataSet} into {@code chartDataSet}'s {@code Point2D} list, patching only the ring
+       * positions that changed since the caller's last call (tracked via {@code lastConsumedTotalSamples}/
+       * {@code lastConsumedRebuildCounter}, which the caller should persist from
+       * {@link #getTotalSamplesPublished()}/{@link #getRebuildCounter()} after each call) whenever that's
+       * provably safe, falling back to a full rewrite otherwise.
+       */
+      public void readUpdate(NumberSeries chartDataSet, long lastConsumedTotalSamples, long lastConsumedRebuildCounter)
       {
          chartDataSet.getLock().writeLock().lock();
 
          try
          {
+            boolean sizeMatches = chartDataSet.getData().size() == dataSet.size;
+
             // Resizing the cart data
             while (chartDataSet.getData().size() < dataSet.size)
                chartDataSet.getData().add(new Point2D());
             while (chartDataSet.getData().size() > dataSet.size)
                chartDataSet.getData().remove(chartDataSet.getData().size() - 1);
 
-            for (int i = 0; i < dataSet.size; i++)
+            long newSamplesSinceLastConsumed = totalSamplesPublished - lastConsumedTotalSamples;
+
+            boolean updateIncrementally = canPatchIncrementally(sizeMatches, newSamplesSinceLastConsumed, lastConsumedRebuildCounter);
+
+            if (updateIncrementally)
             {
-               chartDataSet.getData().get(i).set(i, dataSet.values[i]);
+               int index = bufferProperties.getOutPoint();
+               for (int i = 0; i < newSamplesSinceLastConsumed; i++)
+               {
+                  chartDataSet.getData().get(index).set(index, dataSet.values[index]);
+                  index = SharedMemoryTools.decrement(index, 1, dataSet.size);
+               }
+            }
+            else
+            {
+               for (int i = 0; i < dataSet.size; i++)
+                  chartDataSet.getData().get(i).set(i, dataSet.values[i]);
             }
 
             chartDataSet.bufferCurrentIndexProperty().set(bufferProperties.getCurrentIndex());
@@ -355,22 +517,55 @@ public class YoVariableChartData
          }
       }
 
-      public int getUpdateEndIndex()
+      public long getTotalSamplesPublished()
       {
-         return bufferProperties.getOutPoint();
+         return totalSamplesPublished;
+      }
+
+      public long getRebuildCounter()
+      {
+         return rebuildCounter;
+      }
+
+      /**
+       * Whether {@link #dataSet} can be folded into {@code chartDataSet} by patching just the trailing
+       * {@code newSamplesSinceLastConsumed} ring positions, instead of rewriting every point.
+       */
+      private boolean canPatchIncrementally(boolean sizeMatches, long newSamplesSinceLastConsumed, long lastConsumedRebuildCounter)
+      {
+         if (!sizeMatches)
+            return false; // chart series is a different length than last render; ring positions can't be assumed to line up.
+         if (rebuildCounter != lastConsumedRebuildCounter)
+            return false; // a full rebuild happened since the caller's last render; ring layout may have changed arbitrarily.
+         if (newSamplesSinceLastConsumed < 0)
+            return false; // totalSamplesPublished went backward -- should never happen, guards against stale/bogus caller state.
+         if (newSamplesSinceLastConsumed >= dataSet.size)
+            return false; // more new samples arrived than the buffer holds; "just patch the trailing window" no longer covers everything that changed.
+         return true;
       }
    }
 
-   private static class DoubleArray
+   /** Package-private (rather than private) so its fields are directly testable from same-package unit tests. */
+   static class DoubleArray
    {
-      private final int size;
-      private final double[] values;
-      private double valueMin, valueMax;
+      final int size;
+      final double[] values;
+      double valueMin, valueMax;
 
-      public DoubleArray(int size)
+      DoubleArray(int size)
       {
          this.size = size;
          values = new double[size];
+      }
+
+      /** Deep copy, used to publish a safe-to-read snapshot while the source keeps being mutated in place. */
+      DoubleArray deepCopy()
+      {
+         DoubleArray copy = new DoubleArray(size);
+         System.arraycopy(values, 0, copy.values, 0, size);
+         copy.valueMin = valueMin;
+         copy.valueMax = valueMax;
+         return copy;
       }
    }
 
