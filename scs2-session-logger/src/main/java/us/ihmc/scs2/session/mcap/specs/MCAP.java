@@ -9,6 +9,7 @@ import us.ihmc.scs2.session.mcap.specs.records.Opcode;
 import us.ihmc.scs2.session.mcap.specs.records.Record;
 import us.ihmc.scs2.session.mcap.specs.records.RecordDataInputBacked;
 
+import java.io.Closeable;
 import java.nio.channels.FileChannel;
 import java.util.ArrayList;
 import java.util.List;
@@ -22,7 +23,7 @@ import java.util.List;
  *
  * @see <a href="https://github.com/foxglove/mcap/tree/c1cc51d/docs/specification#readme">Source</a>
  */
-public class MCAP
+public class MCAP implements Closeable
 {
    /**
     * Stream object that this MCAP was parsed from.
@@ -79,6 +80,12 @@ public class MCAP
    public MCAPDataInput getDataInput()
    {
       return dataInput;
+   }
+
+   @Override
+   public void close()
+   {
+      dataInput.close();
    }
 
    public List<Record> records()
