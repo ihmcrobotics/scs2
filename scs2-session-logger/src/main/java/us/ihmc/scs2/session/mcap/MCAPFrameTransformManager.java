@@ -29,6 +29,7 @@ import us.ihmc.yoVariables.registry.YoRegistry;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
@@ -54,9 +55,30 @@ public class MCAPFrameTransformManager
    private static final String TRANSLATION_Y_FIELD_NAME = "translation.y";
    private static final String TRANSLATION_Z_FIELD_NAME = "translation.z";
 
+   // tf2_msgs/TFMessage field names. Unlike the foxglove::FrameTransform schema above, these are read from the
+   // *unflattened* schema, so nested struct field names are plain (e.g. "x", not "translation.x").
+   private static final String TF2_TRANSFORMS_FIELD_NAME = "transforms";
+   private static final String TF2_HEADER_FIELD_NAME = "header";
+   private static final String TF2_HEADER_FRAME_ID_FIELD_NAME = "frame_id";
+   private static final String TF2_TRANSFORM_FIELD_NAME = "transform";
+   private static final String FIELD_X = "x";
+   private static final String FIELD_Y = "y";
+   private static final String FIELD_Z = "z";
+   private static final String FIELD_W = "w";
+
+   private enum FrameTransformSchemaKind
+   {
+      FOXGLOVE_FRAME_TRANSFORM, TF2_TF_MESSAGE
+   }
+
    private final YoRegistry registry = new YoRegistry(getClass().getSimpleName());
    private final ReferenceFrame inertialFrame;
-   private MCAPSchema foxgloveFrameTransformSchema;
+   private MCAPSchema frameTransformSchema;
+   private FrameTransformSchemaKind frameTransformSchemaKind;
+   /** Only set when {@link #frameTransformSchemaKind} is {@link FrameTransformSchemaKind#TF2_TF_MESSAGE}: the unflattened schema for one {@code geometry_msgs/TransformStamped} array element. */
+   private MCAPSchema transformStampedSchema;
+   /** Only set when {@link #frameTransformSchemaKind} is {@link FrameTransformSchemaKind#TF2_TF_MESSAGE}: the flat map of all sub-schema types referenced anywhere in the tf2_msgs/TFMessage schema (Header, Time, Transform, Vector3, Quaternion, ...). */
+   private Map<String, MCAPSchema> tf2SubSchemaMap;
    private final List<YoFoxGloveFrameTransform> transformList = new ArrayList<>();
    private final Map<String, YoFoxGloveFrameTransform> rawNameToTransformMap = new LinkedHashMap<>();
    private final Map<String, YoFoxGloveFrameTransform> sanitizedNameToTransformMap = new LinkedHashMap<>();
@@ -76,52 +98,90 @@ public class MCAPFrameTransformManager
 
    public void initialize(MCAP mcap, MCAPBufferedChunk chunkBuffer) throws IOException
    {
+      Schema foxgloveCandidate = null;
+      Schema tf2Candidate = null;
+
       for (Record record : mcap.records())
       {
          if (record.op() != Opcode.SCHEMA)
             continue;
 
-         mcapSchema = (Schema) record.body();
-         if (mcapSchema.name().equalsIgnoreCase("foxglove::FrameTransform"))
-         {
-            if (mcapSchema.encoding().equalsIgnoreCase("ros2msg"))
-            {
-               foxgloveFrameTransformSchema = ROS2SchemaParser.loadSchema(mcapSchema);
-            }
-            else if (mcapSchema.encoding().equalsIgnoreCase("omgidl"))
-            {
-               foxgloveFrameTransformSchema = OMGIDLSchemaParser.loadSchema(mcapSchema);
-            }
-            else
-            {
-               throw new UnsupportedOperationException("Unsupported encoding: " + mcapSchema.encoding());
-            }
-            break;
-         }
+         Schema schema = (Schema) record.body();
+         if (foxgloveCandidate == null && schema.name().equalsIgnoreCase("foxglove::FrameTransform"))
+            foxgloveCandidate = schema;
+         else if (tf2Candidate == null && isTf2TFMessageSchemaName(schema.name()))
+            tf2Candidate = schema;
       }
 
-      if (foxgloveFrameTransformSchema == null)
+      if (foxgloveCandidate != null)
       {
-         LogTools.error("Could not find the schema for foxglove::FrameTransform");
+         frameTransformSchemaKind = FrameTransformSchemaKind.FOXGLOVE_FRAME_TRANSFORM;
+         mcapSchema = foxgloveCandidate;
+         if (tf2Candidate != null)
+            LogTools.warn("Found both foxglove::FrameTransform and a tf2_msgs/TFMessage schema; using foxglove::FrameTransform and ignoring the tf2_msgs one.");
+      }
+      else if (tf2Candidate != null)
+      {
+         frameTransformSchemaKind = FrameTransformSchemaKind.TF2_TF_MESSAGE;
+         mcapSchema = tf2Candidate;
+      }
+      else
+      {
+         LogTools.error("Could not find the schema for foxglove::FrameTransform or tf2_msgs/TFMessage");
          return;
       }
 
-      // Flatten the schema to make it easier to read.
-      foxgloveFrameTransformSchema = foxgloveFrameTransformSchema.flattenSchema();
-      for (String fieldName : Arrays.asList(PARENT_FRAME_FIELD_NAME,
-                                            CHILD_FRAME_FIELD_NAME,
-                                            ROTATION_FIELD_NAME,
-                                            ROTATION_X_FIELD_NAME,
-                                            ROTATION_Y_FIELD_NAME,
-                                            ROTATION_Z_FIELD_NAME,
-                                            ROTATION_W_FIELD_NAME,
-                                            TRANSLATION_FIELD_NAME,
-                                            TRANSLATION_X_FIELD_NAME,
-                                            TRANSLATION_Y_FIELD_NAME,
-                                            TRANSLATION_Z_FIELD_NAME))
+      MCAPSchema loadedSchema;
+      if (mcapSchema.encoding().equalsIgnoreCase("ros2msg"))
       {
-         if (foxgloveFrameTransformSchema.getFields().stream().noneMatch(field -> field.getName().equalsIgnoreCase(fieldName)))
-            throw new RuntimeException("Could not find the field " + fieldName + " in the schema for foxglove::FrameTransform");
+         loadedSchema = ROS2SchemaParser.loadSchema(mcapSchema);
+      }
+      else if (mcapSchema.encoding().equalsIgnoreCase("omgidl"))
+      {
+         loadedSchema = OMGIDLSchemaParser.loadSchema(mcapSchema);
+      }
+      else
+      {
+         throw new UnsupportedOperationException("Unsupported encoding: " + mcapSchema.encoding());
+      }
+
+      if (frameTransformSchemaKind == FrameTransformSchemaKind.FOXGLOVE_FRAME_TRANSFORM)
+      {
+         // Flatten the schema to make it easier to read.
+         frameTransformSchema = loadedSchema.flattenSchema();
+         for (String fieldName : Arrays.asList(PARENT_FRAME_FIELD_NAME,
+                                               CHILD_FRAME_FIELD_NAME,
+                                               ROTATION_FIELD_NAME,
+                                               ROTATION_X_FIELD_NAME,
+                                               ROTATION_Y_FIELD_NAME,
+                                               ROTATION_Z_FIELD_NAME,
+                                               ROTATION_W_FIELD_NAME,
+                                               TRANSLATION_FIELD_NAME,
+                                               TRANSLATION_X_FIELD_NAME,
+                                               TRANSLATION_Y_FIELD_NAME,
+                                               TRANSLATION_Z_FIELD_NAME))
+         {
+            if (frameTransformSchema.getFields().stream().noneMatch(field -> field.getName().equalsIgnoreCase(fieldName)))
+               throw new RuntimeException("Could not find the field " + fieldName + " in the schema for foxglove::FrameTransform");
+         }
+      }
+      else
+      {
+         // Keep the schema nested: the tf2_msgs/TFMessage reader walks the struct tree directly instead of relying on flattening,
+         // since flattenSchema() does not know how to expand an unbounded sequence of structs (only fixed-size arrays).
+         frameTransformSchema = loadedSchema;
+         MCAPSchemaField transformsField = loadedSchema.getFields()
+                                                        .stream()
+                                                        .filter(field -> field.getName().equalsIgnoreCase(TF2_TRANSFORMS_FIELD_NAME))
+                                                        .findFirst()
+                                                        .orElseThrow(() -> new RuntimeException(
+                                                              "Could not find the field '" + TF2_TRANSFORMS_FIELD_NAME
+                                                              + "' in the schema for tf2_msgs/TFMessage"));
+         tf2SubSchemaMap = loadedSchema.getSubSchemaMap();
+         transformStampedSchema = tf2SubSchemaMap.get(transformsField.getType());
+         if (transformStampedSchema == null)
+            throw new RuntimeException("Could not find the sub-schema for type: " + transformsField.getType());
+         validateTransformStampedSchema(transformStampedSchema, tf2SubSchemaMap);
       }
 
       TIntObjectHashMap<String> channelIdToTopicMap = new TIntObjectHashMap<>();
@@ -130,7 +190,7 @@ public class MCAPFrameTransformManager
          if (record.op() == Opcode.CHANNEL)
          {
             Channel channel = (Channel) record.body();
-            if (channel.schemaId() == foxgloveFrameTransformSchema.getId())
+            if (channel.schemaId() == frameTransformSchema.getId())
             {
                channelIdToTopicMap.put(channel.id(), channel.topic());
             }
@@ -212,8 +272,8 @@ public class MCAPFrameTransformManager
       if (topic == null)
          return;
 
-      BasicTransformInfo transformInfo = extractFromMessage(foxgloveFrameTransformSchema, topic, message);
-      allTransforms.put(transformInfo.childFrameName(), transformInfo);
+      for (BasicTransformInfo transformInfo : extractFromMessage(topic, message))
+         allTransforms.put(transformInfo.childFrameName(), transformInfo);
    }
 
    private static LinkedList<BasicTransformInfo> sortTransforms(Map<String, BasicTransformInfo> allTransforms)
@@ -240,7 +300,7 @@ public class MCAPFrameTransformManager
 
    public void update()
    {
-      if (foxgloveFrameTransformSchema == null)
+      if (frameTransformSchemaKind == null)
          return;
 
       for (YoFoxGloveFrameTransform transform : transformList)
@@ -259,7 +319,7 @@ public class MCAPFrameTransformManager
     */
    public boolean readMessage(Message message)
    {
-      if (foxgloveFrameTransformSchema == null)
+      if (frameTransformSchemaKind == null)
          return false;
 
       if (!channelIds.contains(message.channelId()))
@@ -267,80 +327,84 @@ public class MCAPFrameTransformManager
 
       cdr.initialize(message.messageBuffer(), 0, message.dataLength());
 
-      double rx, ry, rz, rw;
-      double tx, ty, tz;
-      String parentFrameName;
-      String childFrameName;
       try
       {
-         List<? extends MCAPSchemaField> fields = foxgloveFrameTransformSchema.getFields();
-         rw = 1.0;
-         rz = 0.0;
-         ry = 0.0;
-         rx = 0.0;
-         tz = 0.0;
-         ty = 0.0;
-         tx = 0.0;
-         parentFrameName = null;
-         childFrameName = null;
-
-         for (int i = 0; i < fields.size(); i++)
+         if (frameTransformSchemaKind == FrameTransformSchemaKind.TF2_TF_MESSAGE)
          {
-            MCAPSchemaField field = fields.get(i);
-            if (field.isComplexType())
+            cdr.read_sequence((elementIndex, elementCdr) ->
             {
-               if (field.getName().equalsIgnoreCase(ROTATION_FIELD_NAME))
+               RawTransform raw = readTransformStamped(elementCdr, transformStampedSchema, tf2SubSchemaMap);
+               applyTransformUpdate(raw);
+            });
+         }
+         else
+         {
+            List<? extends MCAPSchemaField> fields = frameTransformSchema.getFields();
+            double rw = 1.0, rz = 0.0, ry = 0.0, rx = 0.0;
+            double tz = 0.0, ty = 0.0, tx = 0.0;
+            String parentFrameName = null;
+            String childFrameName = null;
+
+            for (int i = 0; i < fields.size(); i++)
+            {
+               MCAPSchemaField field = fields.get(i);
+               if (field.isComplexType())
                {
-                  MCAPSchemaField xField = fields.get(i + 1);
-                  MCAPSchemaField yField = fields.get(i + 2);
-                  MCAPSchemaField zField = fields.get(i + 3);
-                  MCAPSchemaField wField = fields.get(i + 4);
-                  if (!xField.getName().equalsIgnoreCase(ROTATION_X_FIELD_NAME))
-                     throw new RuntimeException("Unexpected field name: " + xField.getName());
-                  if (!yField.getName().equalsIgnoreCase(ROTATION_Y_FIELD_NAME))
-                     throw new RuntimeException("Unexpected field name: " + yField.getName());
-                  if (!zField.getName().equalsIgnoreCase(ROTATION_Z_FIELD_NAME))
-                     throw new RuntimeException("Unexpected field name: " + zField.getName());
-                  if (!wField.getName().equalsIgnoreCase(ROTATION_W_FIELD_NAME))
-                     throw new RuntimeException("Unexpected field name: " + wField.getName());
-                  rx = cdr.readTypeAsDouble(CDRDeserializer.Type.parseType(xField.getType()));
-                  ry = cdr.readTypeAsDouble(CDRDeserializer.Type.parseType(yField.getType()));
-                  rz = cdr.readTypeAsDouble(CDRDeserializer.Type.parseType(zField.getType()));
-                  rw = cdr.readTypeAsDouble(CDRDeserializer.Type.parseType(wField.getType()));
-                  i += 4;
+                  if (field.getName().equalsIgnoreCase(ROTATION_FIELD_NAME))
+                  {
+                     MCAPSchemaField xField = fields.get(i + 1);
+                     MCAPSchemaField yField = fields.get(i + 2);
+                     MCAPSchemaField zField = fields.get(i + 3);
+                     MCAPSchemaField wField = fields.get(i + 4);
+                     if (!xField.getName().equalsIgnoreCase(ROTATION_X_FIELD_NAME))
+                        throw new RuntimeException("Unexpected field name: " + xField.getName());
+                     if (!yField.getName().equalsIgnoreCase(ROTATION_Y_FIELD_NAME))
+                        throw new RuntimeException("Unexpected field name: " + yField.getName());
+                     if (!zField.getName().equalsIgnoreCase(ROTATION_Z_FIELD_NAME))
+                        throw new RuntimeException("Unexpected field name: " + zField.getName());
+                     if (!wField.getName().equalsIgnoreCase(ROTATION_W_FIELD_NAME))
+                        throw new RuntimeException("Unexpected field name: " + wField.getName());
+                     rx = cdr.readTypeAsDouble(CDRDeserializer.Type.parseType(xField.getType()));
+                     ry = cdr.readTypeAsDouble(CDRDeserializer.Type.parseType(yField.getType()));
+                     rz = cdr.readTypeAsDouble(CDRDeserializer.Type.parseType(zField.getType()));
+                     rw = cdr.readTypeAsDouble(CDRDeserializer.Type.parseType(wField.getType()));
+                     i += 4;
+                  }
+                  else if (field.getName().equalsIgnoreCase(TRANSLATION_FIELD_NAME))
+                  {
+                     MCAPSchemaField xField = fields.get(i + 1);
+                     MCAPSchemaField yField = fields.get(i + 2);
+                     MCAPSchemaField zField = fields.get(i + 3);
+                     if (!xField.getName().equalsIgnoreCase(TRANSLATION_X_FIELD_NAME))
+                        throw new RuntimeException("Unexpected field name: " + xField.getName());
+                     if (!yField.getName().equalsIgnoreCase(TRANSLATION_Y_FIELD_NAME))
+                        throw new RuntimeException("Unexpected field name: " + yField.getName());
+                     if (!zField.getName().equalsIgnoreCase(TRANSLATION_Z_FIELD_NAME))
+                        throw new RuntimeException("Unexpected field name: " + zField.getName());
+                     tx = cdr.readTypeAsDouble(CDRDeserializer.Type.parseType(xField.getType()));
+                     ty = cdr.readTypeAsDouble(CDRDeserializer.Type.parseType(yField.getType()));
+                     tz = cdr.readTypeAsDouble(CDRDeserializer.Type.parseType(zField.getType()));
+                     i += 3;
+                  }
                }
-               else if (field.getName().equalsIgnoreCase(TRANSLATION_FIELD_NAME))
+               else if (field.getType().equalsIgnoreCase(FRAME_FIELD_TYPE))
                {
-                  MCAPSchemaField xField = fields.get(i + 1);
-                  MCAPSchemaField yField = fields.get(i + 2);
-                  MCAPSchemaField zField = fields.get(i + 3);
-                  if (!xField.getName().equalsIgnoreCase(TRANSLATION_X_FIELD_NAME))
-                     throw new RuntimeException("Unexpected field name: " + xField.getName());
-                  if (!yField.getName().equalsIgnoreCase(TRANSLATION_Y_FIELD_NAME))
-                     throw new RuntimeException("Unexpected field name: " + yField.getName());
-                  if (!zField.getName().equalsIgnoreCase(TRANSLATION_Z_FIELD_NAME))
-                     throw new RuntimeException("Unexpected field name: " + zField.getName());
-                  tx = cdr.readTypeAsDouble(CDRDeserializer.Type.parseType(xField.getType()));
-                  ty = cdr.readTypeAsDouble(CDRDeserializer.Type.parseType(yField.getType()));
-                  tz = cdr.readTypeAsDouble(CDRDeserializer.Type.parseType(zField.getType()));
-                  i += 3;
+                  if (field.getName().equalsIgnoreCase(PARENT_FRAME_FIELD_NAME))
+                  {
+                     parentFrameName = cdr.read_string();
+                  }
+                  else if (field.getName().equalsIgnoreCase(CHILD_FRAME_FIELD_NAME))
+                  {
+                     childFrameName = cdr.read_string();
+                  }
+               }
+               else
+               {
+                  cdr.skipNext(CDRDeserializer.Type.parseType(field.getType()));
                }
             }
-            else if (field.getType().equalsIgnoreCase(FRAME_FIELD_TYPE))
-            {
-               if (field.getName().equalsIgnoreCase(PARENT_FRAME_FIELD_NAME))
-               {
-                  parentFrameName = cdr.read_string();
-               }
-               else if (field.getName().equalsIgnoreCase(CHILD_FRAME_FIELD_NAME))
-               {
-                  childFrameName = cdr.read_string();
-               }
-            }
-            else
-            {
-               cdr.skipNext(CDRDeserializer.Type.parseType(field.getType()));
-            }
+
+            applyTransformUpdate(new RawTransform(parentFrameName, childFrameName, rx, ry, rz, rw, tx, ty, tz));
          }
       }
       finally
@@ -348,22 +412,26 @@ public class MCAPFrameTransformManager
          cdr.finalize(true);
       }
 
-      YoFoxGloveFrameTransform transform = rawNameToTransformMap.get(childFrameName);
+      return true;
+   }
+
+   private void applyTransformUpdate(RawTransform raw)
+   {
+      YoFoxGloveFrameTransform transform = rawNameToTransformMap.get(raw.childFrameName());
       if (transform != null)
       {
-         if (!Objects.equals(parentFrameName, transform.parentFrameName))
-            LogTools.error(
-                  "Unexpected parent frame name: " + parentFrameName + " for child frame: " + childFrameName + " expected: " + transform.parentFrameName);
+         if (!Objects.equals(raw.parentFrameName(), transform.parentFrameName))
+            LogTools.error("Unexpected parent frame name: " + raw.parentFrameName() + " for child frame: " + raw.childFrameName() + " expected: "
+                           + transform.parentFrameName);
 
-         transform.poseToParent.getOrientation().set(rx, ry, rz, rw);
-         transform.poseToParent.getPosition().set(tx, ty, tz);
+         transform.poseToParent.getOrientation().set(raw.rx(), raw.ry(), raw.rz(), raw.rw());
+         transform.poseToParent.getPosition().set(raw.tx(), raw.ty(), raw.tz());
          transform.markPoseToRootAsDirty();
       }
       else
       {
-         LogTools.error("Could not find transform for child frame: " + childFrameName);
+         LogTools.error("Could not find transform for child frame: " + raw.childFrameName());
       }
-      return true;
    }
 
    public YoGraphicDefinition getYoGraphic()
@@ -378,7 +446,7 @@ public class MCAPFrameTransformManager
 
    public boolean hasMCAPFrameTransforms()
    {
-      return foxgloveFrameTransformSchema != null;
+      return frameTransformSchema != null;
    }
 
    public Schema getMCAPSchema()
@@ -388,7 +456,7 @@ public class MCAPFrameTransformManager
 
    public MCAPSchema getFrameTransformSchema()
    {
-      return foxgloveFrameTransformSchema;
+      return frameTransformSchema;
    }
 
    public YoFoxGloveFrameTransform getTransformFromSanitizedName(String name)
@@ -396,8 +464,29 @@ public class MCAPFrameTransformManager
       return sanitizedNameToTransformMap.get(name);
    }
 
-   private static BasicTransformInfo extractFromMessage(MCAPSchema flatSchema, String topic, Message message)
+   private List<BasicTransformInfo> extractFromMessage(String topic, Message message)
    {
+      if (frameTransformSchemaKind == FrameTransformSchemaKind.TF2_TF_MESSAGE)
+      {
+         List<BasicTransformInfo> infos = new ArrayList<>();
+         CDRDeserializer cdr = new CDRDeserializer();
+         cdr.initialize(message.messageBuffer(), 0, message.dataLength());
+         cdr.read_sequence((elementIndex, elementCdr) ->
+         {
+            RawTransform raw = readTransformStamped(elementCdr, transformStampedSchema, tf2SubSchemaMap);
+            infos.add(new BasicTransformInfo(topic,
+                                             Objects.requireNonNull(raw.parentFrameName(),
+                                                                    "Parent frame name is null for topic: " + topic + " and child: "
+                                                                    + raw.childFrameName()),
+                                             Objects.requireNonNull(raw.childFrameName(),
+                                                                    "Child frame name is null for topic: " + topic + " and parent: "
+                                                                    + raw.parentFrameName())));
+         });
+         cdr.finalize(true);
+         return infos;
+      }
+
+      MCAPSchema flatSchema = frameTransformSchema;
       if (!flatSchema.isSchemaFlat())
          throw new IllegalArgumentException("The schema is not flat.");
 
@@ -433,12 +522,197 @@ public class MCAPFrameTransformManager
 
       if (parentFrameName == null)
          throw new RuntimeException("Could not find the parent frame name for topic: " + topic);
-      return new BasicTransformInfo(topic,
-                                    Objects.requireNonNull(parentFrameName, "Parent frame name is null for topic: " + topic + " and child: " + childFrameName),
-                                    Objects.requireNonNull(childFrameName, "Child frame name is null for topic: " + topic + " and parent: " + parentFrameName));
+      return Collections.singletonList(new BasicTransformInfo(topic,
+                                                               Objects.requireNonNull(parentFrameName,
+                                                                                      "Parent frame name is null for topic: " + topic + " and child: "
+                                                                                      + childFrameName),
+                                                               Objects.requireNonNull(childFrameName,
+                                                                                      "Child frame name is null for topic: " + topic + " and parent: "
+                                                                                      + parentFrameName)));
+   }
+
+   /**
+    * Reads one {@code geometry_msgs/TransformStamped} element (as found in a {@code tf2_msgs/TFMessage.transforms} sequence)
+    * from the current cursor position. The parent frame name is {@code header.frame_id} (ROS convention), not a
+    * {@code parent_frame_id} field like {@code foxglove::FrameTransform} uses.
+    */
+   static RawTransform readTransformStamped(CDRDeserializer cdr, MCAPSchema transformStampedSchema, Map<String, MCAPSchema> subSchemaMap)
+   {
+      String parentFrameName = null;
+      String childFrameName = null;
+      double rw = 1.0, rx = 0.0, ry = 0.0, rz = 0.0;
+      double tx = 0.0, ty = 0.0, tz = 0.0;
+
+      for (MCAPSchemaField field : transformStampedSchema.getFields())
+      {
+         if (field.getName().equalsIgnoreCase(TF2_HEADER_FIELD_NAME))
+         {
+            MCAPSchema headerSchema = subSchemaMap.get(field.getType());
+            for (MCAPSchemaField headerField : headerSchema.getFields())
+            {
+               if (headerField.getName().equalsIgnoreCase(TF2_HEADER_FRAME_ID_FIELD_NAME))
+                  parentFrameName = cdr.read_string();
+               else
+                  skipField(cdr, headerField, subSchemaMap);
+            }
+         }
+         else if (field.getName().equalsIgnoreCase(CHILD_FRAME_FIELD_NAME))
+         {
+            childFrameName = cdr.read_string();
+         }
+         else if (field.getName().equalsIgnoreCase(TF2_TRANSFORM_FIELD_NAME))
+         {
+            MCAPSchema transformSchema = subSchemaMap.get(field.getType());
+            for (MCAPSchemaField transformField : transformSchema.getFields())
+            {
+               if (transformField.getName().equalsIgnoreCase(TRANSLATION_FIELD_NAME))
+               {
+                  MCAPSchema vector3Schema = subSchemaMap.get(transformField.getType());
+                  for (MCAPSchemaField axisField : vector3Schema.getFields())
+                  {
+                     double value = cdr.readTypeAsDouble(CDRDeserializer.Type.parseType(axisField.getType()));
+                     if (axisField.getName().equalsIgnoreCase(FIELD_X))
+                        tx = value;
+                     else if (axisField.getName().equalsIgnoreCase(FIELD_Y))
+                        ty = value;
+                     else if (axisField.getName().equalsIgnoreCase(FIELD_Z))
+                        tz = value;
+                  }
+               }
+               else if (transformField.getName().equalsIgnoreCase(ROTATION_FIELD_NAME))
+               {
+                  MCAPSchema quaternionSchema = subSchemaMap.get(transformField.getType());
+                  for (MCAPSchemaField axisField : quaternionSchema.getFields())
+                  {
+                     double value = cdr.readTypeAsDouble(CDRDeserializer.Type.parseType(axisField.getType()));
+                     if (axisField.getName().equalsIgnoreCase(FIELD_X))
+                        rx = value;
+                     else if (axisField.getName().equalsIgnoreCase(FIELD_Y))
+                        ry = value;
+                     else if (axisField.getName().equalsIgnoreCase(FIELD_Z))
+                        rz = value;
+                     else if (axisField.getName().equalsIgnoreCase(FIELD_W))
+                        rw = value;
+                  }
+               }
+               else
+               {
+                  skipField(cdr, transformField, subSchemaMap);
+               }
+            }
+         }
+         else
+         {
+            skipField(cdr, field, subSchemaMap);
+         }
+      }
+
+      return new RawTransform(parentFrameName, childFrameName, rx, ry, rz, rw, tx, ty, tz);
+   }
+
+   /**
+    * Generic fallback used to advance the CDR cursor past a field this reader doesn't otherwise care about, so that
+    * later, recognized fields in the same struct stay correctly aligned. Handles primitive and complex fields,
+    * fixed-size arrays, and unbounded sequences alike - each element (primitive or complex) is skipped the same
+    * way a non-array field of that type would be, looping {@code maxLength} times for a fixed array or using the
+    * sequence's own encoded length for an unbounded one.
+    */
+   static void skipField(CDRDeserializer cdr, MCAPSchemaField field, Map<String, MCAPSchema> subSchemaMap)
+   {
+      if (field.isArray())
+      {
+         cdr.read_array((elementIndex, elementCdr) -> skipElement(elementCdr, field, subSchemaMap), field.getMaxLength());
+      }
+      else if (field.isVector())
+      {
+         cdr.read_sequence((elementIndex, elementCdr) -> skipElement(elementCdr, field, subSchemaMap));
+      }
+      else
+      {
+         skipElement(cdr, field, subSchemaMap);
+      }
+   }
+
+   private static void skipElement(CDRDeserializer cdr, MCAPSchemaField field, Map<String, MCAPSchema> subSchemaMap)
+   {
+      // Not field.isComplexType(): ROS2SchemaParser sets that flag unconditionally for any bracketed (array or
+      // vector) field, even when the element type is primitive (e.g. "float64[36]") - so it can't be trusted here
+      // to distinguish a primitive array element from a struct one. Whether subSchemaMap actually resolves the
+      // (bracket-stripped) type name is the reliable check.
+      MCAPSchema subSchema = subSchemaMap.get(field.getType());
+      if (subSchema == null)
+      {
+         cdr.skipNext(CDRDeserializer.Type.parseType(field.getType()));
+         return;
+      }
+      for (MCAPSchemaField subField : subSchema.getFields())
+         skipField(cdr, subField, subSchemaMap);
+   }
+
+   /**
+    * Validates that the given {@code geometry_msgs/TransformStamped} schema has the fields
+    * {@link #readTransformStamped} expects, failing fast with a clear message instead of a confusing CDR misalignment
+    * error later on.
+    */
+   static void validateTransformStampedSchema(MCAPSchema transformStampedSchema, Map<String, MCAPSchema> subSchemaMap)
+   {
+      MCAPSchemaField headerField = requireField(transformStampedSchema, TF2_HEADER_FIELD_NAME);
+      MCAPSchema headerSchema = subSchemaMap.get(headerField.getType());
+      if (headerSchema == null)
+         throw new RuntimeException("Could not find the sub-schema for type: " + headerField.getType());
+      requireField(headerSchema, TF2_HEADER_FRAME_ID_FIELD_NAME);
+
+      requireField(transformStampedSchema, CHILD_FRAME_FIELD_NAME);
+
+      MCAPSchemaField transformField = requireField(transformStampedSchema, TF2_TRANSFORM_FIELD_NAME);
+      MCAPSchema transformSchema = subSchemaMap.get(transformField.getType());
+      if (transformSchema == null)
+         throw new RuntimeException("Could not find the sub-schema for type: " + transformField.getType());
+
+      MCAPSchemaField translationField = requireField(transformSchema, TRANSLATION_FIELD_NAME);
+      MCAPSchema vector3Schema = subSchemaMap.get(translationField.getType());
+      if (vector3Schema == null)
+         throw new RuntimeException("Could not find the sub-schema for type: " + translationField.getType());
+      requireField(vector3Schema, FIELD_X);
+      requireField(vector3Schema, FIELD_Y);
+      requireField(vector3Schema, FIELD_Z);
+
+      MCAPSchemaField rotationField = requireField(transformSchema, ROTATION_FIELD_NAME);
+      MCAPSchema quaternionSchema = subSchemaMap.get(rotationField.getType());
+      if (quaternionSchema == null)
+         throw new RuntimeException("Could not find the sub-schema for type: " + rotationField.getType());
+      requireField(quaternionSchema, FIELD_X);
+      requireField(quaternionSchema, FIELD_Y);
+      requireField(quaternionSchema, FIELD_Z);
+      requireField(quaternionSchema, FIELD_W);
+   }
+
+   private static MCAPSchemaField requireField(MCAPSchema schema, String fieldName)
+   {
+      return schema.getFields()
+                   .stream()
+                   .filter(field -> field.getName().equalsIgnoreCase(fieldName))
+                   .findFirst()
+                   .orElseThrow(() -> new RuntimeException(
+                         "Could not find the field '" + fieldName + "' in the schema for tf2_msgs/TFMessage (schema: " + schema.getName() + ")"));
+   }
+
+   /**
+    * Matches {@code tf2_msgs/msg/TFMessage} (ROS2), {@code tf2_msgs/TFMessage} (ROS1), and OMGIDL/CycloneDDS-mangled
+    * variants such as {@code tf2_msgs::msg::dds_::TFMessage_} that real {@code ros2 bag record} MCAP files use.
+    */
+   static boolean isTf2TFMessageSchemaName(String rawSchemaName)
+   {
+      String normalized = rawSchemaName.toLowerCase().replaceAll("[^a-z0-9]", "");
+      return normalized.contains("tf2msgs") && normalized.contains("tfmessage");
    }
 
    private record BasicTransformInfo(String topic, String parentFrameName, String childFrameName)
+   {
+
+   }
+
+   record RawTransform(String parentFrameName, String childFrameName, double rx, double ry, double rz, double rw, double tx, double ty, double tz)
    {
 
    }
