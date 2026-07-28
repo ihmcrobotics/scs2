@@ -268,9 +268,15 @@ public final class MujocoMultiBodyRobotFactory
    {
       String namePrefix = robotDefinition.getName() + "_";
       String pad = "  ".repeat(indent);
+      Set<String> ignoredJointNames = new HashSet<>(robotDefinition.getNameOfJointsToIgnore());
       StringBuilder excludes = new StringBuilder();
       for (JointDefinition joint : robotDefinition.getAllJoints())
       {
+         // Hands and other ignored subtrees are omitted from the MJCF (see appendBody); do not emit
+         // <exclude> pairs that reference bodies MuJoCo never created.
+         if (isJointOmittedFromMjcf(joint, ignoredJointNames))
+            continue;
+
          JointDefinition parentJoint = joint.getParentJoint();
          RigidBodyDefinition childBody = joint.getSuccessor();
          if (parentJoint == null || childBody == null)
@@ -288,6 +294,20 @@ public final class MujocoMultiBodyRobotFactory
          return;
 
       sb.append(pad).append("<contact>\n").append(excludes).append(pad).append("</contact>\n");
+   }
+
+   /**
+    * True when this joint (or an ancestor) is in {@code ignoredJointNames}, matching the subtree
+    * pruning in {@link #appendBody}.
+    */
+   private static boolean isJointOmittedFromMjcf(JointDefinition joint, Set<String> ignoredJointNames)
+   {
+      for (JointDefinition current = joint; current != null; current = current.getParentJoint())
+      {
+         if (ignoredJointNames.contains(current.getName()))
+            return true;
+      }
+      return false;
    }
 
    private static RigidBodyTransform computeSpawnTransform(JointDefinition joint)
