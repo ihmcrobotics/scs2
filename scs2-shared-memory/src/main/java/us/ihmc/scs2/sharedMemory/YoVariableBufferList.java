@@ -3,10 +3,8 @@ package us.ihmc.scs2.sharedMemory;
 import java.util.AbstractList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
+import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.RecursiveAction;
 
 public class YoVariableBufferList extends AbstractList<YoVariableBuffer<?>>
 {
@@ -27,15 +25,29 @@ public class YoVariableBufferList extends AbstractList<YoVariableBuffer<?>>
    private int doubleSize = 0, booleanSize = 0, integerSize = 0, longSize = 0, enumSize = 0;
 
    /*
-    * Dedicated, statically-partitioned worker pool for writeBufferAt, sized off Runtime.availableProcessors()
-    * so it adapts to whatever machine this runs on. This replaces a per-call Arrays.stream(...).parallel(),
-    * which re-splits the array via the (contended, shared) common ForkJoinPool on every single tick - overkill
-    * given each element's work is a single array store.
+    * Statically-partitioned worker pool for writeBufferAt, sized off Runtime.availableProcessors() so it adapts
+    * to whatever machine this runs on. This replaces a per-call Arrays.stream(...).parallel(), which re-splits
+    * the array via the (contended, shared) common ForkJoinPool on every single tick - overkill given each
+    * element's work is a single array store.
+    *
+    * The pool itself is one shared instance per JVM (WorkerPool.INSTANCE below), not one per YoVariableBufferList:
+    * many short-lived instances of this class are created (e.g. one per YoRegistryBuffer in a test loop, without
+    * ever calling dispose()), so a pool sized to (cores - 1) created per instance leaked threads badly enough to
+    * exhaust the OS thread limit (pthread_create EAGAIN) under normal test load.
+    *
+    * This uses a dedicated ForkJoinPool (RecursiveAction.fork()/join()), not an ExecutorService with
+    * Future.get(): join() can work-steal other pending tasks while waiting, whereas Future.get() just blocks -
+    * benchmarking against Arrays.stream(...).parallel() (which also runs on a ForkJoinPool) showed a plain
+    * ExecutorService here was consistently slower than the stream version it was meant to replace.
     */
-   private ExecutorService workerPool;
    private WriteWorker[] writeWorkers = new WriteWorker[0];
-   private Future<?>[] writeFutures = new Future<?>[0];
    private volatile int writeIndex;
+
+   private static final class WorkerPool
+   {
+      static final int WORKER_COUNT = Math.max(1, Runtime.getRuntime().availableProcessors() - 1);
+      static final ForkJoinPool INSTANCE = WORKER_COUNT > 1 ? new ForkJoinPool(WORKER_COUNT) : null;
+   }
 
    @Override
    public int size()
@@ -169,23 +181,16 @@ public class YoVariableBufferList extends AbstractList<YoVariableBuffer<?>>
 
       writeIndex = index;
 
-      for (int i = 0; i < writeWorkers.length; i++)
-         writeFutures[i] = workerPool.submit(writeWorkers[i]);
+      // Reinitialize (a completed RecursiveAction can't be re-submitted as-is) before reusing the same task
+      // objects tick after tick - avoids allocating a fresh task per element/tick.
+      for (WriteWorker worker : writeWorkers)
+         worker.reinitialize();
 
-      try
-      {
-         for (Future<?> future : writeFutures)
-            future.get();
-      }
-      catch (InterruptedException e)
-      {
-         Thread.currentThread().interrupt();
-         throw new RuntimeException(e);
-      }
-      catch (ExecutionException e)
-      {
-         throw new RuntimeException(e.getCause());
-      }
+      for (int i = 1; i < writeWorkers.length; i++)
+         WorkerPool.INSTANCE.execute(writeWorkers[i]);
+      writeWorkers[0].compute(); // run the first slice inline on the calling thread instead of dispatching it too.
+      for (int i = 1; i < writeWorkers.length; i++)
+         writeWorkers[i].join();
    }
 
    public void readBufferAt(int index)
@@ -204,22 +209,11 @@ public class YoVariableBufferList extends AbstractList<YoVariableBuffer<?>>
     */
    private void rebuildWriteWorkers()
    {
-      int workerCount = Math.max(1, Runtime.getRuntime().availableProcessors() - 1);
-
-      if (workerPool == null && workerCount > 1)
-      {
-         workerPool = Executors.newFixedThreadPool(workerCount, runnable ->
-         {
-            Thread thread = new Thread(runnable, "YoVariableBufferList-writer");
-            thread.setDaemon(true);
-            return thread;
-         });
-      }
+      int workerCount = WorkerPool.WORKER_COUNT;
 
       if (workerCount <= 1)
       {
          writeWorkers = new WriteWorker[0];
-         writeFutures = new Future<?>[0];
          return;
       }
 
@@ -242,7 +236,6 @@ public class YoVariableBufferList extends AbstractList<YoVariableBuffer<?>>
       }
 
       writeWorkers = workers;
-      writeFutures = new Future<?>[workerCount];
    }
 
    private static int partitionBound(int total, int parts, int part)
@@ -250,7 +243,7 @@ public class YoVariableBufferList extends AbstractList<YoVariableBuffer<?>>
       return (int) ((long) total * part / parts);
    }
 
-   private final class WriteWorker implements Runnable
+   private final class WriteWorker extends RecursiveAction
    {
       int doubleFrom, doubleTo;
       int booleanFrom, booleanTo;
@@ -259,7 +252,7 @@ public class YoVariableBufferList extends AbstractList<YoVariableBuffer<?>>
       int enumFrom, enumTo;
 
       @Override
-      public void run()
+      protected void compute()
       {
          int index = writeIndex;
 
@@ -302,13 +295,8 @@ public class YoVariableBufferList extends AbstractList<YoVariableBuffer<?>>
       longBuffers = null;
       enumBuffers = null;
       writeWorkers = new WriteWorker[0];
-      writeFutures = new Future<?>[0];
-
-      if (workerPool != null)
-      {
-         workerPool.shutdown();
-         workerPool = null;
-      }
+      // WorkerPool.INSTANCE is shared JVM-wide across every YoVariableBufferList - not shut down here, since other
+      // live instances may still be using it.
    }
 
    @Override
