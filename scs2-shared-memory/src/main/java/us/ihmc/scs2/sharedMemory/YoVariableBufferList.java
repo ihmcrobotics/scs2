@@ -57,11 +57,10 @@ public class YoVariableBufferList extends AbstractList<YoVariableBuffer<?>>
 
    public void writeBufferAt(int index)
    {
-      Arrays.stream(yoVariableBuffers, 0, size).parallel().forEach(buffer -> buffer.writeBufferAt(index));
-//      for (int i = 0; i < size; i++)
-//      {
-//         yoVariableBuffers[i].writeBufferAt(index);
-//      }
+      for (int i = 0; i < size; i++)
+      {
+         yoVariableBuffers[i].writeBufferAt(index);
+      }
    }
 
    public void readBufferAt(int index)
