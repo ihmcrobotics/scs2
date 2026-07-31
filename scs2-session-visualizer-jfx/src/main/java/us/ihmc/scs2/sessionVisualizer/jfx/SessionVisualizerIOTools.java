@@ -203,12 +203,12 @@ public class SessionVisualizerIOTools
 
    // SCS 1 Skybox
    public static final String SKYBOX_SCS1_FOLDER = "brightSky/";
-   public static final Image SCS1_SKYBOX_TOP_IMAGE = loadSkyboxImage(SKYBOX_SCS1_FOLDER + "Up.bmp");
-   public static final Image SCS1_SKYBOX_BOTTOM_IMAGE = loadSkyboxImage(SKYBOX_SCS1_FOLDER + "Down.bmp");
-   public static final Image SCS1_SKYBOX_LEFT_IMAGE = loadSkyboxImage(SKYBOX_SCS1_FOLDER + "Left.bmp");
-   public static final Image SCS1_SKYBOX_RIGHT_IMAGE = loadSkyboxImage(SKYBOX_SCS1_FOLDER + "Right.bmp");
-   public static final Image SCS1_SKYBOX_FRONT_IMAGE = loadSkyboxImage(SKYBOX_SCS1_FOLDER + "Front.bmp");
-   public static final Image SCS1_SKYBOX_BACK_IMAGE = loadSkyboxImage(SKYBOX_SCS1_FOLDER + "Back.bmp");
+   public static final Image SCS1_SKYBOX_TOP_IMAGE = loadSkyboxImage(SKYBOX_SCS1_FOLDER + "Up.png");
+   public static final Image SCS1_SKYBOX_BOTTOM_IMAGE = loadSkyboxImage(SKYBOX_SCS1_FOLDER + "Down.png");
+   public static final Image SCS1_SKYBOX_LEFT_IMAGE = loadSkyboxImage(SKYBOX_SCS1_FOLDER + "Left.png");
+   public static final Image SCS1_SKYBOX_RIGHT_IMAGE = loadSkyboxImage(SKYBOX_SCS1_FOLDER + "Right.png");
+   public static final Image SCS1_SKYBOX_FRONT_IMAGE = loadSkyboxImage(SKYBOX_SCS1_FOLDER + "Front.png");
+   public static final Image SCS1_SKYBOX_BACK_IMAGE = loadSkyboxImage(SKYBOX_SCS1_FOLDER + "Back.png");
 
    public static void addSCSIconToDialog(Dialog<?> dialog)
    {
