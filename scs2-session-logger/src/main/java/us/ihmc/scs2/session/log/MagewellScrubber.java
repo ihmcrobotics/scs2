@@ -121,7 +121,7 @@ public class MagewellScrubber
          timestampWriter.println(videoTimestampsForCroppedLog[i]);
       }
 
-      magewellMuxer.close();
+      magewellMuxer.stopRecording();
       timestampWriter.close();
    }
 
