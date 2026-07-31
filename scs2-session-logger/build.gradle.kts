@@ -20,7 +20,7 @@ mainDependencies {
    api("us.ihmc:scs2-simulation:source") // TODO Need to fix this, it needs the Robot.
 
    api("us.ihmc:ihmc-robot-data-logger:0.39.2")
-   api("us.ihmc:jros2-parser:1.5.0")
+   api("us.ihmc:jros2-parser:1.5.1")
    api("org.antlr:antlr4-runtime:4.13.1")
    api("com.github.vatbub:mslinks:1.0.6.2")
    api("com.google.protobuf:protobuf-java:4.34.2")
