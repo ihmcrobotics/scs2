@@ -15,6 +15,8 @@ import us.ihmc.scs2.session.SessionMode;
 import us.ihmc.scs2.session.SessionRobotDefinitionListChange;
 import us.ihmc.scs2.session.tools.RobotDataLogTools;
 import us.ihmc.scs2.session.tools.RobotModelLoader;
+import us.ihmc.scs2.sharedMemory.HistoricalValueBitsSource;
+import us.ihmc.scs2.sharedMemory.YoVariableBuffer;
 import us.ihmc.scs2.sharedMemory.interfaces.YoBufferPropertiesReadOnly;
 import us.ihmc.scs2.simulation.TimeConsumer;
 import us.ihmc.scs2.simulation.robot.Robot;
@@ -72,8 +74,28 @@ public class LogSession extends Session
     * is always eager; this only restricts the raw per-log variable trees, which is where nearly all of a log's
     * variable count lives and where almost none of it is ever looked at in a given session.
     */
-   private final Map<YoRegistry, Set<String>> lazyBufferScopeEagerNames = new HashMap<>();
+   /**
+    * Keyed by the {@link YoVariable} object itself, not its full name: {@link YoVariable#getFullNameString()} is
+    * lazily cached (see {@link YoVariable#resetFullName()}), and {@link YoRegistry#addChild} - which every one of
+    * these variables goes through right after this map is populated, when its log's registry tree gets attached to
+    * {@link #rootRegistry} - recursively invalidates that cache for the whole attached subtree. A name captured here
+    * beforehand and a name queried afterward are therefore never equal (the latter gains the attached tree's prefix),
+    * so identity is the only key that stays valid across that attachment.
+    */
+   private final Map<YoRegistry, Set<YoVariable>> lazyBufferScopeEagerVariables = new HashMap<>();
    private boolean lazyBufferFilterInstalled = false;
+
+   /**
+    * Which {@link LogDataReader} owns a given lazy variable, and its index within that reader's own
+    * {@link LogDataReader#getYoVariablesList()} - built once per log in {@link #configureLazyBufferPolicy} and
+    * consulted by {@link #getHistoricalValueBits} to fetch a value directly from that log's file on demand. Keyed by
+    * identity for the same reason as {@link #lazyBufferScopeEagerVariables}.
+    */
+   private final Map<YoVariable, LazyLogVariableIndex> lazyLogVariableIndexByVariable = new HashMap<>();
+
+   private record LazyLogVariableIndex(LogDataReader reader, int variableIndex)
+   {
+   }
 
    public LogSession(File logDirectory, ProgressConsumer progressConsumer) throws IOException
    {
@@ -152,13 +174,73 @@ public class LogSession extends Session
     */
    private void configureLazyBufferPolicy(LogDataReader logToAdd)
    {
-      lazyBufferScopeEagerNames.put(logToAdd.getLogRootRegistry(), computeYoGraphicReferencedVariableNames(logToAdd));
+      lazyBufferScopeEagerVariables.put(logToAdd.getLogRootRegistry(), computeYoGraphicReferencedVariables(logToAdd));
+
+      List<YoVariable> logVariables = logToAdd.getYoVariablesList();
+      for (int i = 0; i < logVariables.size(); i++)
+         lazyLogVariableIndexByVariable.put(logVariables.get(i), new LazyLogVariableIndex(logToAdd, i));
 
       if (!lazyBufferFilterInstalled)
       {
          lazyBufferFilterInstalled = true;
          sharedBuffer.setEagerVariableFilter(this::isEagerLogVariable);
+         sharedBuffer.setOnDemandBufferCreatedListener(buffer -> buffer.setHistoricalValueBitsSource(this::getHistoricalValueBits));
       }
+   }
+
+   /**
+    * Fetches {@code variable}'s value at {@code index} straight from whichever log it belongs to, instead of requiring
+    * the log to have already been replayed up to {@code index} - installed as every lazily-created buffer's
+    * {@link HistoricalValueBitsSource} in {@link #configureLazyBufferPolicy}. Only ever consulted for an index a chart
+    * (or similar consumer) actually asked for, and only once per index - see {@link YoVariableBuffer#copy} - so the
+    * cost scales with what was actually looked at rather than with how far the log has played.
+    * <p>
+    * Uses {@link LogDataReader#readVariableValueBitsAt}, which reads only {@code variable}'s own field out of a
+    * record instead of decoding all of that log's (possibly tens of thousands of) other variables, and walks the log
+    * without re-seeking between consecutive indices so a compressed log's batches each get decompressed once rather
+    * than once per contained tick - the two things that made naively replaying the whole log through the ordinary
+    * {@link LogDataReader#seek}/{@link LogDataReader#read} path prohibitively slow.
+    * </p>
+    */
+   private long getHistoricalValueBits(YoVariable variable, int index)
+   {
+      LazyLogVariableIndex source = lazyLogVariableIndexByVariable.get(variable);
+      if (source == null)
+         return variable.getValueAsLongBits();
+
+      LogDataReader reader = source.reader();
+      int localPosition = index;
+
+      if (reader != logDataReader)
+      {
+         ChildLogSynchronization synchronization = findSynchronization(reader);
+         long relativePosition = synchronization == null ? index : synchronization.computeChildPosition(index);
+         if (relativePosition < 0 || relativePosition >= reader.getNumberOfEntries())
+            return 0L; // Outside this child log's recorded range (e.g. it hadn't started yet) - no data to report.
+         localPosition = (int) relativePosition;
+      }
+
+      int savedPosition = reader.getCurrentLogPosition();
+      try
+      {
+         return reader.readVariableValueBitsAt(localPosition, source.variableIndex());
+      }
+      finally
+      {
+         // Restores the live read cursor exactly like resuming playback/scrubbing at savedPosition would - required for
+         // the main log (nothing else re-syncs its position), and done the same way for a child log for consistency
+         // even though ChildLogData.read() would already force a re-seek on its next normal tick regardless.
+         reader.seek(savedPosition);
+         reader.read();
+      }
+   }
+
+   private ChildLogSynchronization findSynchronization(LogDataReader reader)
+   {
+      for (ChildLogData childLogData : logDataReader.getChildLogData())
+         if (childLogData.getChildLogDataReader() == reader)
+            return childLogData.getSynchronization();
+      return null;
    }
 
    /**
@@ -170,10 +252,10 @@ public class LogSession extends Session
    {
       YoRegistry registry = variable.getRegistry();
 
-      for (Map.Entry<YoRegistry, Set<String>> scope : lazyBufferScopeEagerNames.entrySet())
+      for (Map.Entry<YoRegistry, Set<YoVariable>> scope : lazyBufferScopeEagerVariables.entrySet())
       {
          if (isDescendantOrSelf(registry, scope.getKey()))
-            return scope.getValue().contains(variable.getFullNameString());
+            return scope.getValue().contains(variable);
       }
 
       return true;
@@ -195,8 +277,15 @@ public class LogSession extends Session
     * short-name match. A field that matches nothing (a constant, a color, an ambiguous short name, or a reference
     * outside this log) is simply not included - worst case that graphic's binding stays unbuffered until something
     * else (e.g. a chart) asks for it, same as it would if this method didn't run at all.
+    * <p>
+    * Matching itself still goes through {@link YoVariable#getFullNameString()} - at this point, before {@code
+    * logToAdd}'s registry tree gets attached to {@link #rootRegistry}, that reflects the log's own internal path,
+    * which is what a {@link YoGraphicDefinition} field value (recorded by the log, independent of any session) refers
+    * to. The returned set holds the matched variables themselves rather than those (soon stale) names, so callers can
+    * check membership by identity instead - see {@link #lazyBufferScopeEagerVariables}.
+    * </p>
     */
-   private static Set<String> computeYoGraphicReferencedVariableNames(LogDataReader logToAdd)
+   private static Set<YoVariable> computeYoGraphicReferencedVariables(LogDataReader logToAdd)
    {
       List<YoGraphicGroupDefinition> graphics = logToAdd.getLogSCS2YoGraphics();
       if (graphics == null || graphics.isEmpty())
@@ -210,7 +299,7 @@ public class LogSession extends Session
          shortNameToVariables.computeIfAbsent(variable.getName(), name -> new ArrayList<>()).add(variable);
       }
 
-      Set<String> eagerFullNames = new HashSet<>();
+      Set<YoVariable> eagerVariables = new HashSet<>();
 
       for (YoGraphicGroupDefinition group : graphics)
       {
@@ -225,19 +314,19 @@ public class LogSession extends Session
                YoVariable exactMatch = fullNameToVariable.get(value);
                if (exactMatch != null)
                {
-                  eagerFullNames.add(exactMatch.getFullNameString());
+                  eagerVariables.add(exactMatch);
                   continue;
                }
 
                String shortName = value.contains(".") ? value.substring(value.lastIndexOf('.') + 1) : value;
                List<YoVariable> candidates = shortNameToVariables.get(shortName);
                if (candidates != null && candidates.size() == 1)
-                  eagerFullNames.add(candidates.get(0).getFullNameString());
+                  eagerVariables.add(candidates.get(0));
             }
          }
       }
 
-      return eagerFullNames;
+      return eagerVariables;
    }
 
    public void bindSynchronization(String logToSynchronize, String mainLogVarName, String logToSyncVarName)

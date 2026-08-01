@@ -12,6 +12,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 
 public class YoRegistryBuffer
@@ -37,6 +38,14 @@ public class YoRegistryBuffer
     * </p>
     */
    private volatile Predicate<YoVariable> eagerVariableFilter = null;
+
+   /**
+    * Notified with a buffer right after {@link #findOrCreateYoVariableBuffer(YoVariable)} creates it on demand, i.e.
+    * for a variable that {@link #eagerVariableFilter} skipped at registration time and that something has now asked
+    * for by name. {@code null} (the default) means no one is listening. See {@code LogSession} for the only current
+    * caller, which uses this to backfill the buffer's history from the log.
+    */
+   private volatile Consumer<YoVariableBuffer<?>> onDemandBufferCreatedListener = null;
 
    public YoRegistryBuffer(YoRegistry rootRegistry, YoBufferPropertiesReadOnly properties)
    {
@@ -106,6 +115,15 @@ public class YoRegistryBuffer
    public void setEagerVariableFilter(Predicate<YoVariable> filter)
    {
       eagerVariableFilter = filter;
+   }
+
+   /**
+    * Sets the listener notified when {@link #findOrCreateYoVariableBuffer(YoVariable)} creates a buffer on demand.
+    * {@code null} (the default) disables the notification.
+    */
+   public void setOnDemandBufferCreatedListener(Consumer<YoVariableBuffer<?>> listener)
+   {
+      onDemandBufferCreatedListener = listener;
    }
 
    private boolean isEager(YoVariable variable)
@@ -247,6 +265,10 @@ public class YoRegistryBuffer
          yoVariableBuffer = YoVariableBuffer.newYoVariableBuffer(duplicate, properties);
          yoVariableBuffers.add(yoVariableBuffer);
          yoVariableFullnameToBufferMap.put(variableFullName, yoVariableBuffer);
+
+         Consumer<YoVariableBuffer<?>> listener = onDemandBufferCreatedListener;
+         if (listener != null)
+            listener.accept(yoVariableBuffer);
       }
 
       return yoVariableBuffer;

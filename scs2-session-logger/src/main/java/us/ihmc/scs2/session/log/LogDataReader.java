@@ -213,6 +213,34 @@ public class LogDataReader
       return parser.getDt();
    }
 
+   /**
+    * Reads {@code variableIndex}'s raw value directly out of the record at {@code position}, without decoding the
+    * record's other variables and without touching {@link #currentRecordTick}, {@link #timestamp}, {@link #robotTime},
+    * or any live {@link YoVariable} - unlike {@link #seek(int)} + {@link #read()}, which decode every one of
+    * {@link #yoVariables} (there can be tens of thousands) into their live objects and advance the tick counter that
+    * ongoing playback relies on.
+    * <p>
+    * This still repositions the underlying channel and, for a compressed log, still decompresses the batch containing
+    * {@code position} - it only skips the "decode everything, advance the cursor" work {@link #read()} does on top of
+    * that. Leaves the reader's read cursor at {@code position}'s batch; a caller that needs the live cursor left where
+    * it was must save {@link #getCurrentLogPosition()} beforehand and {@link #seek}/{@link #read()} back to it
+    * afterward.
+    * </p>
+    */
+   long readVariableValueBitsAt(int position, int variableIndex)
+   {
+      try
+      {
+         positionChannel(position);
+         readLogLine();
+         return logLongArray.get(1 + variableIndex);
+      }
+      catch (IOException e)
+      {
+         throw new RuntimeException(e);
+      }
+   }
+
    public void setToNaN()
    {
       timestamp.set(-1);

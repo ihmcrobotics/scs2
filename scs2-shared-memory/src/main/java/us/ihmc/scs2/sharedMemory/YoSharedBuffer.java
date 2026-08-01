@@ -13,6 +13,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 
 /**
@@ -101,6 +102,16 @@ public class YoSharedBuffer implements LinkedYoVariableFactory
    public void setEagerVariableFilter(Predicate<YoVariable> filter)
    {
       registryBuffer.setEagerVariableFilter(filter);
+   }
+
+   /**
+    * Sets the listener notified when a buffer skipped by {@link #setEagerVariableFilter} is later created on demand.
+    * See {@link YoRegistryBuffer#setOnDemandBufferCreatedListener(Consumer)} - {@code null} (the default) disables
+    * the notification.
+    */
+   public void setOnDemandBufferCreatedListener(Consumer<YoVariableBuffer<?>> listener)
+   {
+      registryBuffer.setOnDemandBufferCreatedListener(listener);
    }
 
    /**
