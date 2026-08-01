@@ -46,6 +46,18 @@ public abstract class YoVariableBuffer<T extends YoVariable>
     */
    private BitSet populatedIndices;
 
+   /**
+    * How many bits are set in {@link #populatedIndices}, kept incrementally so {@link #ensurePopulated} can tell in
+    * O(1) whether the whole buffer is already backfilled - once {@code populatedCount == properties.getSize()}, every
+    * index this buffer could ever be asked for is already real data, permanently (a ring buffer only ever reuses an
+    * index by writing genuine live data over it via {@link #writeBufferAt}, never by un-writing one), so there is
+    * nothing left for {@link #historicalValueBitsSource} to ever contribute again. Without this, a buffer that had a
+    * source installed keeps paying to walk the requested range and check every bit against {@link #populatedIndices}
+    * on every single read for the rest of the session, long after backfilling actually finished - unlike a buffer
+    * that never had a source, which always takes the {@code source == null} fast exit.
+    */
+   private int populatedCount;
+
    public YoVariableBuffer(T yoVariable, YoBufferPropertiesReadOnly properties)
    {
       this.yoVariable = yoVariable;
@@ -77,7 +89,10 @@ public abstract class YoVariableBuffer<T extends YoVariable>
       // the bookkeeping through that reshuffle, just forget what was known and let it be re-derived from the source
       // on next access.
       if (populatedIndices != null)
+      {
          populatedIndices = new BitSet();
+         populatedCount = 0;
+      }
    }
 
    protected abstract void resizeBufferRaw(int from, int length);
@@ -156,29 +171,53 @@ public abstract class YoVariableBuffer<T extends YoVariable>
     * {@link SharedMemoryTools#ringArrayCopy}) not yet known to hold real data, asks {@link #historicalValueBitsSource}
     * for it, stores it through the ordinary {@link #writeBufferAtRaw} path by briefly swapping it onto
     * {@link #yoVariable}, then restores the variable's actual live value. A no-op whenever
-    * {@link #historicalValueBitsSource} is {@code null}, i.e. for every buffer except the ones a log session created
-    * on demand.
+    * {@link #historicalValueBitsSource} is {@code null} (every buffer except the ones a log session created on
+    * demand) or once every index in this buffer has already been populated (see {@link #populatedCount}).
+    * <p>
+    * Not-yet-populated indices are batched into the longest possible non-wrapping run and handed to
+    * {@link #historicalValueBitsSource} in one {@link HistoricalValueBitsSource#getHistoricalValueBits} call rather
+    * than one call per index: for a log-backed source, one call per index means one seek (and, for a
+    * compressed/batched log, one decompression) per single value, even for values that are consecutive in the log -
+    * e.g. backfilling a chart's whole history for a variable just linked. See {@code LogSession}, the only current
+    * source, for how it uses the batched range to pay for that seek/decompression once per contiguous run instead.
+    * </p>
     */
    private void ensurePopulated(int from, int length)
    {
       HistoricalValueBitsSource source = historicalValueBitsSource;
-      if (source == null || length <= 0)
+      if (source == null || length <= 0 || populatedCount >= properties.getSize())
          return;
 
       int size = properties.getSize();
+      int remaining = length;
+      int cursor = ((from % size) + size) % size;
 
-      for (int i = 0; i < length; i++)
+      while (remaining > 0)
       {
-         int index = (from + i) % size;
-         if (populatedIndices.get(index))
+         if (populatedIndices.get(cursor))
+         {
+            cursor = cursor + 1 == size ? 0 : cursor + 1;
+            remaining--;
             continue;
+         }
 
+         int maxRunLength = Math.min(remaining, size - cursor);
+         int runLength = 1;
+         while (runLength < maxRunLength && !populatedIndices.get(cursor + runLength))
+            runLength++;
+
+         int runStart = cursor;
          long liveBits = yoVariable.getValueAsLongBits();
-         yoVariable.setValueFromLongBits(source.getHistoricalValueBits(yoVariable, index), false);
-         writeBufferAtRaw(index);
+         source.getHistoricalValueBits(yoVariable, runStart, runLength, (index, bits) ->
+         {
+            yoVariable.setValueFromLongBits(bits, false);
+            writeBufferAtRaw(index);
+            setPopulated(index);
+         });
          yoVariable.setValueFromLongBits(liveBits, false);
 
-         populatedIndices.set(index);
+         cursor = (cursor + runLength) % size;
+         remaining -= runLength;
       }
    }
 
@@ -189,7 +228,16 @@ public abstract class YoVariableBuffer<T extends YoVariable>
 
       int size = properties.getSize();
       for (int i = 0; i < length; i++)
-         populatedIndices.set((from + i) % size);
+         setPopulated((from + i) % size);
+   }
+
+   private void setPopulated(int index)
+   {
+      if (!populatedIndices.get(index))
+      {
+         populatedIndices.set(index);
+         populatedCount++;
+      }
    }
 
    @Override

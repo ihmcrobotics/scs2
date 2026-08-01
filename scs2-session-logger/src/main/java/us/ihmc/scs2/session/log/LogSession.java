@@ -16,6 +16,7 @@ import us.ihmc.scs2.session.SessionRobotDefinitionListChange;
 import us.ihmc.scs2.session.tools.RobotDataLogTools;
 import us.ihmc.scs2.session.tools.RobotModelLoader;
 import us.ihmc.scs2.sharedMemory.HistoricalValueBitsSource;
+import us.ihmc.scs2.sharedMemory.HistoricalValueBitsWriter;
 import us.ihmc.scs2.sharedMemory.YoVariableBuffer;
 import us.ihmc.scs2.sharedMemory.interfaces.YoBufferPropertiesReadOnly;
 import us.ihmc.scs2.simulation.TimeConsumer;
@@ -93,6 +94,14 @@ public class LogSession extends Session
     */
    private final Map<YoVariable, LazyLogVariableIndex> lazyLogVariableIndexByVariable = new HashMap<>();
 
+   /**
+    * One dedicated {@link LogRandomAccessValueReader} per {@link LogDataReader} (main log and each child log), opened
+    * once in {@link #configureLazyBufferPolicy} and reused by every {@link #getHistoricalValueBits} call for that log
+    * - see {@link LogRandomAccessValueReader}'s class doc for why this needs to stay separate from that
+    * {@link LogDataReader}'s own live-playback channel/cursor rather than sharing it.
+    */
+   private final Map<LogDataReader, LogRandomAccessValueReader> randomAccessValueReaders = new HashMap<>();
+
    private record LazyLogVariableIndex(LogDataReader reader, int variableIndex)
    {
    }
@@ -127,7 +136,7 @@ public class LogSession extends Session
       setSessionMode(SessionMode.PAUSE);
    }
 
-   private void addLogToDataContainers(LogDataReader logDataReader, boolean isMain)
+   private void addLogToDataContainers(LogDataReader logDataReader, boolean isMain) throws IOException
    {
       configureLazyBufferPolicy(logDataReader);
 
@@ -172,13 +181,15 @@ public class LogSession extends Session
     * {@link RobotModelLoader#setupRobotUpdater}) that this method never scopes, so they remain eager as before.
     * </p>
     */
-   private void configureLazyBufferPolicy(LogDataReader logToAdd)
+   private void configureLazyBufferPolicy(LogDataReader logToAdd) throws IOException
    {
       lazyBufferScopeEagerVariables.put(logToAdd.getLogRootRegistry(), computeYoGraphicReferencedVariables(logToAdd));
 
       List<YoVariable> logVariables = logToAdd.getYoVariablesList();
       for (int i = 0; i < logVariables.size(); i++)
          lazyLogVariableIndexByVariable.put(logVariables.get(i), new LazyLogVariableIndex(logToAdd, i));
+
+      randomAccessValueReaders.put(logToAdd, logToAdd.openRandomAccessValueReader());
 
       if (!lazyBufferFilterInstalled)
       {
@@ -189,49 +200,53 @@ public class LogSession extends Session
    }
 
    /**
-    * Fetches {@code variable}'s value at {@code index} straight from whichever log it belongs to, instead of requiring
-    * the log to have already been replayed up to {@code index} - installed as every lazily-created buffer's
-    * {@link HistoricalValueBitsSource} in {@link #configureLazyBufferPolicy}. Only ever consulted for an index a chart
-    * (or similar consumer) actually asked for, and only once per index - see {@link YoVariableBuffer#copy} - so the
-    * cost scales with what was actually looked at rather than with how far the log has played.
+    * Fetches {@code variable}'s value for every index in {@code [from, from + length)} straight from whichever log it
+    * belongs to, instead of requiring the log to have already been replayed that far - installed as every
+    * lazily-created buffer's {@link HistoricalValueBitsSource} in {@link #configureLazyBufferPolicy}. Only ever
+    * consulted for a range a chart (or similar consumer) actually asked for - see {@link YoVariableBuffer#copy} - so
+    * the cost scales with what was actually looked at rather than with how far the log has played.
     * <p>
-    * Uses {@link LogDataReader#readVariableValueBitsAt}, which reads only {@code variable}'s own field out of a
-    * record instead of decoding all of that log's (possibly tens of thousands of) other variables, and walks the log
-    * without re-seeking between consecutive indices so a compressed log's batches each get decompressed once rather
-    * than once per contained tick - the two things that made naively replaying the whole log through the ordinary
-    * {@link LogDataReader#seek}/{@link LogDataReader#read} path prohibitively slow.
+    * Reads through {@link #randomAccessValueReaders}, a dedicated {@link LogRandomAccessValueReader} per log with its
+    * own channel and batch cache, entirely separate from that log's live-playback {@link LogDataReader}. That
+    * separation (rather than reusing the live reader's channel with a save-position/restore-position dance around
+    * each call) is what lets repeatedly re-visiting the same region - e.g. scrubbing a chart back and forth - reuse
+    * an already-decompressed batch instead of reloading it: restoring a shared channel's live position after each
+    * call would otherwise land it in whatever batch playback happens to be at, evicting the one this range just
+    * decompressed before the very next call (e.g. the next redraw of the same scrub) could reuse it.
     * </p>
     */
-   private long getHistoricalValueBits(YoVariable variable, int index)
+   private void getHistoricalValueBits(YoVariable variable, int from, int length, HistoricalValueBitsWriter writer)
    {
       LazyLogVariableIndex source = lazyLogVariableIndexByVariable.get(variable);
       if (source == null)
-         return variable.getValueAsLongBits();
+      {
+         long bits = variable.getValueAsLongBits();
+         for (int i = 0; i < length; i++)
+            writer.write(from + i, bits);
+         return;
+      }
 
       LogDataReader reader = source.reader();
-      int localPosition = index;
+      LogRandomAccessValueReader randomAccessReader = randomAccessValueReaders.get(reader);
+      ChildLogSynchronization synchronization = reader == logDataReader ? null : findSynchronization(reader);
 
-      if (reader != logDataReader)
+      for (int i = 0; i < length; i++)
       {
-         ChildLogSynchronization synchronization = findSynchronization(reader);
-         long relativePosition = synchronization == null ? index : synchronization.computeChildPosition(index);
-         if (relativePosition < 0 || relativePosition >= reader.getNumberOfEntries())
-            return 0L; // Outside this child log's recorded range (e.g. it hadn't started yet) - no data to report.
-         localPosition = (int) relativePosition;
-      }
+         int index = from + i;
+         int localPosition = index;
 
-      int savedPosition = reader.getCurrentLogPosition();
-      try
-      {
-         return reader.readVariableValueBitsAt(localPosition, source.variableIndex());
-      }
-      finally
-      {
-         // Restores the live read cursor exactly like resuming playback/scrubbing at savedPosition would - required for
-         // the main log (nothing else re-syncs its position), and done the same way for a child log for consistency
-         // even though ChildLogData.read() would already force a re-seek on its next normal tick regardless.
-         reader.seek(savedPosition);
-         reader.read();
+         if (reader != logDataReader)
+         {
+            long relativePosition = synchronization == null ? index : synchronization.computeChildPosition(index);
+            if (relativePosition < 0 || relativePosition >= reader.getNumberOfEntries())
+            {
+               writer.write(index, 0L); // Outside this child log's recorded range (e.g. it hadn't started yet).
+               continue;
+            }
+            localPosition = (int) relativePosition;
+         }
+
+         writer.write(index, randomAccessReader.readVariableValueBitsAt(localPosition, source.variableIndex()));
       }
    }
 
