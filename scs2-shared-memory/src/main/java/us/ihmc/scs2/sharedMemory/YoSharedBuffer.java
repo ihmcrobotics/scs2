@@ -94,6 +94,16 @@ public class YoSharedBuffer implements LinkedYoVariableFactory
    }
 
    /**
+    * Restricts which future variables get a buffer allocated immediately versus on first use. See
+    * {@link YoRegistryBuffer#setEagerVariableFilter(Predicate)} - {@code null} (the default) preserves the original
+    * eager-for-everything behavior.
+    */
+   public void setEagerVariableFilter(Predicate<YoVariable> filter)
+   {
+      registryBuffer.setEagerVariableFilter(filter);
+   }
+
+   /**
     * Consumes a request for cropping the size of the buffers, i.e. resizing the buffers to only keep
     * the part that is in between the {@code from} and {@code to} points as defined in the given
     * {@code request}.
@@ -747,8 +757,15 @@ public class YoSharedBuffer implements LinkedYoVariableFactory
       if (isDisposed)
          return null;
 
+      // findOrCreate, not find: a variable skipped by an eager-variable filter (see setEagerVariableFilter) has no
+      // buffer yet - this is the actual "something wants this variable's history" signal, e.g. opening a chart for it.
+      // findOrCreateYoVariableBuffer (not a plain backend lookup) matters here: variableToLink is very often a
+      // UI-owned mirror variable (see YoManager.startSession's duplicateMissingYoVariablesInTarget), and this
+      // resolves through its namespace path to the real backend variable before creating anything - creating a
+      // buffer bound to the mirror object directly would silently record its permanently-stale duplicate value
+      // instead of the live backend data.
       LinkedYoVariable<?> linkedYoVariable = LinkedYoVariable.newLinkedYoVariable(variableToLink,
-                                                                                  registryBuffer.findYoVariableBuffer(variableToLink),
+                                                                                  registryBuffer.findOrCreateYoVariableBuffer(variableToLink),
                                                                                   initialUser);
       linkedBuffersLock.lock();
       try

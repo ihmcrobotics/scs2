@@ -12,6 +12,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.Predicate;
 
 public class YoRegistryBuffer
 {
@@ -26,20 +27,32 @@ public class YoRegistryBuffer
 
    private final ReentrantLock lock = new ReentrantLock();
 
+   /**
+    * Governs whether a newly added {@link YoVariable} gets a buffer allocated immediately.
+    * <p>
+    * {@code null} (the default) means every variable is eager, which is the original behavior and what live/simulation
+    * sessions rely on. A non-null filter lets a variable that tests {@code false} skip buffer allocation entirely until
+    * something later asks for it via {@link #findOrCreateYoVariableBuffer(YoVariable)}. See {@code LogSession}
+    * for the only current caller that installs a restrictive filter.
+    * </p>
+    */
+   private volatile Predicate<YoVariable> eagerVariableFilter = null;
+
    public YoRegistryBuffer(YoRegistry rootRegistry, YoBufferPropertiesReadOnly properties)
    {
       this.rootRegistry = rootRegistry;
       this.properties = properties;
 
       for (YoVariable yoVariable : rootRegistry.collectSubtreeVariables())
-         registerNewYoVariable(yoVariable);
+         if (isEager(yoVariable))
+            registerNewYoVariable(yoVariable);
 
       registryBufferUpdater = (change) ->
       {
-         if (change.wasVariableAdded())
+         if (change.wasVariableAdded() && isEager(change.getTargetVariable()))
             registerNewYoVariable(change.getTargetVariable());
          if (change.wasRegistryAdded())
-            registerNewYoVariables(change.getTargetRegistry().collectSubtreeVariables());
+            registerNewEagerYoVariables(change.getTargetRegistry().collectSubtreeVariables());
 
          // A registry/variable removed on the backend side (e.g. a robot being replaced) must also drop its buffer
          // entry here - otherwise a same-named replacement variable is silently skipped by registerNewYoVariable's
@@ -72,12 +85,33 @@ public class YoRegistryBuffer
       this.rootRegistry.addListener(registryBufferUpdater);
    }
 
-   private void registerNewYoVariables(Collection<? extends YoVariable> yoVariables)
+   /** Registers only the variables that pass {@link #isEager(YoVariable)} - used by the automatic add-listener path. */
+   private void registerNewEagerYoVariables(Collection<? extends YoVariable> yoVariables)
    {
       for (YoVariable yoVariable : yoVariables)
       {
-         registerNewYoVariable(yoVariable);
+         if (isEager(yoVariable))
+            registerNewYoVariable(yoVariable);
       }
+   }
+
+   /**
+    * Sets the filter deciding whether a newly added variable gets a buffer allocated right away.
+    * <p>
+    * {@code null} (the default) makes every variable eager - existing behavior, relied on by live/simulation sessions.
+    * A variable that a non-null filter rejects gets no buffer until {@link #findOrCreateYoVariableBuffer} is
+    * called for it, e.g. when the user opens a chart for it.
+    * </p>
+    */
+   public void setEagerVariableFilter(Predicate<YoVariable> filter)
+   {
+      eagerVariableFilter = filter;
+   }
+
+   private boolean isEager(YoVariable variable)
+   {
+      Predicate<YoVariable> filter = eagerVariableFilter;
+      return filter == null || filter.test(variable);
    }
 
    private void registerNewYoVariable(YoVariable yoVariable)
@@ -189,6 +223,15 @@ public class YoRegistryBuffer
       return yoVariableFullnameToBufferMap.get(yoVariable.getFullNameString());
    }
 
+   /**
+    * Finds the buffer for {@code yoVariable}, resolving through its namespace path within {@link #rootRegistry} first
+    * (so this works whether {@code yoVariable} is itself already attached to {@link #rootRegistry}, or is an
+    * equivalently-named variable living in a separate mirror registry - e.g. the duplicate variables
+    * {@code SharedMemoryTools.duplicateMissingYoVariablesInTarget} builds for a UI-owned {@code LinkedYoRegistry}), and
+    * creating the buffer (and the matching backend variable, if it doesn't exist yet) if none is found. This is also
+    * how a variable skipped by a restrictive {@link #setEagerVariableFilter} gets its buffer materialized on first
+    * real use, e.g. a chart or the variable search panel being opened for it.
+    */
    public YoVariableBuffer<?> findOrCreateYoVariableBuffer(YoVariable yoVariable)
    {
       String variableFullName = yoVariable.getFullNameString();

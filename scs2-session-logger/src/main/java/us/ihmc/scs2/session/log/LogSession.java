@@ -20,12 +20,18 @@ import us.ihmc.scs2.simulation.TimeConsumer;
 import us.ihmc.scs2.simulation.robot.Robot;
 import us.ihmc.yoVariables.registry.YoRegistry;
 
+import us.ihmc.yoVariables.variable.YoVariable;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
@@ -57,6 +63,17 @@ public class LogSession extends Session
 
    private final List<TimeConsumer> afterReadCallbacks = new ArrayList<>();
    private final List<Consumer<List<YoGraphicDefinition>>> graphicsAddedCallbacks = new ArrayList<>();
+
+   /**
+    * Per-log-registry allow-list of variables that should get a buffer allocated immediately (those referenced by that
+    * log's own {@link YoGraphicDefinition}s), keyed by that log's root registry. Everything else under a known key gets
+    * its buffer created lazily, on first use (e.g. opening a chart for it) - see {@link #isEagerLogVariable}. A
+    * variable whose registry isn't a descendant of any key here (robot joints, session/user/equation registries, etc.)
+    * is always eager; this only restricts the raw per-log variable trees, which is where nearly all of a log's
+    * variable count lives and where almost none of it is ever looked at in a given session.
+    */
+   private final Map<YoRegistry, Set<String>> lazyBufferScopeEagerNames = new HashMap<>();
+   private boolean lazyBufferFilterInstalled = false;
 
    public LogSession(File logDirectory, ProgressConsumer progressConsumer) throws IOException
    {
@@ -90,6 +107,8 @@ public class LogSession extends Session
 
    private void addLogToDataContainers(LogDataReader logDataReader, boolean isMain)
    {
+      configureLazyBufferPolicy(logDataReader);
+
       rootRegistry.addChild(logDataReader.getLocalYoRegistry());
       if (isMain)
          rootRegistry.addChild(logDataReader.getLogRootRegistry());
@@ -117,6 +136,108 @@ public class LogSession extends Session
       // This alerts the graphics system that it needs to update. if we've added a log to an existing session, its graphics need to be loaded by the
       // YoGraphicFXManager
       graphicsAddedCallbacks.forEach(consumer -> consumer.accept(addedGraphics));
+   }
+
+   /**
+    * Restricts eager buffer allocation to the variables {@code logToAdd} actually needs rendered immediately (those
+    * referenced by its own {@link YoGraphicDefinition}s), instead of every one of its variables. This log's raw
+    * variable count can be in the tens of thousands while the variables actually driving a graphic are typically a
+    * handful, so this is where practically all of the savings comes from. Called before every place that attaches a
+    * log's registry tree to {@link #rootRegistry}, so it covers the main log, child logs added at construction, and
+    * ones added later via {@link #addLogAtDirectory}.
+    * <p>
+    * Robot joint variables aren't affected - those live in a separate registry ({@code robot.getRegistry()}, added in
+    * {@link RobotModelLoader#setupRobotUpdater}) that this method never scopes, so they remain eager as before.
+    * </p>
+    */
+   private void configureLazyBufferPolicy(LogDataReader logToAdd)
+   {
+      lazyBufferScopeEagerNames.put(logToAdd.getLogRootRegistry(), computeYoGraphicReferencedVariableNames(logToAdd));
+
+      if (!lazyBufferFilterInstalled)
+      {
+         lazyBufferFilterInstalled = true;
+         sharedBuffer.setEagerVariableFilter(this::isEagerLogVariable);
+      }
+   }
+
+   /**
+    * @return {@code true} if {@code variable} isn't under any log's raw variable tree (always eager - robot joints,
+    *       session/user/equation registries, etc.), or if it is and was found to be referenced by that log's own
+    *       {@link YoGraphicDefinition}s.
+    */
+   private boolean isEagerLogVariable(YoVariable variable)
+   {
+      YoRegistry registry = variable.getRegistry();
+
+      for (Map.Entry<YoRegistry, Set<String>> scope : lazyBufferScopeEagerNames.entrySet())
+      {
+         if (isDescendantOrSelf(registry, scope.getKey()))
+            return scope.getValue().contains(variable.getFullNameString());
+      }
+
+      return true;
+   }
+
+   private static boolean isDescendantOrSelf(YoRegistry candidate, YoRegistry ancestor)
+   {
+      for (YoRegistry current = candidate; current != null; current = current.getParent())
+      {
+         if (current == ancestor)
+            return true;
+      }
+      return false;
+   }
+
+   /**
+    * Matches every field value of every {@link YoGraphicDefinition} under {@code logToAdd}'s graphics against
+    * {@code logToAdd}'s own variables, preferring an exact full-name match and falling back to an unambiguous
+    * short-name match. A field that matches nothing (a constant, a color, an ambiguous short name, or a reference
+    * outside this log) is simply not included - worst case that graphic's binding stays unbuffered until something
+    * else (e.g. a chart) asks for it, same as it would if this method didn't run at all.
+    */
+   private static Set<String> computeYoGraphicReferencedVariableNames(LogDataReader logToAdd)
+   {
+      List<YoGraphicGroupDefinition> graphics = logToAdd.getLogSCS2YoGraphics();
+      if (graphics == null || graphics.isEmpty())
+         return Collections.emptySet();
+
+      Map<String, YoVariable> fullNameToVariable = new HashMap<>();
+      Map<String, List<YoVariable>> shortNameToVariables = new HashMap<>();
+      for (YoVariable variable : logToAdd.getYoVariablesList())
+      {
+         fullNameToVariable.put(variable.getFullNameString(), variable);
+         shortNameToVariables.computeIfAbsent(variable.getName(), name -> new ArrayList<>()).add(variable);
+      }
+
+      Set<String> eagerFullNames = new HashSet<>();
+
+      for (YoGraphicGroupDefinition group : graphics)
+      {
+         for (YoGraphicDefinition.YoGraphicFieldsSummary summary : YoGraphicDefinition.exportSubtreeYoGraphicFieldsSummaryList(group))
+         {
+            for (YoGraphicDefinition.YoGraphicFieldInfo field : summary)
+            {
+               String value = field.getFieldValue();
+               if (value == null || value.isEmpty())
+                  continue;
+
+               YoVariable exactMatch = fullNameToVariable.get(value);
+               if (exactMatch != null)
+               {
+                  eagerFullNames.add(exactMatch.getFullNameString());
+                  continue;
+               }
+
+               String shortName = value.contains(".") ? value.substring(value.lastIndexOf('.') + 1) : value;
+               List<YoVariable> candidates = shortNameToVariables.get(shortName);
+               if (candidates != null && candidates.size() == 1)
+                  eagerFullNames.add(candidates.get(0).getFullNameString());
+            }
+         }
+      }
+
+      return eagerFullNames;
    }
 
    public void bindSynchronization(String logToSynchronize, String mainLogVarName, String logToSyncVarName)
