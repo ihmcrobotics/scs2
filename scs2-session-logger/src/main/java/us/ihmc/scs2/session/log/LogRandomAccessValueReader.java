@@ -9,7 +9,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.nio.LongBuffer;
 import java.nio.channels.FileChannel;
 
 /**
@@ -40,11 +39,10 @@ class LogRandomAccessValueReader implements AutoCloseable
 
    private final ByteBuffer compressedBuffer;
    private final ByteBuffer batchBuffer;
-   private final ByteBuffer logLine;
-   private final LongBuffer logLongArray;
+   /** Scratch for the uncompressed path, which reads its 8 bytes straight off the channel. */
+   private final ByteBuffer singleValue = ByteBuffer.allocate(Long.BYTES);
 
    private int index;
-   private int tickIndexInBatch;
    private int currentBatchTickCount;
    /** The batch index currently decompressed into {@link #batchBuffer}, or {@code -1} if none. */
    private int loadedBatchIndex = -1;
@@ -76,22 +74,43 @@ class LogRandomAccessValueReader implements AutoCloseable
          compressedBuffer = null;
          batchBuffer = null;
       }
-
-      logLine = ByteBuffer.allocate(singleTickSize);
-      logLongArray = logLine.asLongBuffer();
    }
 
    /**
     * Reads {@code variableIndex}'s raw value out of the record at {@code position}, without decoding the record's
     * other variables - see {@link LogDataReader#readVariableValueBitsAt} for the live-cursor equivalent this mirrors.
+    *
+    * @return the raw value bits, or {@code 0} if {@code position} lies past the end of the log's recorded data.
     */
    long readVariableValueBitsAt(int position, int variableIndex)
    {
       try
       {
-         positionChannel(position);
-         readLogLine();
-         return logLongArray.get(1 + variableIndex);
+         // Byte offset of this one variable within the tick record. The leading long is the timestamp, which is why
+         // the variables start at index 1 - see LogDataReader.readAndProcessALogLineReturnTrueIfDone.
+         int byteOffsetInTick = (1 + variableIndex) * Long.BYTES;
+
+         if (compressed)
+         {
+            if (!loadBatchFor(position))
+               return 0L;
+
+            int tickOffset = position % batchSize;
+            // Read the 8 bytes straight out of the decompressed batch. Copying the whole tick into logLine first
+            // (as the sequential-playback path does, because it decodes every variable) would mean a memcpy of
+            // singleTickSize - 8 bytes per variable, so hundreds of KB on a log with tens of thousands of
+            // variables - per single value read, and backfilling a chart reads thousands of them.
+            return batchBuffer.getLong(tickOffset * singleTickSize + byteOffsetInTick);
+         }
+         else
+         {
+            // Same idea uncompressed: seek straight to the value rather than reading the whole record.
+            channel.position((long) position * (long) singleTickSize + byteOffsetInTick);
+            singleValue.clear();
+            if (channel.read(singleValue) != Long.BYTES)
+               return 0L;
+            return singleValue.getLong(0);
+         }
       }
       catch (IOException e)
       {
@@ -99,37 +118,32 @@ class LogRandomAccessValueReader implements AutoCloseable
       }
    }
 
-   private void positionChannel(int position) throws IOException
+   /**
+    * Makes sure the batch holding {@code position} is the one decompressed into {@link #batchBuffer}.
+    *
+    * @return {@code false} if that tick isn't in the log, in which case the reader's state is left untouched.
+    */
+   private boolean loadBatchFor(int position) throws IOException
    {
-      if (compressed)
-      {
-         int batchIndex = position / batchSize;
-         int tickOffset = position % batchSize;
+      int batchIndex = position / batchSize;
+      int tickOffset = position % batchSize;
 
-         if (batchIndex == loadedBatchIndex)
-         {
-            // Already decompressed - just move the in-batch cursor, no re-read/re-decompress needed.
-            tickIndexInBatch = tickOffset;
-            return;
-         }
+      if (batchIndex != loadedBatchIndex)
+      { // Not the batch currently decompressed into batchBuffer - go get it.
+         if (batchIndex < 0 || batchIndex >= logIndex.dataOffsets.length)
+            return false;
 
+         channel.position(logIndex.dataOffsets[batchIndex]);
          currentBatchTickCount = 0;
-         tickIndexInBatch = 0;
          index = batchIndex;
 
-         if (batchIndex < logIndex.dataOffsets.length)
-            channel.position(logIndex.dataOffsets[batchIndex]);
+         if (!readNextBatch())
+            return false;
+      }
 
-         if (tickOffset > 0)
-         {
-            readNextBatch();
-            tickIndexInBatch = tickOffset;
-         }
-      }
-      else
-      {
-         channel.position((long) position * (long) logLine.capacity());
-      }
+      // Decompressing is what tells us how many ticks the batch actually holds, so this has to be checked after it
+      // is loaded rather than against batchSize up front: the final batch is usually short.
+      return tickOffset < currentBatchTickCount;
    }
 
    private boolean readNextBatch() throws IOException
@@ -178,42 +192,9 @@ class LogRandomAccessValueReader implements AutoCloseable
       }
 
       currentBatchTickCount = batchBuffer.position() / singleTickSize;
-      tickIndexInBatch = 0;
       loadedBatchIndex = batchBeingLoaded;
       index++;
       return true;
-   }
-
-   private boolean readLogLine() throws IOException
-   {
-      logLine.clear();
-      logLongArray.clear();
-
-      if (compressed)
-      {
-         if (tickIndexInBatch >= currentBatchTickCount)
-         {
-            if (!readNextBatch())
-               return false;
-         }
-
-         int tickStart = tickIndexInBatch * singleTickSize;
-         batchBuffer.limit(tickStart + singleTickSize);
-         batchBuffer.position(tickStart);
-         logLine.put(batchBuffer);
-         tickIndexInBatch++;
-
-         return true;
-      }
-      else
-      {
-         int read = channel.read(logLine);
-         if (read < 0)
-            return false;
-         if (read != logLine.capacity())
-            throw new RuntimeException("Expected read of " + logLine.capacity() + ", got " + read + ". TODO: Implement loop for reading the full log line.");
-         return true;
-      }
    }
 
    @Override

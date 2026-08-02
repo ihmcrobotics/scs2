@@ -47,6 +47,13 @@ public class YoRegistryBuffer
     */
    private volatile Consumer<YoVariableBuffer<?>> onDemandBufferCreatedListener = null;
 
+   /**
+    * Shared by every on-demand buffer so the cap is on the total time spent backfilling per publish cycle rather
+    * than per buffer - a chart panel full of freshly added variables would otherwise multiply the limit by the
+    * number of variables in it. Reset once per cycle by {@link YoSharedBuffer#prepareLinkedBuffersForPull()}.
+    */
+   private final HistoricalBackfillBudget backfillBudget = new HistoricalBackfillBudget();
+
    public YoRegistryBuffer(YoRegistry rootRegistry, YoBufferPropertiesReadOnly properties)
    {
       this.rootRegistry = rootRegistry;
@@ -124,6 +131,12 @@ public class YoRegistryBuffer
    public void setOnDemandBufferCreatedListener(Consumer<YoVariableBuffer<?>> listener)
    {
       onDemandBufferCreatedListener = listener;
+   }
+
+   /** The allowance shared by every on-demand buffer this registry created. See {@link HistoricalBackfillBudget}. */
+   public HistoricalBackfillBudget getBackfillBudget()
+   {
+      return backfillBudget;
    }
 
    private boolean isEager(YoVariable variable)
@@ -249,6 +262,9 @@ public class YoRegistryBuffer
     * creating the buffer (and the matching backend variable, if it doesn't exist yet) if none is found. This is also
     * how a variable skipped by a restrictive {@link #setEagerVariableFilter} gets its buffer materialized on first
     * real use, e.g. a chart or the variable search panel being opened for it.
+    *
+    * @return the buffer, or {@code null} if {@code yoVariable} has been {@code destroy()}'d and so no longer names a
+    *       place in any registry tree to create one under.
     */
    public YoVariableBuffer<?> findOrCreateYoVariableBuffer(YoVariable yoVariable)
    {
@@ -257,12 +273,19 @@ public class YoRegistryBuffer
 
       if (yoVariableBuffer == null)
       {
+         // A destroyed variable (e.g. a robot replaced mid-session, with a UI control still holding the old
+         // reference) has no namespace left, so there is no path to create it under - and creating one would
+         // resurrect a buffer for something deliberately torn down. Callers treat null as "not linkable".
+         if (yoVariable.getNamespace() == null)
+            return null;
+
          YoRegistry registry = SharedMemoryTools.ensurePathExists(rootRegistry, yoVariable.getNamespace());
          YoVariable duplicate = registry.getVariable(yoVariable.getName());
          if (duplicate == null)
             duplicate = yoVariable.duplicate(registry);
 
          yoVariableBuffer = YoVariableBuffer.newYoVariableBuffer(duplicate, properties);
+         yoVariableBuffer.setBackfillBudget(backfillBudget);
          yoVariableBuffers.add(yoVariableBuffer);
          yoVariableFullnameToBufferMap.put(variableFullName, yoVariableBuffer);
 

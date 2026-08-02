@@ -462,6 +462,25 @@ public class LogDataReader
       return currentRecordTick.getValue();
    }
 
+   /**
+    * The variable backing {@link #getCurrentLogPosition()}.
+    * <p>
+    * It lives in {@link #getLocalYoRegistry()} rather than under {@link #getLogRootRegistry()}, so it is always given
+    * a buffer eagerly (see {@code LogSession.isEagerLogVariable}). Its buffer is therefore a per-buffer-index record
+    * of which log tick was read into that index, which is the only way to map a buffer index back to a log position -
+    * the two only coincide when a log is played straight through from tick 0 with a buffer record period of 1 and no
+    * wrapping, scrubbing, or cropping. See {@code LogSession.logPositionAtBufferIndex}.
+    * </p>
+    * <p>
+    * Beware of the off-by-one: {@link #read()} increments this <i>after</i> reading, and the buffer is written after
+    * that, so the value stored at a buffer index is the log position that was read there <i>plus one</i>.
+    * </p>
+    */
+   public YoInteger getCurrentRecordTickVariable()
+   {
+      return currentRecordTick;
+   }
+
    public YoRegistry getLocalYoRegistry()
    {
       return registry;

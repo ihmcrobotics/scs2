@@ -394,6 +394,11 @@ public class YoSharedBuffer implements LinkedYoVariableFactory
       if (isDisposed)
          return;
 
+      // Opens this cycle's allowance for pulling history out of a HistoricalValueBitsSource, which is work
+      // prepareForPull below can trigger. Doing it here, rather than per buffer, is what keeps the limit on the
+      // total: this is the one call per publish cycle that all of that work hangs off.
+      registryBuffer.getBackfillBudget().startCycle();
+
       linkedBuffersLock.lock();
       try
       {

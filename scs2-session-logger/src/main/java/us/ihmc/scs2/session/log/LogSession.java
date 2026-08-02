@@ -17,6 +17,7 @@ import us.ihmc.scs2.session.tools.RobotDataLogTools;
 import us.ihmc.scs2.session.tools.RobotModelLoader;
 import us.ihmc.scs2.sharedMemory.HistoricalValueBitsSource;
 import us.ihmc.scs2.sharedMemory.HistoricalValueBitsWriter;
+import us.ihmc.scs2.sharedMemory.YoIntegerBuffer;
 import us.ihmc.scs2.sharedMemory.YoVariableBuffer;
 import us.ihmc.scs2.sharedMemory.interfaces.YoBufferPropertiesReadOnly;
 import us.ihmc.scs2.simulation.TimeConsumer;
@@ -214,6 +215,14 @@ public class LogSession extends Session
     * call would otherwise land it in whatever batch playback happens to be at, evicting the one this range just
     * decompressed before the very next call (e.g. the next redraw of the same scrub) could reuse it.
     * </p>
+    * <p>
+    * A buffer index is <em>not</em> a log position, so each one is translated through
+    * {@link #logPositionAtBufferIndex(int)} first. An index the main log never recorded into has no value to fetch,
+    * and is written as {@code 0} rather than left alone - leaving it unwritten would leave it unpopulated, and
+    * {@link YoVariableBuffer} would re-request it (and pay the seek) on every subsequent read forever. Playback
+    * writing genuine data there later still overwrites it through the ordinary
+    * {@link YoVariableBuffer#writeBufferAt} path.
+    * </p>
     */
    private void getHistoricalValueBits(YoVariable variable, int from, int length, HistoricalValueBitsWriter writer)
    {
@@ -230,14 +239,31 @@ public class LogSession extends Session
       LogRandomAccessValueReader randomAccessReader = randomAccessValueReaders.get(reader);
       ChildLogSynchronization synchronization = reader == logDataReader ? null : findSynchronization(reader);
 
+      // Resolved once per call, not per index: this is the live array, and only the session thread - the one running
+      // this - ever resizes it, so it cannot be swapped out from under this loop.
+      int[] bufferIndexToLogPosition = bufferIndexToLogPosition();
+      int mainLogEntryCount = logDataReader.getNumberOfEntries();
+
       for (int i = 0; i < length; i++)
       {
          int index = from + i;
-         int localPosition = index;
+
+         // Stored as position + 1, so 0 (an index never written) becomes -1.
+         int mainLogPosition = bufferIndexToLogPosition == null || index < 0 || index >= bufferIndexToLogPosition.length ?
+               -1 :
+               bufferIndexToLogPosition[index] - 1;
+
+         if (mainLogPosition < 0 || mainLogPosition >= mainLogEntryCount)
+         { // This buffer index holds no log data at all - never written, or written before a crop shifted it away.
+            writer.write(index, 0L);
+            continue;
+         }
+
+         int localPosition = mainLogPosition;
 
          if (reader != logDataReader)
-         {
-            long relativePosition = synchronization == null ? index : synchronization.computeChildPosition(index);
+         { // computeChildPosition maps a *parent log position* onto this child's own timeline, not a buffer index.
+            long relativePosition = synchronization == null ? mainLogPosition : synchronization.computeChildPosition(mainLogPosition);
             if (relativePosition < 0 || relativePosition >= reader.getNumberOfEntries())
             {
                writer.write(index, 0L); // Outside this child log's recorded range (e.g. it hadn't started yet).
@@ -248,6 +274,31 @@ public class LogSession extends Session
 
          writer.write(index, randomAccessReader.readVariableValueBitsAt(localPosition, source.variableIndex()));
       }
+   }
+
+   /**
+    * The per-buffer-index record of which main-log tick was read into that index, as {@code position + 1} (so a
+    * never-written index reads as {@code 0}), or {@code null} if that record isn't available.
+    * <p>
+    * A buffer index and a log position are not interchangeable: they only coincide for a log played straight through
+    * from tick 0, with a buffer record period of 1, that has not yet wrapped the ring buffer and has never been
+    * scrubbed, cropped or resized. Every one of those breaks the correspondence, and the buffer outlives all of them,
+    * so the mapping has to be read back out of the buffer rather than assumed.
+    * </p>
+    * <p>
+    * {@link LogDataReader#getCurrentRecordTickVariable()} is exactly that record - it is buffered eagerly alongside
+    * everything else, and gets shuffled by a crop/resize in lockstep with the data it describes. See that method for
+    * the off-by-one.
+    * </p>
+    */
+   private int[] bufferIndexToLogPosition()
+   {
+      // Re-fetched rather than cached: YoIntegerBuffer#getBuffer hands out the live array, which resizeBuffer
+      // replaces wholesale.
+      YoVariableBuffer<?> recordTickBuffer = sharedBuffer.getRegistryBuffer()
+                                                         .findYoVariableBuffer(logDataReader.getCurrentRecordTickVariable());
+
+      return recordTickBuffer instanceof YoIntegerBuffer yoIntegerBuffer ? yoIntegerBuffer.getBuffer() : null;
    }
 
    private ChildLogSynchronization findSynchronization(LogDataReader reader)
