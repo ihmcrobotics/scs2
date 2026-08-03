@@ -21,6 +21,9 @@ import us.ihmc.scs2.definition.yoVariable.YoEquationListDefinition;
 import us.ihmc.scs2.session.Session;
 import us.ihmc.scs2.session.SessionIOTools;
 import us.ihmc.scs2.session.SessionPropertiesHelper;
+import us.ihmc.scs2.session.log.LogSession;
+import us.ihmc.scs2.session.mcap.MCAPLogSession;
+import us.ihmc.scs2.session.remote.RemoteSession;
 import us.ihmc.scs2.sessionVisualizer.jfx.MainWindowController;
 import us.ihmc.scs2.sessionVisualizer.jfx.SCSGuiConfiguration;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerIOTools;
@@ -103,8 +106,17 @@ public class MultiSessionManager
                                    {
                                       startSession(newValue, () ->
                                       {
-                                         if (activeController.get() != null)
-                                            activeController.get().notifySessionLoaded();
+                                         SessionControlsController controller = activeController.get();
+                                         if (controller == null)
+                                         {
+                                            // The session may have been started by a controller that is not showing, e.g. the log session
+                                            // manager's drag-and-drop listener which starts a session without first opening its panel.
+                                            Class<? extends SessionControlsController> controllerType = controllerTypeForSession(newValue);
+                                            if (controllerType != null)
+                                               controller = inactiveControllerMap.get(controllerType);
+                                         }
+                                         if (controller != null)
+                                            controller.notifySessionLoaded();
                                       });
                                    }
                                 });
@@ -117,6 +129,21 @@ public class MultiSessionManager
       messager.addFXTopicListener(topics.getSessionVisualizerConfigurationSaveRequest(), m -> saveSessionConfiguration(m, toolkit.getSession()));
       messager.addFXTopicListener(topics.getSessionVisualizerDefaultConfigurationLoadRequest(), m -> loadSessionDefaultConfiguration(toolkit.getSession()));
       messager.addFXTopicListener(topics.getSessionVisualizerDefaultConfigurationSaveRequest(), m -> saveSessionDefaultConfiguration(toolkit.getSession()));
+
+      // Load and initialize (without showing its window) so its OpenLogDirectoryRequest listener - used by
+      // the 3D scene's drag-and-drop - is live from startup, instead of only after the user opens this panel once.
+      try
+      {
+         FXMLLoader loader = new FXMLLoader(SessionVisualizerIOTools.LOG_SESSION_MANAGER_PANE_FXML_URL);
+         loader.load();
+         LogSessionManagerController controller = loader.getController();
+         controller.initialize(toolkit);
+         inactiveControllerMap.put(LogSessionManagerController.class, controller);
+      }
+      catch (IOException e)
+      {
+         e.printStackTrace();
+      }
    }
 
    public void startSession(Session session, Runnable sessionLoadedCallback)
@@ -248,6 +275,17 @@ public class MultiSessionManager
 
       if (activeController.get() == controller)
          activeController.set(null);
+   }
+
+   private static Class<? extends SessionControlsController> controllerTypeForSession(Session session)
+   {
+      if (session instanceof LogSession)
+         return LogSessionManagerController.class;
+      if (session instanceof RemoteSession)
+         return RemoteSessionManagerController.class;
+      if (session instanceof MCAPLogSession)
+         return MCAPLogSessionManagerController.class;
+      return null;
    }
 
    private String robotName;

@@ -266,6 +266,7 @@ public class LogSessionManagerController implements SessionControlsController
 
                                                        });
       });
+      messager.addTopicListener(topics.getOpenLogDirectoryRequest(), this::openLogSession);
       messager.addTopicListener(topics.getBindSynchronizingVariablesRequest(), request ->
       {
          if (!(toolkit.getSession() instanceof LogSession activeSession))
@@ -460,6 +461,15 @@ public class LogSessionManagerController implements SessionControlsController
       if (result == null)
          return;
 
+      openLogSession(result.getParentFile());
+   }
+
+   /**
+    * Opens the log located in the given directory, replacing the active session if there is one (the usual
+    * "save default configuration?" prompt from {@code MultiSessionManager} applies, same as {@link #openLogFile()}).
+    */
+   public void openLogSession(File logDirectory)
+   {
       unloadSession();
       setIsLoading(true);
 
@@ -469,10 +479,10 @@ public class LogSessionManagerController implements SessionControlsController
                                                        try
                                                        {
                                                           LogTools.info("Creating log session.");
-                                                          newSession = new LogSession(result.getParentFile(), null); // TODO Need a progress window
+                                                          newSession = new LogSession(logDirectory, null); // TODO Need a progress window
                                                           LogTools.info("Created log session.");
                                                           JavaFXMissingTools.runLater(getClass(), () -> activeSessionProperty.set(newSession));
-                                                          SessionVisualizerIOTools.setDefaultFilePath(LOG_FILE_KEY, result);
+                                                          SessionVisualizerIOTools.setDefaultFilePath(LOG_FILE_KEY, logDirectory);
                                                        }
                                                        catch (IOException ex)
                                                        {

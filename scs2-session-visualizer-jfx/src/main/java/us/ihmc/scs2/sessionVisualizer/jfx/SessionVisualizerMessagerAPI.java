@@ -230,6 +230,7 @@ public class SessionVisualizerMessagerAPI
       public static final Topic<Session> StartNewSessionRequest = APIRoot.child(Session).child(Start).topic(Request);
       public static final Topic<OpenSessionControlsRequest> OpenSessionControlsRequest = APIRoot.child(Session).child(Controls).topic(Request);
       public static final Topic<OpenAddLogRequest> OpenAddLogRequest = APIRoot.child(Session).child(Controls).topic(Add);
+      public static final Topic<File> OpenLogDirectoryRequest = APIRoot.child(Session).child(Controls).topic(Open);
       public static final Topic<BindSynchronizingVariablesRequest> BindSynchronizingVariablesRequest = APIRoot.child(Session).child(Controls).topic(Recordable);
    }
 

@@ -17,9 +17,11 @@ import javafx.scene.Node;
 import javafx.scene.SubScene;
 import javafx.scene.control.Label;
 import javafx.scene.control.SplitPane;
+import javafx.scene.input.Dragboard;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseEvent;
+import javafx.scene.input.TransferMode;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
@@ -46,7 +48,9 @@ import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.ObservedAnimationTimer;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.YoVariableDatabase;
 
+import java.io.File;
 import java.io.IOException;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 public class MainWindowController extends ObservedAnimationTimer implements VisualizerController
@@ -157,6 +161,7 @@ public class MainWindowController extends ObservedAnimationTimer implements Visu
       }
 
       setupViewport3D(toolkit.getGlobalToolkit().getViewport3DManager().getPane());
+      setupLogDirectoryDropTarget();
       setupPlotter2D(plotter2D);
       messager.addFXTopicListener(topics.getPlotter2DTrackCoordinateRequest(), m ->
       {
@@ -197,6 +202,80 @@ public class MainWindowController extends ObservedAnimationTimer implements Visu
       AnchorPane.setBottomAnchor(viewportPane, 0.0);
       AnchorPane.setLeftAnchor(viewportPane, 0.0);
       globalToolkit.getSnapshotManager().registerRecordable(viewportPane);
+   }
+
+   /**
+    * Lets a log directory (or the {@code *.log} property file inside it) be dropped directly onto the 3D scene to
+    * open it, as an alternative to the log session panel's file chooser. Only single-item drops are handled; drops
+    * that don't resolve to a log directory are silently rejected (no drop feedback, no error dialog).
+    */
+   private void setupLogDirectoryDropTarget()
+   {
+      Pane logDropOverlay = new Pane();
+      logDropOverlay.setStyle("-fx-background-color: rgba(0, 0, 0, 0.35);");
+      logDropOverlay.setMouseTransparent(true);
+      logDropOverlay.setVisible(false);
+      sceneAnchorPane.getChildren().add(logDropOverlay);
+      AnchorPane.setTopAnchor(logDropOverlay, 0.0);
+      AnchorPane.setRightAnchor(logDropOverlay, 0.0);
+      AnchorPane.setBottomAnchor(logDropOverlay, 0.0);
+      AnchorPane.setLeftAnchor(logDropOverlay, 0.0);
+
+      sceneAnchorPane.setOnDragOver(event ->
+      {
+         boolean canDrop = event.getGestureSource() != sceneAnchorPane && resolveLogDirectory(event.getDragboard()) != null;
+         if (canDrop)
+            event.acceptTransferModes(TransferMode.COPY);
+         logDropOverlay.setVisible(canDrop);
+         event.consume();
+      });
+
+      sceneAnchorPane.setOnDragExited(event ->
+      {
+         logDropOverlay.setVisible(false);
+         event.consume();
+      });
+
+      sceneAnchorPane.setOnDragDropped(event ->
+      {
+         File logDirectory = resolveLogDirectory(event.getDragboard());
+         if (logDirectory != null)
+            messager.submitMessage(topics.getOpenLogDirectoryRequest(), logDirectory);
+         logDropOverlay.setVisible(false);
+         event.setDropCompleted(logDirectory != null);
+         event.consume();
+      });
+   }
+
+   /**
+    * @return the log directory to open for the current drag, or {@code null} if the drag isn't a single item that
+    *       resolves to one (not exactly one file/directory dropped, a directory with no {@code *.log} file directly
+    *       in it, or a file that isn't itself a {@code *.log} file).
+    */
+   private static File resolveLogDirectory(Dragboard dragboard)
+   {
+      if (!dragboard.hasFiles())
+         return null;
+
+      List<File> droppedFiles = dragboard.getFiles();
+      if (droppedFiles.size() != 1)
+         return null;
+
+      File dropped = droppedFiles.get(0);
+
+      if (dropped.isDirectory())
+      {
+         File[] logPropertyFiles = dropped.listFiles((dir, name) -> name.endsWith(".log"));
+         return logPropertyFiles != null && logPropertyFiles.length == 1 ? dropped : null;
+      }
+      else if (dropped.getName().endsWith(".log"))
+      {
+         return dropped.getParentFile();
+      }
+      else
+      {
+         return null;
+      }
    }
 
    private Property<Boolean> showOverheadPlotterProperty;
