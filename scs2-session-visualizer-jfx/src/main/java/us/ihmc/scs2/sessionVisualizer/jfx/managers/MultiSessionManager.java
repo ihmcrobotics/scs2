@@ -130,7 +130,7 @@ public class MultiSessionManager
       messager.addFXTopicListener(topics.getSessionVisualizerDefaultConfigurationLoadRequest(), m -> loadSessionDefaultConfiguration(toolkit.getSession()));
       messager.addFXTopicListener(topics.getSessionVisualizerDefaultConfigurationSaveRequest(), m -> saveSessionDefaultConfiguration(toolkit.getSession()));
 
-      // Load and initialize eagerly (without showing its window) so its OpenLogDirectoryRequest listener - used by
+      // Load and initialize (without showing its window) so its OpenLogDirectoryRequest listener - used by
       // the 3D scene's drag-and-drop - is live from startup, instead of only after the user opens this panel once.
       try
       {
