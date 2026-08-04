@@ -144,6 +144,20 @@ public class MultiSessionManager
       {
          e.printStackTrace();
       }
+
+      // Same as above, but for the MCAP log session manager's OpenMCAPLogFileRequest listener.
+      try
+      {
+         FXMLLoader loader = new FXMLLoader(SessionVisualizerIOTools.MCAP_LOG_SESSION_MANAGER_PANE_FXML_URL);
+         loader.load();
+         MCAPLogSessionManagerController controller = loader.getController();
+         controller.initialize(toolkit);
+         inactiveControllerMap.put(MCAPLogSessionManagerController.class, controller);
+      }
+      catch (IOException e)
+      {
+         e.printStackTrace();
+      }
    }
 
    public void startSession(Session session, Runnable sessionLoadedCallback)

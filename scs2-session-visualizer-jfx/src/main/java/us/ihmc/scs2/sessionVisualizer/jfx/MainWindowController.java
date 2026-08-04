@@ -30,6 +30,7 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
 import org.apache.commons.lang3.mutable.MutableBoolean;
 import us.ihmc.commons.Conversions;
+import us.ihmc.messager.MessagerAPIFactory.Topic;
 import us.ihmc.messager.javafx.JavaFXMessager;
 import us.ihmc.scs2.sessionVisualizer.jfx.HamburgerAnimationTransition.FrameType;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.SessionAdvancedControlsController;
@@ -205,9 +206,10 @@ public class MainWindowController extends ObservedAnimationTimer implements Visu
    }
 
    /**
-    * Lets a log directory (or the {@code *.log} property file inside it) be dropped directly onto the 3D scene to
-    * open it, as an alternative to the log session panel's file chooser. Only single-item drops are handled; drops
-    * that don't resolve to a log directory are silently rejected (no drop feedback, no error dialog).
+    * Lets a log directory (or the {@code *.log} property file inside it) or a {@code *.mcap} file be dropped
+    * directly onto the 3D scene to open it, as an alternative to the log/MCAP session panels' file choosers. Only
+    * single-item drops are handled; drops that don't resolve to a supported session are silently rejected (no drop
+    * feedback, no error dialog).
     */
    private void setupLogDirectoryDropTarget()
    {
@@ -223,7 +225,7 @@ public class MainWindowController extends ObservedAnimationTimer implements Visu
 
       sceneAnchorPane.setOnDragOver(event ->
       {
-         boolean canDrop = event.getGestureSource() != sceneAnchorPane && resolveLogDirectory(event.getDragboard()) != null;
+         boolean canDrop = event.getGestureSource() != sceneAnchorPane && resolveDroppedSession(event.getDragboard()) != null;
          if (canDrop)
             event.acceptTransferModes(TransferMode.COPY);
          logDropOverlay.setVisible(canDrop);
@@ -238,21 +240,22 @@ public class MainWindowController extends ObservedAnimationTimer implements Visu
 
       sceneAnchorPane.setOnDragDropped(event ->
       {
-         File logDirectory = resolveLogDirectory(event.getDragboard());
-         if (logDirectory != null)
-            messager.submitMessage(topics.getOpenLogDirectoryRequest(), logDirectory);
+         DroppedSession droppedSession = resolveDroppedSession(event.getDragboard());
+         if (droppedSession != null)
+            messager.submitMessage(droppedSession.topic(), droppedSession.file());
          logDropOverlay.setVisible(false);
-         event.setDropCompleted(logDirectory != null);
+         event.setDropCompleted(droppedSession != null);
          event.consume();
       });
    }
 
    /**
-    * @return the log directory to open for the current drag, or {@code null} if the drag isn't a single item that
-    *       resolves to one (not exactly one file/directory dropped, a directory with no {@code *.log} file directly
-    *       in it, or a file that isn't itself a {@code *.log} file).
+    * @return the session file (paired with the topic to open it with) to open for the current drag, or
+    *       {@code null} if the drag isn't a single item that resolves to one (not exactly one file/directory
+    *       dropped, a directory with no {@code *.log} file directly in it, or a file that isn't itself a
+    *       {@code *.log} or {@code *.mcap} file).
     */
-   private static File resolveLogDirectory(Dragboard dragboard)
+   private DroppedSession resolveDroppedSession(Dragboard dragboard)
    {
       if (!dragboard.hasFiles())
          return null;
@@ -266,16 +269,24 @@ public class MainWindowController extends ObservedAnimationTimer implements Visu
       if (dropped.isDirectory())
       {
          File[] logPropertyFiles = dropped.listFiles((dir, name) -> name.endsWith(".log"));
-         return logPropertyFiles != null && logPropertyFiles.length == 1 ? dropped : null;
+         return logPropertyFiles != null && logPropertyFiles.length == 1 ? new DroppedSession(topics.getOpenLogDirectoryRequest(), dropped) : null;
       }
       else if (dropped.getName().endsWith(".log"))
       {
-         return dropped.getParentFile();
+         return new DroppedSession(topics.getOpenLogDirectoryRequest(), dropped.getParentFile());
+      }
+      else if (dropped.getName().endsWith(".mcap"))
+      {
+         return new DroppedSession(topics.getOpenMCAPLogFileRequest(), dropped);
       }
       else
       {
          return null;
       }
+   }
+
+   private record DroppedSession(Topic<File> topic, File file)
+   {
    }
 
    private Property<Boolean> showOverheadPlotterProperty;
