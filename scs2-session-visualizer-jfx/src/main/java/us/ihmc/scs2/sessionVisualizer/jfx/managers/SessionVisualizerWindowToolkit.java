@@ -1,6 +1,8 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.managers;
 
 import javafx.stage.Stage;
+import us.ihmc.scs2.session.Session;
+import us.ihmc.scs2.sessionVisualizer.jfx.SessionChangeListener;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerTopics;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.SCS2JavaFXMessager;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.YoGroupFX;
@@ -16,8 +18,8 @@ public class SessionVisualizerWindowToolkit
    {
       this.window = window;
       this.globalToolkit = globalToolkit;
-      chartZoomManager = new ChartZoomManager(window, getMessager(), getTopics());
-      windowShortcutManager = new WindowShortcutManager(window, getMessager(), getTopics());
+      chartZoomManager = new ChartZoomManager(window, this, getMessager(), getTopics());
+      windowShortcutManager = new WindowShortcutManager(window, this, getMessager(), getTopics());
    }
 
    public void start()
@@ -105,5 +107,32 @@ public class SessionVisualizerWindowToolkit
    public SessionDataPreferenceManager getSessionDataPreferenceManager()
    {
       return globalToolkit.getSessionDataPreferenceManager();
+   }
+
+   public Session getSession()
+   {
+      return globalToolkit.getSession();
+   }
+
+   public void addSessionChangedListener(SessionChangeListener listener)
+   {
+      globalToolkit.addSessionChangedListener(listener);
+   }
+
+   /**
+    * Registers the listener and immediately invokes it with {@code (null, getSession())}, so callers
+    * don't need to separately handle "attach to whatever session is already active".
+    *
+    * @param listener the listener to add.
+    */
+   public void addAndTriggerSessionChangedListener(SessionChangeListener listener)
+   {
+      addSessionChangedListener(listener);
+      listener.sessionChanged(null, getSession());
+   }
+
+   public boolean removeSessionChangedListener(SessionChangeListener listener)
+   {
+      return globalToolkit.removeSessionChangedListener(listener);
    }
 }

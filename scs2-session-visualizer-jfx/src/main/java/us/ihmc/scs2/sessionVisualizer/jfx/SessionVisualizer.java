@@ -500,7 +500,8 @@ public class SessionVisualizer
       @Override
       public void requestChartsForceUpdate()
       {
-         submitMessage(getTopics().getYoBufferForceListenerUpdate(), true);
+         if (toolkit.getSession() != null)
+            toolkit.getSession().requestBufferListenerForceUpdate();
       }
 
       @Override

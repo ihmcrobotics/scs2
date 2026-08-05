@@ -22,14 +22,10 @@ import us.ihmc.scs2.sharedMemory.interfaces.YoBufferPropertiesReadOnly;
 import us.ihmc.scs2.symbolic.YoEquationManager.YoEquationListChange;
 
 /**
- * Characterizes the public {@link Session} API that backs the topics defined in
- * {@link SessionMessagerAPI} and {@link YoSharedBufferMessagerAPI}.
- * <p>
- * {@link Session#setupWithMessager} is a translation shim: every topic it listens to or publishes
- * on is backed by a plain method already on {@code Session}. These tests exercise that direct API
- * so it stays locked down independently of the {@link us.ihmc.messager.Messager} wiring, which is
- * the piece intended to be removed.
- * </p>
+ * Characterizes the public {@link Session} API that used to back the (now removed)
+ * {@code SessionMessagerAPI} and {@code YoSharedBufferMessagerAPI} topics and the
+ * {@code Session#setupWithMessager} translation shim. These tests lock down that direct API
+ * independently of any {@code us.ihmc.messager.Messager} wiring.
  */
 public class SessionMessagerBoundaryTest
 {
@@ -104,6 +100,34 @@ public class SessionMessagerBoundaryTest
    }
 
    @Test
+   public void testCropAndFillBufferRequestListeners()
+   {
+      session = new TestSession();
+      AtomicInteger cropCount = new AtomicInteger();
+      AtomicInteger fillCount = new AtomicInteger();
+      Consumer<CropBufferRequest> cropListener = request -> cropCount.incrementAndGet();
+      Consumer<FillBufferRequest> fillListener = request -> fillCount.incrementAndGet();
+
+      session.addCropBufferRequestListener(cropListener);
+      session.addFillBufferRequestListener(fillListener);
+
+      session.submitCropBufferRequestAndWait(new CropBufferRequest(0, 10));
+      session.submitFillBufferRequestAndWait(new FillBufferRequest(true, 0, 10));
+
+      assertEquals(1, cropCount.get());
+      assertEquals(1, fillCount.get());
+
+      assertTrue(session.removeCropBufferRequestListener(cropListener));
+      assertTrue(session.removeFillBufferRequestListener(fillListener));
+
+      session.submitCropBufferRequestAndWait(new CropBufferRequest(0, 5));
+      session.submitFillBufferRequestAndWait(new FillBufferRequest(true, 0, 5));
+
+      assertEquals(1, cropCount.get());
+      assertEquals(1, fillCount.get());
+   }
+
+   @Test
    public void testInitializeBufferSizeIsOneShot()
    {
       session = new TestSession();
@@ -133,17 +157,6 @@ public class SessionMessagerBoundaryTest
       assertTrue(session.removeCurrentBufferPropertiesListener(listener));
       session.publishBufferProperties(session.getBufferProperties());
       assertEquals(1, notificationCount.get());
-   }
-
-   @Test
-   public void testRequestBufferListenerForceUpdateDoesNotThrow()
-   {
-      // ForceListenerUpdate is a distinct signal from CurrentBufferProperties: it tells listeners to
-      // go re-fetch state themselves. There is currently no public way to register a listener for it
-      // from outside the package (that gap is tracked separately); this is a smoke check that the
-      // request path itself is safe to call with no listeners registered.
-      session = new TestSession();
-      session.requestBufferListenerForceUpdate();
    }
 
    // ----------------------------------------------------------------------
@@ -226,6 +239,43 @@ public class SessionMessagerBoundaryTest
       session.doGeneric(session.getActiveMode());
 
       assertTrue(session.getYoEquationDefinitions().isEmpty());
+   }
+
+   @Test
+   public void testYoEquationListChangeListener()
+   {
+      session = new TestSession();
+      AtomicInteger notificationCount = new AtomicInteger();
+      Consumer<YoEquationListChange> listener = change -> notificationCount.incrementAndGet();
+
+      session.addYoEquationListChangeListener(listener);
+
+      session.submitEquationListChange(YoEquationListChange.newList(Collections.emptyList()));
+      session.doGeneric(session.getActiveMode());
+
+      assertEquals(1, notificationCount.get());
+
+      assertTrue(session.removeYoEquationListChangeListener(listener));
+      session.submitEquationListChange(YoEquationListChange.newList(Collections.emptyList()));
+      session.doGeneric(session.getActiveMode());
+      assertEquals(1, notificationCount.get());
+   }
+
+   @Test
+   public void testBufferListenerForceUpdateListener()
+   {
+      session = new TestSession();
+      AtomicInteger notificationCount = new AtomicInteger();
+      Runnable listener = notificationCount::incrementAndGet;
+
+      session.addBufferListenerForceUpdateListener(listener);
+      session.requestBufferListenerForceUpdate();
+
+      assertEquals(1, notificationCount.get());
+
+      assertTrue(session.removeBufferListenerForceUpdateListener(listener));
+      session.requestBufferListenerForceUpdate();
+      assertEquals(1, notificationCount.get());
    }
 
    @Test

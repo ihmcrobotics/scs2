@@ -4,8 +4,6 @@ import us.ihmc.commons.Conversions;
 import us.ihmc.euclid.referenceFrame.ReferenceFrame;
 import us.ihmc.euclid.referenceFrame.tools.ReferenceFrameTools;
 import us.ihmc.log.LogTools;
-import us.ihmc.messager.Messager;
-import us.ihmc.messager.TopicListener;
 import us.ihmc.scs2.definition.robot.RobotDefinition;
 import us.ihmc.scs2.definition.robot.RobotStateDefinition;
 import us.ihmc.scs2.definition.terrain.TerrainObjectDefinition;
@@ -340,6 +338,8 @@ public abstract class Session
    private final List<Consumer<SessionProperties>> sessionPropertiesListeners = new ArrayList<>();
    private final List<Consumer<YoBufferPropertiesReadOnly>> currentBufferPropertiesListeners = new ArrayList<>();
    private final List<Runnable> bufferListenerForceUpdateListeners = new ArrayList<>();
+   private final List<Consumer<CropBufferRequest>> cropBufferRequestListeners = new ArrayList<>();
+   private final List<Consumer<FillBufferRequest>> fillBufferRequestListeners = new ArrayList<>();
    private final List<Runnable> shutdownListeners = new ArrayList<>();
 
    // For exception handling
@@ -365,7 +365,6 @@ public abstract class Session
    private final SessionUserField<SessionDataExportRequest> pendingDataExportRequest = new SessionUserField<>();
 
    // Strictly internal fields
-   private final List<SessionTopicListenerManager> sessionTopicListenerManagers = new ArrayList<>();
    private boolean sessionThreadStarted = false;
    private boolean sessionInitialized = false;
    private boolean isSessionShutdown = false;
@@ -453,24 +452,6 @@ public abstract class Session
          String classSimpleName = className.substring(className.lastIndexOf(".") + 1);
          return classSimpleName + "-" + methodName;
       }
-   }
-
-   /**
-    * Configures this session to communicate with the given messager. The session will register
-    * listeners and publishers using the API defined in {@link YoSharedBufferMessagerAPI} and
-    * {@link SessionMessagerAPI}.
-    *
-    * @param messager the messager to configure this session with.
-    */
-   public void setupWithMessager(Messager messager)
-   {
-      for (SessionTopicListenerManager manager : sessionTopicListenerManagers)
-      {
-         if (messager == manager.messager)
-            throw new IllegalArgumentException("Messager already registered.");
-      }
-
-      sessionTopicListenerManagers.add(new SessionTopicListenerManager(messager));
    }
 
    /**
@@ -768,6 +749,28 @@ public abstract class Session
    }
 
    /**
+    * Adds a listener to be notified whenever a change to the list of equations for this session has
+    * been performed.
+    *
+    * @param listener the listener to add.
+    */
+   public void addYoEquationListChangeListener(Consumer<YoEquationListChange> listener)
+   {
+      equationManager.addChangeListener(listener);
+   }
+
+   /**
+    * Removes a listener previously registered to this session.
+    *
+    * @param listener the listener to remove.
+    * @return {@code true} if the listener was successfully removed, {@code false} if it could not be found.
+    */
+   public boolean removeYoEquationListChangeListener(Consumer<YoEquationListChange> listener)
+   {
+      return equationManager.removeChangeListener(listener);
+   }
+
+   /**
     * Sets the initial size of this session's buffer.
     * <p>
     * Unlike {@link #submitBufferSizeRequest(Integer)} or
@@ -912,6 +915,39 @@ public abstract class Session
    public void submitCropBufferRequest(CropBufferRequest cropBufferRequest)
    {
       pendingCropBufferRequest.submit(cropBufferRequest);
+      reportCropBufferRequest(cropBufferRequest);
+   }
+
+   /**
+    * Adds a listener to be notified whenever a crop request is submitted, e.g. via
+    * {@link #submitCropBufferRequest(CropBufferRequest)}.
+    * <p>
+    * Unlike {@link #addCurrentBufferPropertiesListener(Consumer)}, this fires as soon as the request is
+    * submitted, regardless of whether or when it is actually applied.
+    * </p>
+    *
+    * @param listener the listener to add.
+    */
+   public void addCropBufferRequestListener(Consumer<CropBufferRequest> listener)
+   {
+      cropBufferRequestListeners.add(Objects.requireNonNull(listener, "The listener cannot be null."));
+   }
+
+   /**
+    * Removes a listener previously registered to this session.
+    *
+    * @param listener the listener to remove.
+    * @return {@code true} if the listener was successfully removed, {@code false} if it could not be found.
+    */
+   public boolean removeCropBufferRequestListener(Consumer<CropBufferRequest> listener)
+   {
+      return cropBufferRequestListeners.remove(listener);
+   }
+
+   private void reportCropBufferRequest(CropBufferRequest cropBufferRequest)
+   {
+      for (Consumer<CropBufferRequest> listener : cropBufferRequestListeners)
+         listener.accept(cropBufferRequest);
    }
 
    /**
@@ -930,6 +966,39 @@ public abstract class Session
    public void submitFillBufferRequest(FillBufferRequest fillBufferRequest)
    {
       pendingFillBufferRequest.submit(fillBufferRequest);
+      reportFillBufferRequest(fillBufferRequest);
+   }
+
+   /**
+    * Adds a listener to be notified whenever a fill request is submitted, e.g. via
+    * {@link #submitFillBufferRequest(FillBufferRequest)}.
+    * <p>
+    * Unlike {@link #addCurrentBufferPropertiesListener(Consumer)}, this fires as soon as the request is
+    * submitted, regardless of whether or when it is actually applied.
+    * </p>
+    *
+    * @param listener the listener to add.
+    */
+   public void addFillBufferRequestListener(Consumer<FillBufferRequest> listener)
+   {
+      fillBufferRequestListeners.add(Objects.requireNonNull(listener, "The listener cannot be null."));
+   }
+
+   /**
+    * Removes a listener previously registered to this session.
+    *
+    * @param listener the listener to remove.
+    * @return {@code true} if the listener was successfully removed, {@code false} if it could not be found.
+    */
+   public boolean removeFillBufferRequestListener(Consumer<FillBufferRequest> listener)
+   {
+      return fillBufferRequestListeners.remove(listener);
+   }
+
+   private void reportFillBufferRequest(FillBufferRequest fillBufferRequest)
+   {
+      for (Consumer<FillBufferRequest> listener : fillBufferRequestListeners)
+         listener.accept(fillBufferRequest);
    }
 
    /**
@@ -1084,6 +1153,7 @@ public abstract class Session
     */
    public void submitCropBufferRequestAndWait(CropBufferRequest cropBufferRequest)
    {
+      reportCropBufferRequest(cropBufferRequest);
       if (hasSessionStarted())
       {
          pendingCropBufferRequest.submitAndWait(cropBufferRequest);
@@ -1111,6 +1181,7 @@ public abstract class Session
     */
    public void submitFillBufferRequestAndWait(FillBufferRequest fillBufferRequest)
    {
+      reportFillBufferRequest(fillBufferRequest);
       if (hasSessionStarted())
       {
          pendingFillBufferRequest.submitAndWait(fillBufferRequest);
@@ -1309,6 +1380,27 @@ public abstract class Session
    }
 
    /**
+    * Adds a listener to be notified whenever {@link #requestBufferListenerForceUpdate()} is invoked.
+    *
+    * @param listener the listener to add.
+    */
+   public void addBufferListenerForceUpdateListener(Runnable listener)
+   {
+      bufferListenerForceUpdateListeners.add(Objects.requireNonNull(listener, "The listener cannot be null."));
+   }
+
+   /**
+    * Removes a listener previously registered to this session.
+    *
+    * @param listener the listener to remove.
+    * @return {@code true} if the listener was successfully removed, {@code false} if it could not be found.
+    */
+   public boolean removeBufferListenerForceUpdateListener(Runnable listener)
+   {
+      return bufferListenerForceUpdateListeners.remove(listener);
+   }
+
+   /**
     * Requests to export this session's data to file.
     * <p>
     * This is a blocking operation and will return only when done. If the internal thread is not
@@ -1416,8 +1508,6 @@ public abstract class Session
          activePeriodicTask = null;
       }
 
-      sessionTopicListenerManagers.forEach(SessionTopicListenerManager::detachFromMessager);
-      sessionTopicListenerManagers.clear();
       sharedBuffer.dispose();
       rootRegistry.destroy();
 
@@ -1723,8 +1813,8 @@ public abstract class Session
     * {@link SessionMode#RUNNING}.
     * <p>
     * It is at this time that we are processing the changes requested by the user through
-    * {@link LinkedYoVariable}s or via the {@link Messager}. Some operations, such as cropping the
-    * buffer, are not allowed in this mode and will be ignored.
+    * {@link LinkedYoVariable}s or via the various {@code submitXRequest} methods. Some operations,
+    * such as cropping the buffer, are not allowed in this mode and will be ignored.
     * </p>
     */
    protected void initializeRunTick()
@@ -2405,151 +2495,6 @@ public abstract class Session
    public LinkedYoVariableFactory getLinkedYoVariableFactory()
    {
       return sharedBuffer;
-   }
-
-   /**
-    * Convenience class used to hook up a session with a {@link Messager}.
-    * <p>
-    * For internal use only.
-    * </p>
-    */
-   private class SessionTopicListenerManager
-   {
-      private final Messager messager;
-
-      private final TopicListener<CropBufferRequest> cropRequestListener = Session.this::submitCropBufferRequest;
-      private final TopicListener<FillBufferRequest> fillRequestListener = Session.this::submitFillBufferRequest;
-      private final TopicListener<Integer> currentIndexListener = Session.this::submitBufferIndexRequest;
-      private final TopicListener<Integer> inPointIndexListener = Session.this::submitBufferInPointIndexRequest;
-      private final TopicListener<Integer> outPointIndexListener = Session.this::submitBufferOutPointIndexRequest;
-      private final TopicListener<Integer> incrementCurrentIndexListener = Session.this::submitIncrementBufferIndexRequest;
-      private final TopicListener<Integer> decrementCurrentIndexListener = Session.this::submitDecrementBufferIndexRequest;
-      private final TopicListener<Integer> currentBufferSizeListener = Session.this::submitBufferSizeRequest;
-      private final TopicListener<Integer> initializeBufferSizeListener = Session.this::initializeBufferSize;
-
-      // TODO Look into removing the SessionState enum, seems unnecessary
-      private final TopicListener<SessionState> sessionCurrentStateListener = state ->
-      {
-         if (state == SessionState.ACTIVE)
-            startSessionThread();
-         else if (state == SessionState.INACTIVE)
-            shutdownSession();
-      };
-      private final TopicListener<SessionMode> sessionCurrentModeListener = Session.this::setSessionMode;
-      private final TopicListener<Long> sessionDTNanosecondsListener = Session.this::setSessionDTNanoseconds;
-      private final TopicListener<Boolean> runAtRealTimeRateListener = Session.this::submitRunAtRealTimeRate;
-      private final TopicListener<Double> playbackRealTimeRateListener = Session.this::submitPlaybackRealTimeRate;
-      private final TopicListener<Integer> bufferRecordTickPeriodListener = Session.this::setBufferRecordTickPeriod;
-      private final TopicListener<Integer> initializeBufferRecordTickPeriodListener = Session.this::initializeBufferRecordTickPeriod;
-      private final TopicListener<Long> runMaxDurationListener = Session.this::submitRunMaxDuration;
-      private final TopicListener<SessionDataExportRequest> sessionDataExportRequestListener = Session.this::submitSessionDataExportRequest;
-
-      private final TopicListener<SessionRobotDefinitionListChange> robotDefinitionListChangeRequestListener = Session.this::submitRobotDefinitionListChange;
-      private final TopicListener<YoEquationListChange> equationListChangeRequestListener = Session.this::submitEquationListChange;
-
-      private SessionTopicListenerManager(Messager messager)
-      {
-         this.messager = messager;
-
-         Consumer<YoBufferPropertiesReadOnly> bufferPropertiesListener = createBufferPropertiesListener();
-         addCurrentBufferPropertiesListener(bufferPropertiesListener);
-
-         messager.addTopicListener(YoSharedBufferMessagerAPI.CropRequest, cropRequestListener);
-         messager.addTopicListener(YoSharedBufferMessagerAPI.FillRequest, fillRequestListener);
-         messager.addTopicListener(YoSharedBufferMessagerAPI.CurrentIndexRequest, currentIndexListener);
-         messager.addTopicListener(YoSharedBufferMessagerAPI.InPointIndexRequest, inPointIndexListener);
-         messager.addTopicListener(YoSharedBufferMessagerAPI.OutPointIndexRequest, outPointIndexListener);
-         messager.addTopicListener(YoSharedBufferMessagerAPI.IncrementCurrentIndexRequest, incrementCurrentIndexListener);
-         messager.addTopicListener(YoSharedBufferMessagerAPI.DecrementCurrentIndexRequest, decrementCurrentIndexListener);
-         messager.addTopicListener(YoSharedBufferMessagerAPI.CurrentBufferSizeRequest, currentBufferSizeListener);
-         messager.addTopicListener(YoSharedBufferMessagerAPI.InitializeBufferSize, initializeBufferSizeListener);
-
-         Consumer<SessionProperties> sessionPropertiesListener = createSessionPropertiesListener();
-         addSessionPropertiesListener(sessionPropertiesListener);
-
-         messager.addTopicListener(SessionMessagerAPI.SessionCurrentState, sessionCurrentStateListener);
-         messager.addTopicListener(SessionMessagerAPI.SessionCurrentMode, sessionCurrentModeListener);
-         messager.addTopicListener(SessionMessagerAPI.SessionDTNanoseconds, sessionDTNanosecondsListener);
-         messager.addTopicListener(SessionMessagerAPI.RunAtRealTimeRate, runAtRealTimeRateListener);
-         messager.addTopicListener(SessionMessagerAPI.PlaybackRealTimeRate, playbackRealTimeRateListener);
-         messager.addTopicListener(SessionMessagerAPI.BufferRecordTickPeriod, bufferRecordTickPeriodListener);
-         messager.addTopicListener(SessionMessagerAPI.InitializeBufferRecordTickPeriod, initializeBufferRecordTickPeriodListener);
-         messager.addTopicListener(SessionMessagerAPI.RunMaxDuration, runMaxDurationListener);
-         messager.addTopicListener(SessionMessagerAPI.SessionDataExportRequest, sessionDataExportRequestListener);
-
-         bufferListenerForceUpdateListeners.add(() ->
-                                                {
-                                                   if (messager.isMessagerOpen())
-                                                      messager.submitMessage(YoSharedBufferMessagerAPI.ForceListenerUpdate, true);
-                                                });
-
-         addRobotDefinitionListChangeListener(change ->
-                                              {
-                                                 if (messager.isMessagerOpen())
-                                                    messager.submitMessage(SessionMessagerAPI.SessionRobotDefinitionListChangeState, change);
-                                              });
-
-         messager.addTopicListener(SessionMessagerAPI.SessionRobotDefinitionListChangeRequest, robotDefinitionListChangeRequestListener);
-
-         equationManager.addChangeListener(change -> messager.submitMessage(SessionMessagerAPI.SessionYoEquationListChangeState, change));
-         messager.addTopicListener(SessionMessagerAPI.SessionYoEquationListChangeRequest, equationListChangeRequestListener);
-      }
-
-      private void detachFromMessager()
-      {
-         if (messager == null)
-            return;
-
-         messager.removeTopicListener(YoSharedBufferMessagerAPI.CropRequest, cropRequestListener);
-         messager.removeTopicListener(YoSharedBufferMessagerAPI.FillRequest, fillRequestListener);
-         messager.removeTopicListener(YoSharedBufferMessagerAPI.CurrentIndexRequest, currentIndexListener);
-         messager.removeTopicListener(YoSharedBufferMessagerAPI.InPointIndexRequest, inPointIndexListener);
-         messager.removeTopicListener(YoSharedBufferMessagerAPI.OutPointIndexRequest, outPointIndexListener);
-         messager.removeTopicListener(YoSharedBufferMessagerAPI.IncrementCurrentIndexRequest, incrementCurrentIndexListener);
-         messager.removeTopicListener(YoSharedBufferMessagerAPI.DecrementCurrentIndexRequest, decrementCurrentIndexListener);
-         messager.removeTopicListener(YoSharedBufferMessagerAPI.CurrentBufferSizeRequest, currentBufferSizeListener);
-         messager.removeTopicListener(YoSharedBufferMessagerAPI.InitializeBufferSize, initializeBufferSizeListener);
-
-         messager.removeTopicListener(SessionMessagerAPI.SessionCurrentState, sessionCurrentStateListener);
-         messager.removeTopicListener(SessionMessagerAPI.SessionCurrentMode, sessionCurrentModeListener);
-         messager.removeTopicListener(SessionMessagerAPI.SessionDTNanoseconds, sessionDTNanosecondsListener);
-         messager.removeTopicListener(SessionMessagerAPI.RunAtRealTimeRate, runAtRealTimeRateListener);
-         messager.removeTopicListener(SessionMessagerAPI.PlaybackRealTimeRate, playbackRealTimeRateListener);
-         messager.removeTopicListener(SessionMessagerAPI.BufferRecordTickPeriod, bufferRecordTickPeriodListener);
-         messager.removeTopicListener(SessionMessagerAPI.InitializeBufferRecordTickPeriod, initializeBufferRecordTickPeriodListener);
-         messager.removeTopicListener(SessionMessagerAPI.RunMaxDuration, runMaxDurationListener);
-         messager.removeTopicListener(SessionMessagerAPI.SessionDataExportRequest, sessionDataExportRequestListener);
-
-         messager.removeTopicListener(SessionMessagerAPI.SessionRobotDefinitionListChangeRequest, robotDefinitionListChangeRequestListener);
-         messager.removeTopicListener(SessionMessagerAPI.SessionYoEquationListChangeRequest, equationListChangeRequestListener);
-      }
-
-      private Consumer<YoBufferPropertiesReadOnly> createBufferPropertiesListener()
-      {
-         return bufferProperties ->
-         {
-            if (!messager.isMessagerOpen())
-               return;
-
-            messager.submitMessage(YoSharedBufferMessagerAPI.CurrentBufferProperties, bufferProperties);
-         };
-      }
-
-      private Consumer<SessionProperties> createSessionPropertiesListener()
-      {
-         return sessionProperties ->
-         {
-            if (!messager.isMessagerOpen())
-               return;
-
-            messager.submitMessage(SessionMessagerAPI.SessionCurrentMode, sessionProperties.getActiveMode());
-            messager.submitMessage(SessionMessagerAPI.SessionDTNanoseconds, sessionProperties.getSessionDTNanoseconds());
-            messager.submitMessage(SessionMessagerAPI.PlaybackRealTimeRate, sessionProperties.getPlaybackRealTimeRate());
-            messager.submitMessage(SessionMessagerAPI.RunAtRealTimeRate, sessionProperties.isRunAtRealTimeRate());
-            messager.submitMessage(SessionMessagerAPI.BufferRecordTickPeriod, sessionProperties.getBufferRecordTickPeriod());
-            messager.submitMessage(SessionMessagerAPI.RunMaxDuration, sessionProperties.getRunMaxDuration());
-         };
-      }
    }
 
    /**

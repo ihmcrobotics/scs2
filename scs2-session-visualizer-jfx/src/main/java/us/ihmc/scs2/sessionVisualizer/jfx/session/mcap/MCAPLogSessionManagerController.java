@@ -2,6 +2,7 @@ package us.ihmc.scs2.sessionVisualizer.jfx.session.mcap;
 
 import com.jfoenix.controls.JFXTextField;
 import com.jfoenix.controls.JFXTrimSlider;
+import javafx.application.Platform;
 import javafx.beans.property.LongProperty;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleLongProperty;
@@ -32,8 +33,8 @@ import javafx.util.converter.IntegerStringConverter;
 import javafx.util.converter.LongStringConverter;
 import org.apache.commons.lang3.mutable.MutableBoolean;
 import us.ihmc.log.LogTools;
-import us.ihmc.messager.TopicListener;
 import us.ihmc.messager.javafx.JavaFXMessager;
+import us.ihmc.scs2.session.SessionProperties;
 import us.ihmc.scs2.session.SessionRobotDefinitionListChange;
 import us.ihmc.scs2.session.mcap.MCAPLogCropper;
 import us.ihmc.scs2.session.mcap.MCAPLogCropper.OutputFormat;
@@ -128,7 +129,25 @@ public class MCAPLogSessionManagerController implements SessionControlsControlle
 
       TextFormatter<Integer> recordPeriodFormatter = new TextFormatter<>(new IntegerStringConverter(), 0, new PositiveIntegerValueFilter());
       bufferRecordTickPeriodTextField.setTextFormatter(recordPeriodFormatter);
-      messager.bindBidirectional(topics.getBufferRecordTickPeriod(), recordPeriodFormatter.valueProperty(), false);
+      AtomicBoolean updatingRecordPeriodFromSession = new AtomicBoolean(false);
+      recordPeriodFormatter.valueProperty().addListener((o, oldValue, newValue) ->
+      {
+         MCAPLogSession logSession = activeSessionProperty.get();
+         if (!updatingRecordPeriodFromSession.get() && logSession != null)
+            logSession.setBufferRecordTickPeriod(newValue);
+      });
+      Consumer<SessionProperties> recordPeriodListener = properties -> Platform.runLater(() ->
+      {
+         updatingRecordPeriodFromSession.set(true);
+         try
+         {
+            recordPeriodFormatter.setValue(properties.getBufferRecordTickPeriod());
+         }
+         finally
+         {
+            updatingRecordPeriodFromSession.set(false);
+         }
+      });
 
       desiredLogDTTextField.setTextFormatter(new TextFormatter<>(new LongStringConverter(), 1000L, new PositiveIntegerValueFilter()));
       MutableBoolean desiredLogDTTextFieldUpdate = new MutableBoolean(false);
@@ -215,10 +234,15 @@ public class MCAPLogSessionManagerController implements SessionControlsControlle
       activeSessionProperty.addListener((o, oldValue, newValue) ->
                                         {
                                            if (oldValue != null)
+                                           {
                                               oldValue.removeCurrentBufferPropertiesListener(logPositionUpdateListener);
+                                              oldValue.removeSessionPropertiesListener(recordPeriodListener);
+                                           }
                                            if (newValue != null)
                                            {
                                               newValue.addCurrentBufferPropertiesListener(logPositionUpdateListener);
+                                              newValue.addSessionPropertiesListener(recordPeriodListener);
+                                              recordPeriodListener.accept(newValue.getSessionProperties());
                                               if (newValue.getInitialRobotModelFile() != null && defaultRobotModelFile == null)
                                               { // Display the robot model file path if it is available.
                                                  currentModelFilePathTextField.setText(newValue.getInitialRobotModelFile().getAbsolutePath());
@@ -497,26 +521,29 @@ public class MCAPLogSessionManagerController implements SessionControlsControlle
       else
          request = SessionRobotDefinitionListChange.add(result);
 
-      messager.submitMessage(topics.getSessionRobotDefinitionListChangeRequest(), request);
+      logSession.submitRobotDefinitionListChange(request);
       currentModelFilePathTextField.setText("Loading...");
-      TopicListener<SessionRobotDefinitionListChange> listener = new TopicListener<SessionRobotDefinitionListChange>()
+      Consumer<SessionRobotDefinitionListChange> listener = new Consumer<SessionRobotDefinitionListChange>()
       {
          @Override
-         public void receivedMessageForTopic(SessionRobotDefinitionListChange m)
+         public void accept(SessionRobotDefinitionListChange m)
          {
-            if (m.getAddedRobotDefinition() != null)
+            Platform.runLater(() ->
             {
-               currentModelFilePathTextField.setText(result.getAbsolutePath());
-               defaultRobotModelFile = result;
-            }
-            else
-            {
-               currentModelFilePathTextField.setText("Failed to load.");
-               defaultRobotModelFile = null;
-            }
-            messager.removeFXTopicListener(topics.getSessionRobotDefinitionListChangeState(), this);
+               if (m.getAddedRobotDefinition() != null)
+               {
+                  currentModelFilePathTextField.setText(result.getAbsolutePath());
+                  defaultRobotModelFile = result;
+               }
+               else
+               {
+                  currentModelFilePathTextField.setText("Failed to load.");
+                  defaultRobotModelFile = null;
+               }
+            });
+            logSession.removeRobotDefinitionListChangeListener(this);
          }
       };
-      messager.addFXTopicListener(topics.getSessionRobotDefinitionListChangeState(), listener);
+      logSession.addRobotDefinitionListChangeListener(listener);
    }
 }

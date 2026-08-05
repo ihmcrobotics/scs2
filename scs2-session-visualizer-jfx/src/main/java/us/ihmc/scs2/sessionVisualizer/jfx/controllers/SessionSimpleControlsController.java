@@ -14,6 +14,7 @@ public class SessionSimpleControlsController implements VisualizerController
 {
    private JavaFXMessager messager;
    private SessionVisualizerTopics topics;
+   private SessionVisualizerWindowToolkit toolkit;
 
    @FXML
    private HBox controlsHBox;
@@ -27,24 +28,27 @@ public class SessionSimpleControlsController implements VisualizerController
    @Override
    public void initialize(SessionVisualizerWindowToolkit toolkit)
    {
+      this.toolkit = toolkit;
       messager = toolkit.getMessager();
       topics = toolkit.getTopics();
       messager.addTopicListener(topics.getShowAdvancedControls(), showAdvancedControls -> show(!showAdvancedControls));
       messager.addFXTopicListener(topics.getDisableUserControls(), disable -> controlsHBox.setDisable(disable));
 
-      setupMainControlsActiveMode(this, messager, topics, runningIconView, playbackIconView, pauseIconView);
+      setupMainControlsActiveMode(this, toolkit, runningIconView, playbackIconView, pauseIconView);
    }
 
    @FXML
    private void startRunning()
    {
-      messager.submitMessage(topics.getSessionCurrentMode(), SessionMode.RUNNING);
+      if (toolkit.getSession() != null)
+         toolkit.getSession().setSessionMode(SessionMode.RUNNING);
    }
 
    @FXML
    private void startPlayback()
    {
-      messager.submitMessage(topics.getSessionCurrentMode(), SessionMode.PLAYBACK);
+      if (toolkit.getSession() != null)
+         toolkit.getSession().setSessionMode(SessionMode.PLAYBACK);
    }
 
    @FXML
@@ -56,7 +60,8 @@ public class SessionSimpleControlsController implements VisualizerController
    @FXML
    private void pause()
    {
-      messager.submitMessage(topics.getSessionCurrentMode(), SessionMode.PAUSE);
+      if (toolkit.getSession() != null)
+         toolkit.getSession().setSessionMode(SessionMode.PAUSE);
    }
 
    public void show(boolean show)

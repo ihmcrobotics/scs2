@@ -1,8 +1,10 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.controllers;
 
 import com.jfoenix.controls.JFXButton;
+import javafx.application.Platform;
 import javafx.beans.property.Property;
 import javafx.beans.property.ReadOnlyObjectProperty;
+import javafx.beans.property.SimpleObjectProperty;
 import javafx.fxml.FXML;
 import javafx.scene.Node;
 import javafx.scene.layout.FlowPane;
@@ -15,6 +17,8 @@ import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerTopics;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerWindowToolkit;
 import us.ihmc.scs2.sharedMemory.interfaces.YoBufferPropertiesReadOnly;
 
+import java.util.function.Consumer;
+
 import static us.ihmc.scs2.sessionVisualizer.jfx.controllers.SessionAdvancedControlsController.setupMainControlsActiveMode;
 
 public class SecondaryWindowControlsController implements VisualizerController
@@ -22,6 +26,7 @@ public class SecondaryWindowControlsController implements VisualizerController
    private Window owner;
    private JavaFXMessager messager;
    private SessionVisualizerTopics topics;
+   private SessionVisualizerWindowToolkit toolkit;
 
    @FXML
    private VBox mainPane;
@@ -32,7 +37,8 @@ public class SecondaryWindowControlsController implements VisualizerController
    @FXML
    private Node runningIconView, playbackIconView, pauseIconView;
 
-   private Property<YoBufferPropertiesReadOnly> bufferProperties;
+   private final Property<YoBufferPropertiesReadOnly> bufferProperties = new SimpleObjectProperty<>(this, "bufferProperties", null);
+   private Consumer<YoBufferPropertiesReadOnly> bufferPropertiesListener;
 
    public SecondaryWindowControlsController()
    {
@@ -46,11 +52,25 @@ public class SecondaryWindowControlsController implements VisualizerController
    @Override
    public void initialize(SessionVisualizerWindowToolkit toolkit)
    {
+      this.toolkit = toolkit;
       owner = toolkit.getWindow();
       messager = toolkit.getMessager();
       topics = toolkit.getTopics();
 
-      bufferProperties = messager.createPropertyInput(topics.getYoBufferCurrentProperties());
+      toolkit.addAndTriggerSessionChangedListener((previousSession, newSession) ->
+      {
+         if (previousSession != null)
+            previousSession.removeCurrentBufferPropertiesListener(bufferPropertiesListener);
+
+         if (newSession == null)
+         {
+            bufferPropertiesListener = null;
+            return;
+         }
+
+         bufferPropertiesListener = properties -> Platform.runLater(() -> bufferProperties.setValue(properties));
+         newSession.addCurrentBufferPropertiesListener(bufferPropertiesListener);
+      });
 
       ReadOnlyObjectProperty<int[]> keyFrameIndicesProperty = toolkit.getKeyFrameManager().keyFrameIndicesProperty();
       keyFrameIndicesProperty.addListener((o, oldValue, newValue) ->
@@ -63,65 +83,70 @@ public class SecondaryWindowControlsController implements VisualizerController
       previousKeyFrameButton.setDisable(disableKeyFrameButtons);
       nextKeyFrameButton.setDisable(disableKeyFrameButtons);
 
-      setupMainControlsActiveMode(this, messager, topics, runningIconView, playbackIconView, pauseIconView);
+      setupMainControlsActiveMode(this, toolkit, runningIconView, playbackIconView, pauseIconView);
    }
 
    @FXML
    private void startRunning()
    {
-      messager.submitMessage(topics.getSessionCurrentMode(), SessionMode.RUNNING);
+      if (toolkit.getSession() != null)
+         toolkit.getSession().setSessionMode(SessionMode.RUNNING);
    }
 
    @FXML
    private void startPlayback()
    {
-      messager.submitMessage(topics.getSessionCurrentMode(), SessionMode.PLAYBACK);
+      if (toolkit.getSession() != null)
+         toolkit.getSession().setSessionMode(SessionMode.PLAYBACK);
    }
 
    @FXML
    private void pause()
    {
-      messager.submitMessage(topics.getSessionCurrentMode(), SessionMode.PAUSE);
+      if (toolkit.getSession() != null)
+         toolkit.getSession().setSessionMode(SessionMode.PAUSE);
    }
 
    @FXML
    private void setInPoint()
    {
-      if (bufferProperties.getValue() != null)
-         messager.submitMessage(topics.getYoBufferInPointIndexRequest(), bufferProperties.getValue().getCurrentIndex());
+      if (toolkit.getSession() != null && bufferProperties.getValue() != null)
+         toolkit.getSession().submitBufferInPointIndexRequest(bufferProperties.getValue().getCurrentIndex());
    }
 
    @FXML
    private void gotoInPoint()
    {
-      if (bufferProperties.getValue() != null)
-         messager.submitMessage(topics.getYoBufferCurrentIndexRequest(), bufferProperties.getValue().getInPoint());
+      if (toolkit.getSession() != null && bufferProperties.getValue() != null)
+         toolkit.getSession().submitBufferIndexRequest(bufferProperties.getValue().getInPoint());
    }
 
    @FXML
    private void stepBack()
    {
-      messager.submitMessage(topics.getYoBufferDecrementCurrentIndexRequest(), 1);
+      if (toolkit.getSession() != null)
+         toolkit.getSession().submitDecrementBufferIndexRequest(1);
    }
 
    @FXML
    private void stepForward()
    {
-      messager.submitMessage(topics.getYoBufferIncrementCurrentIndexRequest(), 1);
+      if (toolkit.getSession() != null)
+         toolkit.getSession().submitIncrementBufferIndexRequest(1);
    }
 
    @FXML
    private void gotoOutPoint()
    {
-      if (bufferProperties.getValue() != null)
-         messager.submitMessage(topics.getYoBufferCurrentIndexRequest(), bufferProperties.getValue().getOutPoint());
+      if (toolkit.getSession() != null && bufferProperties.getValue() != null)
+         toolkit.getSession().submitBufferIndexRequest(bufferProperties.getValue().getOutPoint());
    }
 
    @FXML
    private void setOutPoint()
    {
-      if (bufferProperties.getValue() != null)
-         messager.submitMessage(topics.getYoBufferOutPointIndexRequest(), bufferProperties.getValue().getCurrentIndex());
+      if (toolkit.getSession() != null && bufferProperties.getValue() != null)
+         toolkit.getSession().submitBufferOutPointIndexRequest(bufferProperties.getValue().getCurrentIndex());
    }
 
    @FXML

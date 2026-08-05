@@ -139,7 +139,7 @@ public class FileMenuController implements VisualizerController
          FXMLLoader loader = new FXMLLoader(SessionVisualizerIOTools.VIDEO_PREVIEW_PANE_URL);
          loader.load();
          VideoRecordingPreviewPaneController controller = loader.getController();
-         controller.initialize(owner, mainView3DRoot, (PerspectiveCamera) mainScene3D.getCamera(), messager, topics);
+         controller.initialize(owner, mainView3DRoot, (PerspectiveCamera) mainScene3D.getCamera(), messager, topics, toolkit.getSession());
          controller.getStage().show();
          videoExportController.setValue(controller);
       }

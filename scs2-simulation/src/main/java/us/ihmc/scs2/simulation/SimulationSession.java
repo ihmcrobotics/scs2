@@ -3,8 +3,6 @@ package us.ihmc.scs2.simulation;
 import us.ihmc.commons.Conversions;
 import us.ihmc.euclid.referenceFrame.ReferenceFrame;
 import us.ihmc.euclid.referenceFrame.tools.ReferenceFrameTools;
-import us.ihmc.messager.Messager;
-import us.ihmc.messager.TopicListener;
 import us.ihmc.scs2.definition.robot.CameraSensorDefinition;
 import us.ihmc.scs2.definition.robot.RobotDefinition;
 import us.ihmc.scs2.definition.robot.RobotStateDefinition;
@@ -13,8 +11,7 @@ import us.ihmc.scs2.definition.yoGraphic.YoGraphicDefinition;
 import us.ihmc.scs2.session.DaemonThreadFactory;
 import us.ihmc.scs2.session.Session;
 import us.ihmc.scs2.session.SessionDataExportRequest;
-import us.ihmc.scs2.session.SessionMessagerAPI;
-import us.ihmc.scs2.session.SessionMessagerAPI.Sensors.SensorMessage;
+import us.ihmc.scs2.session.SensorMessage;
 import us.ihmc.scs2.session.SessionMode;
 import us.ihmc.scs2.sharedMemory.CropBufferRequest;
 import us.ihmc.scs2.sharedMemory.YoSharedBuffer;
@@ -213,30 +210,50 @@ public class SimulationSession extends Session
       cameraSensor.addCameraDefinitionConsumer(cameraDefinitionNotifier);
    }
 
-   @Override
-   public void setupWithMessager(Messager messager)
+   /**
+    * Adds a listener to be notified whenever a camera sensor's definition changes, e.g. when a camera
+    * is added to a robot.
+    *
+    * @param listener the listener to add.
+    */
+   public void addCameraSensorDefinitionListener(Consumer<SensorMessage<CameraSensorDefinition>> listener)
    {
-      super.setupWithMessager(messager);
-
-      cameraDefinitionListeners.add(message -> messager.submitMessage(SessionMessagerAPI.Sensors.CameraSensorDefinitionData, message));
-      TopicListener<SensorMessage<BufferedImage>> listener = message ->
-      {
-         long timestamp = Conversions.secondsToNanoseconds(time.getValue());
-
-         SimCameraSensor cameraSensor = robotNameToSensorNameToCameraMap.getOrDefault(message.getRobotName(), Collections.emptyMap())
-                                                                        .get(message.getSensorName());
-
-         cameraBroadcastExecutor.execute(() ->
-                                         {
-                                            for (CameraFrameConsumer consumer : cameraSensor.getCameraFrameConsumers())
-                                            {
-                                               consumer.nextFrame(timestamp, message.getMessageContent());
-                                            }
-                                         });
-      };
-      messager.addTopicListener(SessionMessagerAPI.Sensors.CameraSensorFrame, listener);
-      cleanupActions.add(() -> messager.removeTopicListener(SessionMessagerAPI.Sensors.CameraSensorFrame, listener));
+      cameraDefinitionListeners.add(listener);
    }
+
+   /**
+    * Removes a listener previously registered to this session.
+    *
+    * @param listener the listener to remove.
+    * @return {@code true} if the listener was successfully removed, {@code false} if it could not be found.
+    */
+   public boolean removeCameraSensorDefinitionListener(Consumer<SensorMessage<CameraSensorDefinition>> listener)
+   {
+      return cameraDefinitionListeners.remove(listener);
+   }
+
+   /**
+    * Submits a new camera frame to be dispatched to the corresponding camera sensor's frame
+    * consumers.
+    *
+    * @param message the frame data, identifying the robot and sensor it is for.
+    */
+   public void submitCameraSensorFrame(SensorMessage<BufferedImage> message)
+   {
+      long timestamp = Conversions.secondsToNanoseconds(time.getValue());
+
+      SimCameraSensor cameraSensor = robotNameToSensorNameToCameraMap.getOrDefault(message.getRobotName(), Collections.emptyMap())
+                                                                     .get(message.getSensorName());
+
+      cameraBroadcastExecutor.execute(() ->
+                                      {
+                                         for (CameraFrameConsumer consumer : cameraSensor.getCameraFrameConsumers())
+                                         {
+                                            consumer.nextFrame(timestamp, message.getMessageContent());
+                                         }
+                                      });
+   }
+
 
    public void addTerrainObject(TerrainObjectDefinition terrainObjectDefinition)
    {

@@ -339,8 +339,8 @@ public class MultiSessionManager
          try (InputStream inputStream = new FileInputStream(configuration.getYoEquationConfigurationFile()))
          {
             YoEquationListDefinition yoEquationListDefinition = DefinitionIOTools.loadYoEquationListDefinition(inputStream);
-            if (yoEquationListDefinition != null && yoEquationListDefinition.getYoEquations() != null)
-               messager.submitMessage(topics.getSessionYoEquationListChangeRequest(), YoEquationListChange.add(yoEquationListDefinition.getYoEquations()));
+            if (yoEquationListDefinition != null && yoEquationListDefinition.getYoEquations() != null && toolkit.getSession() != null)
+               toolkit.getSession().submitEquationListChange(YoEquationListChange.add(yoEquationListDefinition.getYoEquations()));
          }
          catch (Exception e)
          {
@@ -393,11 +393,11 @@ public class MultiSessionManager
 
       if (LOAD_BUFFER_SIZE_CONFIGURATION)
       {
-         if (configuration.hasBufferSize())
-            messager.submitMessage(topics.getYoBufferInitializeSize(), configuration.getBufferSize());
+         if (configuration.hasBufferSize() && toolkit.getSession() != null)
+            toolkit.getSession().initializeBufferSize(configuration.getBufferSize());
       }
-      if (configuration.hasRecordTickPeriod())
-         messager.submitMessage(topics.getInitializeBufferRecordTickPeriod(), configuration.getRecordTickPeriod());
+      if (configuration.hasRecordTickPeriod() && toolkit.getSession() != null)
+         toolkit.getSession().initializeBufferRecordTickPeriod(configuration.getRecordTickPeriod());
       if (configuration.hasNumberPrecision())
          messager.submitMessage(topics.getControlsNumberPrecision(), configuration.getNumberPrecision());
       mainWindowController.leftSidePaneOpenProperty().set(configuration.getShowYoSearchPanel());
@@ -462,9 +462,7 @@ public class MultiSessionManager
 
       int currentBufferSize = toolkit.getYoManager().getBufferSize();
       configuration.setBufferSize(currentBufferSize);
-      Integer bufferRecordTickPeriod = messager.getLastValue(topics.getBufferRecordTickPeriod());
-      if (bufferRecordTickPeriod != null)
-         configuration.setRecordTickPeriod(bufferRecordTickPeriod);
+      configuration.setRecordTickPeriod(session.getBufferRecordTickPeriod());
       Integer numberPrecision = messager.getLastValue(topics.getControlsNumberPrecision());
       if (numberPrecision != null)
          configuration.setNumberPrecision(numberPrecision);

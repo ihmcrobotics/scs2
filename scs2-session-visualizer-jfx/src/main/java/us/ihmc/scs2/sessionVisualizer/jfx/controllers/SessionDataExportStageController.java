@@ -6,6 +6,7 @@ import java.util.List;
 
 import org.apache.commons.lang3.mutable.MutableBoolean;
 
+import javafx.application.Platform;
 import javafx.beans.property.Property;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.value.ChangeListener;
@@ -21,17 +22,19 @@ import javafx.stage.DirectoryChooser;
 import javafx.stage.Stage;
 import javafx.stage.Window;
 import javafx.stage.WindowEvent;
-import us.ihmc.messager.TopicListener;
 import us.ihmc.messager.javafx.JavaFXMessager;
-import us.ihmc.messager.javafx.MessageBidirectionalBinding;
+import us.ihmc.scs2.session.Session;
 import us.ihmc.scs2.session.SessionDataExportRequest;
 import us.ihmc.scs2.session.SessionMode;
+import us.ihmc.scs2.session.SessionProperties;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerIOTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerTopics;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerWindowToolkit;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
 import us.ihmc.scs2.sharedMemory.interfaces.YoBufferPropertiesReadOnly;
 import us.ihmc.scs2.sharedMemory.tools.SharedMemoryIOTools.DataFormat;
+
+import java.util.function.Consumer;
 
 public class SessionDataExportStageController implements VisualizerController
 {
@@ -64,6 +67,7 @@ public class SessionDataExportStageController implements VisualizerController
    private Window owner;
    private SessionVisualizerTopics topics;
    private JavaFXMessager messager;
+   private Session session;
 
    @Override
    public void initialize(SessionVisualizerWindowToolkit toolkit)
@@ -71,26 +75,30 @@ public class SessionDataExportStageController implements VisualizerController
       owner = toolkit.getWindow();
       topics = toolkit.getTopics();
       messager = toolkit.getMessager();
+      session = toolkit.getSession();
 
-      MessageBidirectionalBinding<SessionMode, SessionMode> currentSessionModeBinding = messager.bindBidirectional(topics.getSessionCurrentMode(),
-                                                                                                                   currentSessionMode,
-                                                                                                                   false);
+      Consumer<SessionProperties> sessionModeListener = properties -> Platform.runLater(() -> currentSessionMode.setValue(properties.getActiveMode()));
+      session.addSessionPropertiesListener(sessionModeListener);
+      sessionModeListener.accept(session.getSessionProperties());
+      ChangeListener<SessionMode> currentSessionModeSubmitListener = (o, oldValue, newValue) -> session.setSessionMode(newValue);
+      currentSessionMode.addListener(currentSessionModeSubmitListener);
       cleanupActions.add(() ->
       {
-         messager.removeFXTopicListener(topics.getSessionCurrentMode(), currentSessionModeBinding);
-         currentSessionMode.removeListener(currentSessionModeBinding);
+         session.removeSessionPropertiesListener(sessionModeListener);
+         currentSessionMode.removeListener(currentSessionModeSubmitListener);
       });
 
-      messager.submitMessage(topics.getSessionCurrentMode(), SessionMode.PAUSE);
+      session.setSessionMode(SessionMode.PAUSE);
       MutableBoolean updatingBufferIndex = new MutableBoolean(false);
-      TopicListener<YoBufferPropertiesReadOnly> bufferPropertiesBinding = messager.bindPropertyToTopic(topics.getYoBufferCurrentProperties(), bufferProperties);
-      cleanupActions.add(() -> messager.removeFXTopicListener(topics.getYoBufferCurrentProperties(), bufferPropertiesBinding));
+      Consumer<YoBufferPropertiesReadOnly> bufferPropertiesBinding = properties -> Platform.runLater(() -> bufferProperties.setValue(properties));
+      session.addCurrentBufferPropertiesListener(bufferPropertiesBinding);
+      cleanupActions.add(() -> session.removeCurrentBufferPropertiesListener(bufferPropertiesBinding));
 
       ChangeListener<? super SessionMode> currentSessionModeChangeListener = (o, oldValue, newValue) ->
       {
          if (newValue != SessionMode.PAUSE)
          {
-            messager.submitMessage(topics.getSessionCurrentMode(), SessionMode.PAUSE);
+            session.setSessionMode(SessionMode.PAUSE);
          }
          else if (bufferProperties.getValue() != null)
          {
@@ -103,7 +111,7 @@ public class SessionDataExportStageController implements VisualizerController
       currentSessionMode.addListener(currentSessionModeChangeListener);
       cleanupActions.add(() -> currentSessionMode.removeListener(currentSessionModeChangeListener));
 
-      TopicListener<YoBufferPropertiesReadOnly> bufferPropertiesTopicListener = m ->
+      Consumer<YoBufferPropertiesReadOnly> bufferPropertiesTopicListener = m -> Platform.runLater(() ->
       {
          if (currentSessionMode.getValue() != SessionMode.PAUSE)
             return;
@@ -116,9 +124,9 @@ public class SessionDataExportStageController implements VisualizerController
             currentBufferIndexSlider.setValue(m.getCurrentIndex());
             updatingBufferIndex.setFalse();
          }
-      };
-      messager.addFXTopicListener(topics.getYoBufferCurrentProperties(), bufferPropertiesTopicListener);
-      cleanupActions.add(() -> messager.removeFXTopicListener(topics.getYoBufferCurrentProperties(), bufferPropertiesTopicListener));
+      });
+      session.addCurrentBufferPropertiesListener(bufferPropertiesTopicListener);
+      cleanupActions.add(() -> session.removeCurrentBufferPropertiesListener(bufferPropertiesTopicListener));
 
       ChangeListener<? super Number> bufferIndexSliderListener = (o, oldValue, newValue) ->
       {
@@ -128,7 +136,7 @@ public class SessionDataExportStageController implements VisualizerController
          if (updatingBufferIndex.isFalse())
          {
             updatingBufferIndex.setTrue();
-            messager.submitMessage(topics.getYoBufferCurrentIndexRequest(), newValue.intValue());
+            session.submitBufferIndexRequest(newValue.intValue());
             updatingBufferIndex.setFalse();
          }
       };
@@ -197,6 +205,6 @@ public class SessionDataExportStageController implements VisualizerController
       request.setOnExportStartCallback(() -> messager.submitMessage(topics.getDisableUserControls(), true));
       request.setOnExportEndCallback(() -> messager.submitMessage(topics.getDisableUserControls(), false));
       close();
-      messager.submitMessage(topics.getSessionDataExportRequest(), request);
+      session.submitSessionDataExportRequest(request);
    }
 }

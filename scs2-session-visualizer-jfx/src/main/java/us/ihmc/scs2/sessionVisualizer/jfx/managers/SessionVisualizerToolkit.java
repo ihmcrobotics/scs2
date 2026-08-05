@@ -1,5 +1,6 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.managers;
 
+import javafx.application.Platform;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.FXCollections;
@@ -12,9 +13,7 @@ import us.ihmc.messager.MessagerAPIFactory;
 import us.ihmc.scs2.definition.robot.RobotDefinition;
 import us.ihmc.scs2.definition.terrain.TerrainObjectDefinition;
 import us.ihmc.scs2.session.Session;
-import us.ihmc.scs2.session.SessionMessagerAPI;
-import us.ihmc.scs2.session.SessionState;
-import us.ihmc.scs2.session.YoSharedBufferMessagerAPI;
+import us.ihmc.scs2.session.SessionRobotDefinitionListChange;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionChangeListener;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizer;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerMessagerAPI;
@@ -70,7 +69,7 @@ public class SessionVisualizerToolkit extends ObservedAnimationTimer
 
       MessagerAPIFactory apiFactory = new MessagerAPIFactory();
       apiFactory.createRootCategory("SCS2");
-      apiFactory.includeMessagerAPIs(SessionMessagerAPI.API, YoSharedBufferMessagerAPI.API, SessionVisualizerMessagerAPI.API);
+      apiFactory.includeMessagerAPIs(SessionVisualizerMessagerAPI.API);
       messager = new SCS2JavaFXMessager(apiFactory.getAPIAndCloseFactory());
 
       topics.setupTopics();
@@ -94,15 +93,28 @@ public class SessionVisualizerToolkit extends ObservedAnimationTimer
       videoRecordingManager = new VideoRecordingManager(mainScene3D, mainView3DRoot, topics, messager, backgroundExecutorManager);
       secondaryWindowManager = new SecondaryWindowManager(this);
       sessionDataPreferenceManager = new SessionDataPreferenceManager(messager, topics);
-      cameraSensorsManager = new CameraSensorsManager(mainView3DRoot, messager, topics, yoRobotFXManager);
+      cameraSensorsManager = new CameraSensorsManager(mainView3DRoot, yoRobotFXManager);
+
+      Consumer<SessionRobotDefinitionListChange> robotDefinitionListChangeListener = change -> Platform.runLater(() ->
+      {
+         if (change.getRemovedRobotDefinition() != null)
+            sessionRobotDefinitions.remove(change.getRemovedRobotDefinition());
+         if (change.getAddedRobotDefinition() != null)
+            sessionRobotDefinitions.add(change.getAddedRobotDefinition());
+      });
 
       activeSessionProperty.addListener((o, oldValue, newValue) ->
                                         {
+                                           if (oldValue != null)
+                                              oldValue.removeRobotDefinitionListChangeListener(robotDefinitionListChangeListener);
+
                                            sessionRobotDefinitions.clear();
                                            sessionTerrainObjectDefinitions.clear();
 
                                            if (newValue == null)
                                               return;
+
+                                           newValue.addRobotDefinitionListChangeListener(robotDefinitionListChangeListener);
 
                                            List<RobotDefinition> newRobotDefinitions = newValue.getRobotDefinitions();
                                            if (newRobotDefinitions != null && !newRobotDefinitions.isEmpty())
@@ -112,14 +124,6 @@ public class SessionVisualizerToolkit extends ObservedAnimationTimer
                                            if (newTerrainObjectDefinitions != null && !newTerrainObjectDefinitions.isEmpty())
                                               sessionTerrainObjectDefinitions.setAll(newTerrainObjectDefinitions);
                                         });
-
-      messager.addFXTopicListener(topics.getSessionRobotDefinitionListChangeState(), change ->
-      {
-         if (change.getRemovedRobotDefinition() != null)
-            sessionRobotDefinitions.remove(change.getRemovedRobotDefinition());
-         if (change.getAddedRobotDefinition() != null)
-            sessionRobotDefinitions.add(change.getAddedRobotDefinition());
-      });
    }
 
    public void startSession(Session session, Runnable sessionLoadedCallback)
@@ -132,8 +136,6 @@ public class SessionVisualizerToolkit extends ObservedAnimationTimer
       }
 
       activeSessionProperty.set(session);
-
-      session.setupWithMessager(messager);
 
       backgroundExecutorManager.executeInBackground(() ->
                                                     {
@@ -164,7 +166,8 @@ public class SessionVisualizerToolkit extends ObservedAnimationTimer
 
                                                           yoGraphicFXManager.startSession(session); // In case some graphics rely on the robot frames
                                                           cameraSensorsManager.startSession(session);
-                                                          messager.submitMessage(topics.getSessionCurrentState(), SessionState.ACTIVE);
+                                                          videoRecordingManager.startSession(session);
+                                                          session.startSessionThread();
                                                        }
                                                        finally
                                                        {
@@ -198,12 +201,13 @@ public class SessionVisualizerToolkit extends ObservedAnimationTimer
       keyFrameManager.stopSession();
       secondaryWindowManager.stopSession();
       cameraSensorsManager.stopSession();
+      videoRecordingManager.stopSession();
       yoManager.stopSession();
 
       mainWindow.setTitle(SessionVisualizer.NO_ACTIVE_SESSION_TITLE);
 
       if (shutdownSession)
-         messager.submitMessage(topics.getSessionCurrentState(), SessionState.INACTIVE);
+         oldSession.shutdownSession();
       sessionChangeListeners.forEach(listener -> listener.sessionChanged(oldSession, null));
    }
 
@@ -220,6 +224,18 @@ public class SessionVisualizerToolkit extends ObservedAnimationTimer
    public void addSessionChangedListener(SessionChangeListener listener)
    {
       sessionChangeListeners.add(listener);
+   }
+
+   /**
+    * Registers the listener and immediately invokes it with {@code (null, getSession())}, so callers
+    * don't need to separately handle "attach to whatever session is already active".
+    *
+    * @param listener the listener to add.
+    */
+   public void addAndTriggerSessionChangedListener(SessionChangeListener listener)
+   {
+      addSessionChangedListener(listener);
+      listener.sessionChanged(null, getSession());
    }
 
    public boolean removeSessionChangedListener(SessionChangeListener listener)

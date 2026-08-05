@@ -5,6 +5,7 @@ import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.stage.Window;
 import us.ihmc.messager.Messager;
+import us.ihmc.scs2.session.Session;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerTopics;
 
 public class WindowShortcutManager
@@ -12,7 +13,7 @@ public class WindowShortcutManager
    private final Window owner;
    private final EventHandler<KeyEvent> currentIndexSteppingListener;
 
-   public WindowShortcutManager(Window owner, Messager messager, SessionVisualizerTopics topics)
+   public WindowShortcutManager(Window owner, SessionVisualizerWindowToolkit windowToolkit, Messager messager, SessionVisualizerTopics topics)
    {
       this.owner = owner;
       currentIndexSteppingListener = keyEvent ->
@@ -32,7 +33,9 @@ public class WindowShortcutManager
          if (keyEvent.isShiftDown())
             step *= 10;
 
-         messager.submitMessage(topics.getYoBufferIncrementCurrentIndexRequest(), step);
+         Session session = windowToolkit.getSession();
+         if (session != null)
+            session.submitIncrementBufferIndexRequest(step);
          keyEvent.consume();
       };
 

@@ -27,16 +27,16 @@ import us.ihmc.log.LogTools;
 import us.ihmc.mecano.multiBodySystem.interfaces.JointReadOnly;
 import us.ihmc.mecano.multiBodySystem.interfaces.RigidBodyReadOnly;
 import us.ihmc.mecano.tools.MultiBodySystemTools;
-import us.ihmc.messager.javafx.JavaFXMessager;
 import us.ihmc.scs2.definition.robot.CameraSensorDefinition;
 import us.ihmc.scs2.definition.robot.JointDefinition;
 import us.ihmc.scs2.definition.robot.RobotDefinition;
 import us.ihmc.scs2.session.Session;
-import us.ihmc.scs2.session.SessionMessagerAPI.Sensors.SensorMessage;
-import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerTopics;
+import us.ihmc.scs2.session.SensorMessage;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.ObservedAnimationTimer;
-import us.ihmc.scs2.sessionVisualizer.jfx.tools.SCS2JavaFXMessager;
+import us.ihmc.scs2.simulation.SimulationSession;
+
+import java.util.function.Consumer;
 
 public class CameraSensorsManager extends ObservedAnimationTimer implements Manager
 {
@@ -47,16 +47,13 @@ public class CameraSensorsManager extends ObservedAnimationTimer implements Mana
    private final Map<String, Map<String, SingleCameraSensorManager>> robotNameToSensorNameToManagerMap = new HashMap<>();
    private boolean sessionLoaded = false;
 
-   private final JavaFXMessager messager;
-   private final SessionVisualizerTopics topics;
+   private SimulationSession simulationSession;
+   private final Consumer<SensorMessage<CameraSensorDefinition>> cameraSensorDefinitionListener = this::handleCameraSensorDefinitionMessage;
 
-   public CameraSensorsManager(Node mainSceneRoot, SCS2JavaFXMessager messager, SessionVisualizerTopics topics, YoRobotFXManager robotFXManager)
+   public CameraSensorsManager(Node mainSceneRoot, YoRobotFXManager robotFXManager)
    {
       this.mainSceneRoot = mainSceneRoot;
-      this.messager = messager;
-      this.topics = topics;
       this.robotFXManager = robotFXManager;
-      messager.addTopicListener(topics.getCameraSensorDefinitionData(), this::handleCameraSensorDefinitionMessage);
    }
 
    private void handleCameraSensorDefinitionMessage(SensorMessage<CameraSensorDefinition> message)
@@ -83,6 +80,12 @@ public class CameraSensorsManager extends ObservedAnimationTimer implements Mana
    public void startSession(Session session)
    {
       sessionLoaded = false;
+
+      if (session instanceof SimulationSession)
+      {
+         simulationSession = (SimulationSession) session;
+         simulationSession.addCameraSensorDefinitionListener(cameraSensorDefinitionListener);
+      }
 
       for (RobotDefinition robotDefinition : session.getRobotDefinitions())
       {
@@ -121,6 +124,9 @@ public class CameraSensorsManager extends ObservedAnimationTimer implements Mana
    public void stopSession()
    {
       stop();
+      if (simulationSession != null)
+         simulationSession.removeCameraSensorDefinitionListener(cameraSensorDefinitionListener);
+      simulationSession = null;
       cameras.clear();
       robotNameToSensorNameToManagerMap.clear();
       sessionLoaded = false;
@@ -242,7 +248,8 @@ public class CameraSensorsManager extends ObservedAnimationTimer implements Mana
             JavaFXMissingTools.convertRigidBodyTransformToAffine(actualCameraPose, cameraTransform);
             image = mainSceneRoot.snapshot(snapshotParameters, image);
             bufferedImage = SwingFXUtils.fromFXImage(image, bufferedImage);
-            messager.submitMessage(topics.getCameraSensorFrame(), new SensorMessage<>(robotName, sensorName, bufferedImage));
+            if (simulationSession != null)
+               simulationSession.submitCameraSensorFrame(new SensorMessage<>(robotName, sensorName, bufferedImage));
             lastFrame = now;
          }
       }

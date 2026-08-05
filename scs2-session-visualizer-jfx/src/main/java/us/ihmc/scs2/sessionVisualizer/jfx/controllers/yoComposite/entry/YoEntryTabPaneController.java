@@ -15,7 +15,6 @@ import us.ihmc.log.LogTools;
 import us.ihmc.messager.javafx.JavaFXMessager;
 import us.ihmc.scs2.definition.yoEntry.YoEntryConfigurationDefinition;
 import us.ihmc.scs2.definition.yoEntry.YoEntryListDefinition;
-import us.ihmc.scs2.session.SessionState;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerIOTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerTopics;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerToolkit;
@@ -103,9 +102,9 @@ public class YoEntryTabPaneController
 
       JavaFXMessager messager = toolkit.getMessager();
       SessionVisualizerTopics topics = toolkit.getTopics();
-      messager.addFXTopicListener(topics.getSessionCurrentState(), state ->
+      toolkit.addAndTriggerSessionChangedListener((previousSession, newSession) ->
       {
-         if (state == SessionState.INACTIVE)
+         if (newSession == null)
             yoEntryTabPane.getTabs().clear();
       });
       messager.addFXTopicListener(topics.getYoEntryListAdd(), this::addYoEntryList);

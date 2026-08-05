@@ -9,7 +9,6 @@ import javafx.scene.control.TreeView;
 import javafx.scene.input.*;
 import us.ihmc.messager.javafx.JavaFXMessager;
 import us.ihmc.scs2.session.Session;
-import us.ihmc.scs2.session.SessionState;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerTopics;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.BackgroundExecutorManager;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SecondaryWindowManager.NewWindowRequest;
@@ -90,14 +89,14 @@ public class YoRegistrySearchPaneController extends ObservedAnimationTimer
 
       activeSearchEngine = messager.createInput(topics.getYoSearchEngine(), SearchEngines.DEFAULT);
 
-      messager.addFXTopicListener(topics.getSessionCurrentState(), state ->
+      toolkit.addSessionChangedListener((previousSession, newSession) ->
       {
-         if (state == SessionState.ACTIVE)
+         if (newSession != null)
          {
             refreshRootRegistry = true;
             start();
          }
-         else if (state == SessionState.INACTIVE)
+         else
          {
             stop();
             searchResult = null;

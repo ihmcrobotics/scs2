@@ -1,6 +1,7 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.managers;
 
 import gnu.trove.list.array.TIntArrayList;
+import javafx.application.Platform;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.Property;
 import javafx.beans.property.ReadOnlyObjectProperty;
@@ -10,19 +11,23 @@ import us.ihmc.scs2.session.Session;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerTopics;
 import us.ihmc.scs2.sharedMemory.interfaces.YoBufferPropertiesReadOnly;
 
+import java.util.function.Consumer;
+
 public class KeyFrameManager implements Manager
 {
    private final ObjectProperty<int[]> keyFrameIndicesProperty = new SimpleObjectProperty<int[]>(this, "keyFrameIndices", null);
    private final TIntArrayList keyFrameIndices = new TIntArrayList();
-   private final Property<YoBufferPropertiesReadOnly> bufferProperties;
+   private final Property<YoBufferPropertiesReadOnly> bufferProperties = new SimpleObjectProperty<>(this, "bufferProperties", null);
    private final JavaFXMessager messager;
    private final SessionVisualizerTopics topics;
+
+   private Session session;
+   private Consumer<YoBufferPropertiesReadOnly> bufferPropertiesListener;
 
    public KeyFrameManager(JavaFXMessager messager, SessionVisualizerTopics topics)
    {
       this.messager = messager;
       this.topics = topics;
-      bufferProperties = messager.createPropertyInput(topics.getYoBufferCurrentProperties(), null);
       messager.addFXTopicListener(topics.getToggleKeyFrame(), messageContent -> toggleKeyFrame());
       messager.addFXTopicListener(topics.getGoToNextKeyFrame(), messageContent -> gotToNextKeyFrame());
       messager.addFXTopicListener(topics.getGoToPreviousKeyFrame(), messageContent -> gotToPreviousKeyFrame());
@@ -31,7 +36,7 @@ public class KeyFrameManager implements Manager
 
       bufferProperties.addListener((o, oldValue, newValue) ->
       {
-         if (oldValue == null || oldValue.getSize() != newValue.getSize())
+         if (oldValue == null || newValue == null || oldValue.getSize() != newValue.getSize())
             clearAllKeyFrames();
       });
       keyFrameIndicesProperty.addListener((o, oldValue, newValue) -> messager.submitMessage(topics.getCurrentKeyFrames(), newValue));
@@ -40,11 +45,19 @@ public class KeyFrameManager implements Manager
    @Override
    public void startSession(Session session)
    {
+      this.session = session;
+      bufferPropertiesListener = properties -> Platform.runLater(() -> bufferProperties.setValue(properties));
+      session.addCurrentBufferPropertiesListener(bufferPropertiesListener);
    }
 
    @Override
    public void stopSession()
    {
+      if (session != null)
+         session.removeCurrentBufferPropertiesListener(bufferPropertiesListener);
+      session = null;
+      bufferPropertiesListener = null;
+      bufferProperties.setValue(null);
       clearAllKeyFrames();
    }
 
@@ -111,7 +124,8 @@ public class KeyFrameManager implements Manager
 
       if (nextKeyframeIndex >= keyFrameIndices.size())
          nextKeyframeIndex = 0;
-      messager.submitMessage(topics.getYoBufferCurrentIndexRequest(), keyFrameIndices.get(nextKeyframeIndex));
+      if (session != null)
+         session.submitBufferIndexRequest(keyFrameIndices.get(nextKeyframeIndex));
    }
 
    private void gotToPreviousKeyFrame()
@@ -136,7 +150,8 @@ public class KeyFrameManager implements Manager
 
       if (previousKeyframeIndex < 0)
          previousKeyframeIndex = keyFrameIndices.size() - 1;
-      messager.submitMessage(topics.getYoBufferCurrentIndexRequest(), keyFrameIndices.get(previousKeyframeIndex));
+      if (session != null)
+         session.submitBufferIndexRequest(keyFrameIndices.get(previousKeyframeIndex));
    }
 
    public ReadOnlyObjectProperty<int[]> keyFrameIndicesProperty()

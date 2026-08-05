@@ -2,7 +2,9 @@ package us.ihmc.scs2.sessionVisualizer.jfx.controllers.menu;
 
 import org.apache.commons.lang3.mutable.MutableBoolean;
 
+import javafx.application.Platform;
 import javafx.beans.property.Property;
+import javafx.beans.property.SimpleObjectProperty;
 import javafx.fxml.FXML;
 import javafx.scene.control.CheckMenuItem;
 import javafx.scene.control.CustomMenuItem;
@@ -13,7 +15,8 @@ import javafx.scene.control.TextField;
 import javafx.scene.control.TextFormatter;
 import javafx.util.converter.IntegerStringConverter;
 import us.ihmc.messager.javafx.JavaFXMessager;
-import us.ihmc.scs2.session.SessionState;
+import us.ihmc.scs2.session.Session;
+import us.ihmc.scs2.session.SessionProperties;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerTopics;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.VisualizerController;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerWindowToolkit;
@@ -23,6 +26,8 @@ import us.ihmc.scs2.sharedMemory.CropBufferRequest;
 import us.ihmc.scs2.sharedMemory.FillBufferRequest;
 import us.ihmc.scs2.sharedMemory.interfaces.YoBufferPropertiesReadOnly;
 import us.ihmc.scs2.sharedMemory.tools.SharedMemoryTools;
+
+import java.util.function.Consumer;
 
 public class DataBufferMenuController implements VisualizerController
 {
@@ -43,21 +48,21 @@ public class DataBufferMenuController implements VisualizerController
 
    private JavaFXMessager messager;
    private SessionVisualizerTopics topics;
+   private SessionVisualizerWindowToolkit toolkit;
 
    private boolean initializeBufferSizeTextField = true;
-   private Property<YoBufferPropertiesReadOnly> bufferProperties;
+   private final Property<YoBufferPropertiesReadOnly> bufferProperties = new SimpleObjectProperty<>(this, "bufferProperties", null);
+   private Consumer<YoBufferPropertiesReadOnly> bufferPropertiesListener;
+   private Consumer<SessionProperties> recordTickPeriodListener;
+   /** Guards against feedback loops when a session-driven update sets a UI control's value. */
+   private boolean updatingFromSession = false;
 
    @Override
    public void initialize(SessionVisualizerWindowToolkit toolkit)
    {
+      this.toolkit = toolkit;
       messager = toolkit.getMessager();
       topics = toolkit.getTopics();
-      bufferProperties = messager.createPropertyInput(topics.getYoBufferCurrentProperties(), null);
-      messager.addTopicListener(topics.getSessionCurrentState(), m ->
-      {
-         if (m == SessionState.INACTIVE)
-            initializeBufferSizeTextField = true;
-      });
       messager.addFXTopicListener(topics.getDisableUserControls(), disable -> menu.setDisable(disable));
 
       TextFormatter<Integer> bufferSizeFormatter = new TextFormatter<>(new IntegerStringConverter(), 0, new PositiveIntegerValueFilter());
@@ -90,7 +95,8 @@ public class DataBufferMenuController implements VisualizerController
          if (updatingBufferResize.isFalse())
          {
             updatingBufferResize.setTrue();
-            messager.submitMessage(topics.getYoBufferCurrentSizeRequest(), newValue);
+            if (toolkit.getSession() != null)
+               toolkit.getSession().submitBufferSizeRequest(newValue);
             updatingBufferResize.setFalse();
          }
       });
@@ -98,7 +104,46 @@ public class DataBufferMenuController implements VisualizerController
       TextFormatter<Integer> recordPeriodFormatter = new TextFormatter<>(new IntegerStringConverter(), 0, new PositiveIntegerValueFilter());
       bufferRecordTickPeriodTextField.setTextFormatter(recordPeriodFormatter);
 
-      messager.bindBidirectional(topics.getBufferRecordTickPeriod(), recordPeriodFormatter.valueProperty(), false);
+      recordPeriodFormatter.valueProperty().addListener((o, oldValue, newValue) ->
+      {
+         if (!updatingFromSession && toolkit.getSession() != null)
+            toolkit.getSession().setBufferRecordTickPeriod(newValue);
+      });
+
+      toolkit.addAndTriggerSessionChangedListener((previousSession, newSession) ->
+      {
+         if (previousSession != null)
+         {
+            previousSession.removeCurrentBufferPropertiesListener(bufferPropertiesListener);
+            previousSession.removeSessionPropertiesListener(recordTickPeriodListener);
+         }
+
+         if (newSession == null)
+         {
+            bufferPropertiesListener = null;
+            recordTickPeriodListener = null;
+            initializeBufferSizeTextField = true;
+            return;
+         }
+
+         bufferPropertiesListener = properties -> Platform.runLater(() -> bufferProperties.setValue(properties));
+         newSession.addCurrentBufferPropertiesListener(bufferPropertiesListener);
+
+         recordTickPeriodListener = properties -> Platform.runLater(() ->
+         {
+            updatingFromSession = true;
+            try
+            {
+               recordPeriodFormatter.setValue(properties.getBufferRecordTickPeriod());
+            }
+            finally
+            {
+               updatingFromSession = false;
+            }
+         });
+         newSession.addSessionPropertiesListener(recordTickPeriodListener);
+         recordTickPeriodListener.accept(newSession.getSessionProperties());
+      });
 
       IntegerSpinnerValueFactory numberPrecisionSpinnerValueFactory = new IntegerSpinnerValueFactory(1, 30, 3, 1);
       numberPrecisionSpinner.setValueFactory(numberPrecisionSpinnerValueFactory);
@@ -122,10 +167,10 @@ public class DataBufferMenuController implements VisualizerController
    @FXML
    private void requestCropDataBuffer()
    {
-      if (bufferProperties.getValue() != null)
+      if (bufferProperties.getValue() != null && toolkit.getSession() != null)
       {
          CropBufferRequest cropBufferRequest = new CropBufferRequest(bufferProperties.getValue().getInPoint(), bufferProperties.getValue().getOutPoint());
-         messager.submitMessage(topics.getYoBufferCropRequest(), cropBufferRequest);
+         toolkit.getSession().submitCropBufferRequest(cropBufferRequest);
       }
    }
 
@@ -133,12 +178,12 @@ public class DataBufferMenuController implements VisualizerController
    private void requestFlushDataBuffer()
    {
       YoBufferPropertiesReadOnly properties = bufferProperties.getValue();
-      if (properties != null)
+      if (properties != null && toolkit.getSession() != null)
       {
          FillBufferRequest fillBufferRequest = new FillBufferRequest(false,
                                                                      SharedMemoryTools.increment(properties.getOutPoint(), 1, properties.getSize()),
                                                                      SharedMemoryTools.decrement(properties.getInPoint(), 1, properties.getSize()));
-         messager.submitMessage(topics.getYoBufferFillRequest(), fillBufferRequest);
+         toolkit.getSession().submitFillBufferRequest(fillBufferRequest);
       }
    }
 }
