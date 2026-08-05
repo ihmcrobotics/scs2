@@ -98,7 +98,7 @@ public class RunMenuController implements VisualizerController
             return;
          }
 
-         bufferPropertiesListener = properties -> Platform.runLater(() -> bufferProperties.set(properties));
+         bufferPropertiesListener = bufferProperties::set;
          newSession.addCurrentBufferPropertiesListener(bufferPropertiesListener);
 
          sessionPropertiesListener = properties -> Platform.runLater(() ->

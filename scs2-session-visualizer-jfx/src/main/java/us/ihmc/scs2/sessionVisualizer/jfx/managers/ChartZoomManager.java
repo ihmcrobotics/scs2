@@ -1,6 +1,5 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.managers;
 
-import javafx.application.Platform;
 import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.Property;
 import javafx.beans.property.SimpleDoubleProperty;
@@ -11,6 +10,7 @@ import us.ihmc.messager.javafx.JavaFXMessager;
 import us.ihmc.scs2.session.Session;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerTopics;
 import us.ihmc.scs2.sessionVisualizer.jfx.charts.ChartIntegerBounds;
+import us.ihmc.scs2.sessionVisualizer.jfx.tools.FXCoalescedUpdater;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.ObservedAnimationTimer;
 import us.ihmc.scs2.sharedMemory.interfaces.YoBufferPropertiesReadOnly;
 
@@ -29,6 +29,7 @@ public class ChartZoomManager extends ObservedAnimationTimer
                                                                                                                     "currentBufferProperties",
                                                                                                                     null);
    private Consumer<YoBufferPropertiesReadOnly> currentBufferPropertiesListener;
+   private final FXCoalescedUpdater<YoBufferPropertiesReadOnly> currentBufferPropertiesUpdater = new FXCoalescedUpdater<>(currentBufferPropertiesProperty::setValue);
 
    // Used to detect when the buffer is being resized and to reset the zoom.
    private int previousBufferSize = -1;
@@ -58,13 +59,13 @@ public class ChartZoomManager extends ObservedAnimationTimer
             return;
          }
 
-         currentBufferPropertiesListener = properties -> Platform.runLater(() -> currentBufferPropertiesProperty.setValue(properties));
+         currentBufferPropertiesListener = currentBufferPropertiesUpdater::update;
          newSession.addCurrentBufferPropertiesListener(currentBufferPropertiesListener);
       });
       Session currentSession = windowToolkit.getSession();
       if (currentSession != null)
       {
-         currentBufferPropertiesListener = properties -> Platform.runLater(() -> currentBufferPropertiesProperty.setValue(properties));
+         currentBufferPropertiesListener = currentBufferPropertiesUpdater::update;
          currentSession.addCurrentBufferPropertiesListener(currentBufferPropertiesListener);
       }
       messager.addTopicListener(topics.getYoChartRequestZoomIn(), this::processZoomInRequest);

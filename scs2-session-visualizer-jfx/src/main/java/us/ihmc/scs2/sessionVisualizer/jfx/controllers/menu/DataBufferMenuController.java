@@ -20,6 +20,7 @@ import us.ihmc.scs2.session.SessionProperties;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerTopics;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.VisualizerController;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerWindowToolkit;
+import us.ihmc.scs2.sessionVisualizer.jfx.tools.FXCoalescedUpdater;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.MenuTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.PositiveIntegerValueFilter;
 import us.ihmc.scs2.sharedMemory.CropBufferRequest;
@@ -53,6 +54,7 @@ public class DataBufferMenuController implements VisualizerController
    private boolean initializeBufferSizeTextField = true;
    private final Property<YoBufferPropertiesReadOnly> bufferProperties = new SimpleObjectProperty<>(this, "bufferProperties", null);
    private Consumer<YoBufferPropertiesReadOnly> bufferPropertiesListener;
+   private final FXCoalescedUpdater<YoBufferPropertiesReadOnly> bufferPropertiesUpdater = new FXCoalescedUpdater<>(bufferProperties::setValue);
    private Consumer<SessionProperties> recordTickPeriodListener;
    /** Guards against feedback loops when a session-driven update sets a UI control's value. */
    private boolean updatingFromSession = false;
@@ -126,7 +128,7 @@ public class DataBufferMenuController implements VisualizerController
             return;
          }
 
-         bufferPropertiesListener = properties -> Platform.runLater(() -> bufferProperties.setValue(properties));
+         bufferPropertiesListener = bufferPropertiesUpdater::update;
          newSession.addCurrentBufferPropertiesListener(bufferPropertiesListener);
 
          recordTickPeriodListener = properties -> Platform.runLater(() ->

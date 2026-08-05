@@ -47,6 +47,7 @@ import us.ihmc.scs2.session.SessionProperties;
 import us.ihmc.scs2.sessionVisualizer.jfx.SceneVideoRecordingRequest;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerIOTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerTopics;
+import us.ihmc.scs2.sessionVisualizer.jfx.tools.FXCoalescedUpdater;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.IntegerConverter;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.PositiveIntegerValueFilter;
@@ -206,7 +207,7 @@ public class VideoRecordingPreviewPaneController
       currentSessionMode.addListener(currentSessionModeListener);
       cleanupActions.add(() -> currentSessionMode.removeListener(currentSessionModeListener));
 
-      Consumer<YoBufferPropertiesReadOnly> currentBufferPropertiesListener = m -> Platform.runLater(() ->
+      FXCoalescedUpdater<YoBufferPropertiesReadOnly> currentBufferPropertiesUpdater = new FXCoalescedUpdater<>(m ->
       {
          if (currentSessionMode.getValue() != SessionMode.PAUSE)
             return;
@@ -220,6 +221,7 @@ public class VideoRecordingPreviewPaneController
             updatingBufferIndex.setFalse();
          }
       });
+      Consumer<YoBufferPropertiesReadOnly> currentBufferPropertiesListener = currentBufferPropertiesUpdater::update;
       session.addCurrentBufferPropertiesListener(currentBufferPropertiesListener);
       cleanupActions.add(() -> session.removeCurrentBufferPropertiesListener(currentBufferPropertiesListener));
 

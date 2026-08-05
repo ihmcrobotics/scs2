@@ -21,6 +21,7 @@ import us.ihmc.scs2.session.SessionMode;
 import us.ihmc.scs2.session.SessionProperties;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerTopics;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerWindowToolkit;
+import us.ihmc.scs2.sessionVisualizer.jfx.tools.FXCoalescedUpdater;
 import us.ihmc.scs2.sharedMemory.interfaces.YoBufferPropertiesReadOnly;
 
 import java.util.concurrent.atomic.AtomicReference;
@@ -45,6 +46,7 @@ public class SessionAdvancedControlsController implements VisualizerController
 
    private final Property<YoBufferPropertiesReadOnly> bufferProperties = new SimpleObjectProperty<>(this, "bufferProperties", null);
    private Consumer<YoBufferPropertiesReadOnly> bufferPropertiesListener;
+   private final FXCoalescedUpdater<YoBufferPropertiesReadOnly> bufferPropertiesUpdater = new FXCoalescedUpdater<>(bufferProperties::setValue);
 
    private BooleanProperty showProperty = new SimpleBooleanProperty(this, "show", false);
 
@@ -71,7 +73,7 @@ public class SessionAdvancedControlsController implements VisualizerController
             return;
          }
 
-         bufferPropertiesListener = properties -> Platform.runLater(() -> bufferProperties.setValue(properties));
+         bufferPropertiesListener = bufferPropertiesUpdater::update;
          newSession.addCurrentBufferPropertiesListener(bufferPropertiesListener);
       });
 

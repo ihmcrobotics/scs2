@@ -30,6 +30,7 @@ import us.ihmc.scs2.session.SessionProperties;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerIOTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerTopics;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerWindowToolkit;
+import us.ihmc.scs2.sessionVisualizer.jfx.tools.FXCoalescedUpdater;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
 import us.ihmc.scs2.sharedMemory.interfaces.YoBufferPropertiesReadOnly;
 import us.ihmc.scs2.sharedMemory.tools.SharedMemoryIOTools.DataFormat;
@@ -90,7 +91,8 @@ public class SessionDataExportStageController implements VisualizerController
 
       session.setSessionMode(SessionMode.PAUSE);
       MutableBoolean updatingBufferIndex = new MutableBoolean(false);
-      Consumer<YoBufferPropertiesReadOnly> bufferPropertiesBinding = properties -> Platform.runLater(() -> bufferProperties.setValue(properties));
+      FXCoalescedUpdater<YoBufferPropertiesReadOnly> bufferPropertiesUpdater = new FXCoalescedUpdater<>(bufferProperties::setValue);
+      Consumer<YoBufferPropertiesReadOnly> bufferPropertiesBinding = bufferPropertiesUpdater::update;
       session.addCurrentBufferPropertiesListener(bufferPropertiesBinding);
       cleanupActions.add(() -> session.removeCurrentBufferPropertiesListener(bufferPropertiesBinding));
 
@@ -111,7 +113,7 @@ public class SessionDataExportStageController implements VisualizerController
       currentSessionMode.addListener(currentSessionModeChangeListener);
       cleanupActions.add(() -> currentSessionMode.removeListener(currentSessionModeChangeListener));
 
-      Consumer<YoBufferPropertiesReadOnly> bufferPropertiesTopicListener = m -> Platform.runLater(() ->
+      FXCoalescedUpdater<YoBufferPropertiesReadOnly> bufferPropertiesTopicUpdater = new FXCoalescedUpdater<>(m ->
       {
          if (currentSessionMode.getValue() != SessionMode.PAUSE)
             return;
@@ -125,6 +127,7 @@ public class SessionDataExportStageController implements VisualizerController
             updatingBufferIndex.setFalse();
          }
       });
+      Consumer<YoBufferPropertiesReadOnly> bufferPropertiesTopicListener = bufferPropertiesTopicUpdater::update;
       session.addCurrentBufferPropertiesListener(bufferPropertiesTopicListener);
       cleanupActions.add(() -> session.removeCurrentBufferPropertiesListener(bufferPropertiesTopicListener));
 

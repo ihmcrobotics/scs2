@@ -1,7 +1,6 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.controllers;
 
 import com.jfoenix.controls.JFXButton;
-import javafx.application.Platform;
 import javafx.beans.property.Property;
 import javafx.beans.property.ReadOnlyObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
@@ -15,6 +14,7 @@ import us.ihmc.messager.javafx.JavaFXMessager;
 import us.ihmc.scs2.session.SessionMode;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerTopics;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerWindowToolkit;
+import us.ihmc.scs2.sessionVisualizer.jfx.tools.FXCoalescedUpdater;
 import us.ihmc.scs2.sharedMemory.interfaces.YoBufferPropertiesReadOnly;
 
 import java.util.function.Consumer;
@@ -39,6 +39,7 @@ public class SecondaryWindowControlsController implements VisualizerController
 
    private final Property<YoBufferPropertiesReadOnly> bufferProperties = new SimpleObjectProperty<>(this, "bufferProperties", null);
    private Consumer<YoBufferPropertiesReadOnly> bufferPropertiesListener;
+   private final FXCoalescedUpdater<YoBufferPropertiesReadOnly> bufferPropertiesUpdater = new FXCoalescedUpdater<>(bufferProperties::setValue);
 
    public SecondaryWindowControlsController()
    {
@@ -68,7 +69,7 @@ public class SecondaryWindowControlsController implements VisualizerController
             return;
          }
 
-         bufferPropertiesListener = properties -> Platform.runLater(() -> bufferProperties.setValue(properties));
+         bufferPropertiesListener = bufferPropertiesUpdater::update;
          newSession.addCurrentBufferPropertiesListener(bufferPropertiesListener);
       });
 

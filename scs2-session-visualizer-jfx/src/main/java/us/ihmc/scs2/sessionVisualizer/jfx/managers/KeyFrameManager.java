@@ -1,7 +1,6 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.managers;
 
 import gnu.trove.list.array.TIntArrayList;
-import javafx.application.Platform;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.Property;
 import javafx.beans.property.ReadOnlyObjectProperty;
@@ -9,6 +8,7 @@ import javafx.beans.property.SimpleObjectProperty;
 import us.ihmc.messager.javafx.JavaFXMessager;
 import us.ihmc.scs2.session.Session;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerTopics;
+import us.ihmc.scs2.sessionVisualizer.jfx.tools.FXCoalescedUpdater;
 import us.ihmc.scs2.sharedMemory.interfaces.YoBufferPropertiesReadOnly;
 
 import java.util.function.Consumer;
@@ -23,6 +23,7 @@ public class KeyFrameManager implements Manager
 
    private Session session;
    private Consumer<YoBufferPropertiesReadOnly> bufferPropertiesListener;
+   private final FXCoalescedUpdater<YoBufferPropertiesReadOnly> bufferPropertiesUpdater = new FXCoalescedUpdater<>(bufferProperties::setValue);
 
    public KeyFrameManager(JavaFXMessager messager, SessionVisualizerTopics topics)
    {
@@ -46,7 +47,7 @@ public class KeyFrameManager implements Manager
    public void startSession(Session session)
    {
       this.session = session;
-      bufferPropertiesListener = properties -> Platform.runLater(() -> bufferProperties.setValue(properties));
+      bufferPropertiesListener = bufferPropertiesUpdater::update;
       session.addCurrentBufferPropertiesListener(bufferPropertiesListener);
    }
 
