@@ -8,7 +8,7 @@ import javafx.scene.control.Menu;
 import javafx.scene.control.TextField;
 import javafx.scene.control.TextFormatter;
 import javafx.util.converter.DoubleStringConverter;
-import us.ihmc.messager.javafx.JavaFXMessager;
+import us.ihmc.scs2.sessionVisualizer.jfx.messager.SCS2Messager;
 import us.ihmc.scs2.session.Session;
 import us.ihmc.scs2.session.SessionMode;
 import us.ihmc.scs2.session.SessionProperties;
@@ -37,7 +37,7 @@ public class RunMenuController implements VisualizerController
    @FXML
    private TextField runMaxDurationTextField;
 
-   private JavaFXMessager messager;
+   private SCS2Messager messager;
    private SessionVisualizerTopics topics;
    private SessionVisualizerWindowToolkit toolkit;
 

@@ -7,8 +7,8 @@ import javafx.stage.Window;
 import javafx.util.Pair;
 import org.apache.commons.lang3.tuple.ImmutableTriple;
 import us.ihmc.log.LogTools;
-import us.ihmc.messager.TopicListener;
-import us.ihmc.messager.javafx.JavaFXMessager;
+import us.ihmc.scs2.sessionVisualizer.jfx.messager.TopicListener;
+import us.ihmc.scs2.sessionVisualizer.jfx.messager.SCS2Messager;
 import us.ihmc.scs2.definition.yoSlider.YoButtonDefinition;
 import us.ihmc.scs2.definition.yoSlider.YoKnobDefinition;
 import us.ihmc.scs2.definition.yoSlider.YoSliderDefinition;
@@ -36,7 +36,7 @@ public class YoSliderboardManager implements Manager
    private final Property<YoMultiSliderboardWindowController> behringerSliderboard = new SimpleObjectProperty<>(this, "behringerSliderboard", null);
    private final SessionVisualizerToolkit toolkit;
    private final SessionVisualizerTopics topics;
-   private final JavaFXMessager messager;
+   private final SCS2Messager messager;
 
    private YoSliderboardListDefinition initialConfiguration = null;
 

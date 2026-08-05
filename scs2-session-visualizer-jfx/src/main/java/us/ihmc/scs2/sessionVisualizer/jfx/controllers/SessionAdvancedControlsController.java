@@ -15,7 +15,7 @@ import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.Region;
 import javafx.stage.Window;
 import javafx.util.Pair;
-import us.ihmc.messager.javafx.JavaFXMessager;
+import us.ihmc.scs2.sessionVisualizer.jfx.messager.SCS2Messager;
 import us.ihmc.scs2.session.Session;
 import us.ihmc.scs2.session.SessionMode;
 import us.ihmc.scs2.session.SessionProperties;
@@ -33,7 +33,7 @@ public class SessionAdvancedControlsController implements VisualizerController
    public static final String ACTIVE_MODE = "session-controls-active-mode";
 
    private Window owner;
-   private JavaFXMessager messager;
+   private SCS2Messager messager;
    private SessionVisualizerTopics topics;
    private SessionVisualizerWindowToolkit toolkit;
 

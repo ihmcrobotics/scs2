@@ -22,8 +22,8 @@ import javafx.scene.input.PickResult;
 import javafx.scene.input.TransferMode;
 import javafx.scene.layout.Region;
 import javafx.scene.text.Text;
-import us.ihmc.messager.MessagerAPIFactory.Topic;
-import us.ihmc.messager.javafx.JavaFXMessager;
+import us.ihmc.scs2.sessionVisualizer.jfx.messager.Topic;
+import us.ihmc.scs2.sessionVisualizer.jfx.messager.SCS2Messager;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.sliderboard.YoVariableSlider;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerToolkit;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.YoCompositeSearchManager;
@@ -54,7 +54,7 @@ public abstract class YoBCF2000InputController
    private final StringProperty borderStyle = new SimpleStringProperty(this, "borderStyle", DEFAULT_BORDER);
    private YoVariableSlider yoVariableSlider = null;
 
-   private JavaFXMessager messager;
+   private SCS2Messager messager;
    private Topic<List<String>> yoCompositeSelectedTopic;
    private AtomicReference<List<String>> yoCompositeSelected;
    private Predicate<YoVariable> filter;

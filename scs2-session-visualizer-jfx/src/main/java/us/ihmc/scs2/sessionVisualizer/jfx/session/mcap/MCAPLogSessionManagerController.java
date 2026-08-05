@@ -33,7 +33,7 @@ import javafx.util.converter.IntegerStringConverter;
 import javafx.util.converter.LongStringConverter;
 import org.apache.commons.lang3.mutable.MutableBoolean;
 import us.ihmc.log.LogTools;
-import us.ihmc.messager.javafx.JavaFXMessager;
+import us.ihmc.scs2.sessionVisualizer.jfx.messager.SCS2Messager;
 import us.ihmc.scs2.session.SessionProperties;
 import us.ihmc.scs2.session.SessionRobotDefinitionListChange;
 import us.ihmc.scs2.session.mcap.MCAPLogCropper;
@@ -106,7 +106,7 @@ public class MCAPLogSessionManagerController implements SessionControlsControlle
    private MCAPConsoleLogOutputPaneController consoleOutputPaneController;
    private Stage stage;
    private SessionVisualizerTopics topics;
-   private JavaFXMessager messager;
+   private SCS2Messager messager;
    private BackgroundExecutorManager backgroundExecutorManager;
 
    private File defaultRobotModelFile = null;

@@ -23,9 +23,9 @@ import us.ihmc.commons.MathTools;
 import us.ihmc.euclid.tuple2D.Point2D;
 import us.ihmc.euclid.tuple2D.interfaces.Tuple2DReadOnly;
 import us.ihmc.javaFXExtensions.chart.FastNumberAxis;
-import us.ihmc.messager.MessagerAPIFactory.Topic;
-import us.ihmc.messager.TopicListener;
-import us.ihmc.messager.javafx.JavaFXMessager;
+import us.ihmc.scs2.sessionVisualizer.jfx.messager.Topic;
+import us.ihmc.scs2.sessionVisualizer.jfx.messager.TopicListener;
+import us.ihmc.scs2.sessionVisualizer.jfx.messager.SCS2Messager;
 import us.ihmc.scs2.definition.yoChart.ChartDoubleBoundsDefinition;
 import us.ihmc.scs2.definition.yoChart.YoChartConfigurationDefinition;
 import us.ihmc.scs2.session.SessionMode;
@@ -102,7 +102,7 @@ public class YoChartPanelController extends ObservedAnimationTimer implements Vi
    private Border defaultBorder = null;
 
    private SessionVisualizerTopics topics;
-   private JavaFXMessager messager;
+   private SCS2Messager messager;
    private YoManager yoManager;
    private SessionVisualizerWindowToolkit toolkit;
    private Consumer<YoBufferPropertiesReadOnly> newBufferPropertiesListener;

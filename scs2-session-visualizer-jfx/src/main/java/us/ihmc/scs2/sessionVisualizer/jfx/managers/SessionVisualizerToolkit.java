@@ -9,17 +9,15 @@ import javafx.scene.Group;
 import javafx.scene.SubScene;
 import javafx.stage.Stage;
 import us.ihmc.log.LogTools;
-import us.ihmc.messager.MessagerAPIFactory;
 import us.ihmc.scs2.definition.robot.RobotDefinition;
 import us.ihmc.scs2.definition.terrain.TerrainObjectDefinition;
 import us.ihmc.scs2.session.Session;
 import us.ihmc.scs2.session.SessionRobotDefinitionListChange;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionChangeListener;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizer;
-import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerMessagerAPI;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerTopics;
+import us.ihmc.scs2.sessionVisualizer.jfx.messager.SCS2Messager;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.ObservedAnimationTimer;
-import us.ihmc.scs2.sessionVisualizer.jfx.tools.SCS2JavaFXMessager;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.StringTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.YoGroupFX;
 import us.ihmc.yoVariables.variable.YoVariable;
@@ -32,7 +30,7 @@ import java.util.stream.Collectors;
 
 public class SessionVisualizerToolkit extends ObservedAnimationTimer
 {
-   private final SCS2JavaFXMessager messager;
+   private final SCS2Messager messager;
    private final SessionVisualizerTopics topics = new SessionVisualizerTopics();
 
    private final YoManager yoManager = new YoManager();
@@ -67,16 +65,13 @@ public class SessionVisualizerToolkit extends ObservedAnimationTimer
       this.mainWindow = mainWindow;
       this.mainView3DRoot = mainView3DRoot;
 
-      MessagerAPIFactory apiFactory = new MessagerAPIFactory();
-      apiFactory.createRootCategory("SCS2");
-      apiFactory.includeMessagerAPIs(SessionVisualizerMessagerAPI.API);
-      messager = new SCS2JavaFXMessager(apiFactory.getAPIAndCloseFactory());
+      messager = new SCS2Messager();
 
       topics.setupTopics();
       messager.startMessager();
 
       snapshotManager = new SnapshotManager(mainWindow, messager, topics);
-      chartDataManager = new ChartDataManager(messager, topics, yoManager, backgroundExecutorManager);
+      chartDataManager = new ChartDataManager(topics, yoManager, backgroundExecutorManager);
       yoGraphicFXManager = new YoGraphicFXManager(messager, topics, yoManager, backgroundExecutorManager, referenceFrameManager);
       yoCompositeSearchManager = new YoCompositeSearchManager(messager, topics, yoManager, backgroundExecutorManager);
       keyFrameManager = new KeyFrameManager(messager, topics);
@@ -263,7 +258,7 @@ public class SessionVisualizerToolkit extends ObservedAnimationTimer
       mainView3DRoot.getChildren().clear();
    }
 
-   public SCS2JavaFXMessager getMessager()
+   public SCS2Messager getMessager()
    {
       return messager;
    }

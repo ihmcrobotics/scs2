@@ -35,9 +35,6 @@ mainDependencies {
    api("us.ihmc:euclid-frame:0.22.5")
    api("us.ihmc:ihmc-video-codecs:2.1.6")
    api("us.ihmc:ihmc-javafx-extensions:17-0.2.2")
-   // JavaFX bindings for us.ihmc:ihmc-messager are vendored locally (see
-   // src/main/java/us/ihmc/messager/javafx/), replacing the us.ihmc:ihmc-messager-javafx artifact.
-   api("us.ihmc:ihmc-messager:0.2.1")
    api("org.apache.commons:commons-lang3:3.12.0")
 
    api("org.reflections:reflections:0.9.11")

@@ -40,7 +40,7 @@ import javafx.stage.Stage;
 import javafx.stage.Window;
 import javafx.stage.WindowEvent;
 import javafx.util.converter.DoubleStringConverter;
-import us.ihmc.messager.javafx.JavaFXMessager;
+import us.ihmc.scs2.sessionVisualizer.jfx.messager.SCS2Messager;
 import us.ihmc.scs2.session.Session;
 import us.ihmc.scs2.session.SessionMode;
 import us.ihmc.scs2.session.SessionProperties;
@@ -123,7 +123,7 @@ public class VideoRecordingPreviewPaneController
 
    private Stage stage;
    private Group rootNode3D;
-   private JavaFXMessager messager;
+   private SCS2Messager messager;
    private SessionVisualizerTopics topics;
    private Session session;
 
@@ -142,7 +142,7 @@ public class VideoRecordingPreviewPaneController
    public void initialize(Window owner,
                           Group mainView3DRoot,
                           PerspectiveCamera targetCamera,
-                          JavaFXMessager messager,
+                          SCS2Messager messager,
                           SessionVisualizerTopics topics,
                           Session session)
    {

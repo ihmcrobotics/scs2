@@ -4,7 +4,7 @@ import javafx.stage.Stage;
 import us.ihmc.scs2.session.Session;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionChangeListener;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerTopics;
-import us.ihmc.scs2.sessionVisualizer.jfx.tools.SCS2JavaFXMessager;
+import us.ihmc.scs2.sessionVisualizer.jfx.messager.SCS2Messager;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.YoGroupFX;
 
 public class SessionVisualizerWindowToolkit
@@ -19,7 +19,7 @@ public class SessionVisualizerWindowToolkit
       this.window = window;
       this.globalToolkit = globalToolkit;
       chartZoomManager = new ChartZoomManager(window, this, getMessager(), getTopics());
-      windowShortcutManager = new WindowShortcutManager(window, this, getMessager(), getTopics());
+      windowShortcutManager = new WindowShortcutManager(window, this);
    }
 
    public void start()
@@ -44,7 +44,7 @@ public class SessionVisualizerWindowToolkit
       return globalToolkit;
    }
 
-   public SCS2JavaFXMessager getMessager()
+   public SCS2Messager getMessager()
    {
       return globalToolkit.getMessager();
    }

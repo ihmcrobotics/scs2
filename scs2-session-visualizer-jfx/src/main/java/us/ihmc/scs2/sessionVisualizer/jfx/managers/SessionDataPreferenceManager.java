@@ -4,17 +4,17 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 import us.ihmc.log.LogTools;
-import us.ihmc.messager.Messager;
 import us.ihmc.scs2.session.Session;
 import us.ihmc.scs2.session.SessionDataFilterParameters;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerTopics;
+import us.ihmc.scs2.sessionVisualizer.jfx.messager.SCS2Messager;
 
 // TODO This class is overkill, I couldn't find a place where to put the preferred filters for exporting data
 public class SessionDataPreferenceManager implements Manager
 {
    private final Map<String, SessionDataFilterParameters> filterMap = new LinkedHashMap<>();
 
-   public SessionDataPreferenceManager(Messager messager, SessionVisualizerTopics topics)
+   public SessionDataPreferenceManager(SCS2Messager messager, SessionVisualizerTopics topics)
    {
       messager.addTopicListener(topics.getSessionDataFilterParametersAddRequest(), m ->
       {

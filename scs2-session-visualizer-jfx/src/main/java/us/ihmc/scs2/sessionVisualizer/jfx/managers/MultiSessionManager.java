@@ -13,8 +13,8 @@ import javafx.stage.Window;
 import javafx.util.Pair;
 import us.ihmc.euclid.tools.EuclidCoreIOTools;
 import us.ihmc.log.LogTools;
-import us.ihmc.messager.SynchronizeHint;
-import us.ihmc.messager.javafx.JavaFXMessager;
+import us.ihmc.scs2.sessionVisualizer.jfx.messager.SynchronizeHint;
+import us.ihmc.scs2.sessionVisualizer.jfx.messager.SCS2Messager;
 import us.ihmc.scs2.definition.DefinitionIOTools;
 import us.ihmc.scs2.definition.robot.RobotDefinition;
 import us.ihmc.scs2.definition.yoVariable.YoEquationListDefinition;
@@ -38,7 +38,7 @@ import us.ihmc.scs2.sessionVisualizer.jfx.session.log.LogSessionManagerControlle
 import us.ihmc.scs2.sessionVisualizer.jfx.session.mcap.MCAPLogSessionManagerController;
 import us.ihmc.scs2.sessionVisualizer.jfx.session.remote.RemoteSessionManagerController;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
-import us.ihmc.scs2.sessionVisualizer.jfx.tools.SCS2JavaFXMessager;
+import us.ihmc.scs2.sessionVisualizer.jfx.messager.SCS2Messager;
 import us.ihmc.scs2.symbolic.YoEquationManager.YoEquationListChange;
 
 import java.io.File;
@@ -122,7 +122,7 @@ public class MultiSessionManager
                                 });
 
       SessionVisualizerTopics topics = toolkit.getTopics();
-      JavaFXMessager messager = toolkit.getMessager();
+      SCS2Messager messager = toolkit.getMessager();
       messager.addTopicListener(topics.getStartNewSessionRequest(), m -> activeSession.set(m));
       messager.addFXTopicListener(topics.getOpenSessionControlsRequest(), m -> openSessionControls(m));
       messager.addFXTopicListener(topics.getSessionVisualizerConfigurationLoadRequest(), m -> loadSessionConfiguration(m));
@@ -331,7 +331,7 @@ public class MultiSessionManager
       LogTools.info(synchronizeHint);
       long start = System.nanoTime();
 
-      JavaFXMessager messager = toolkit.getMessager();
+      SCS2Messager messager = toolkit.getMessager();
       SessionVisualizerTopics topics = toolkit.getTopics();
 
       if (configuration.hasYoEquationConfiguration())
@@ -458,7 +458,7 @@ public class MultiSessionManager
       configuration.setMainStage(toolkit.getMainWindow());
 
       SessionVisualizerTopics topics = toolkit.getTopics();
-      SCS2JavaFXMessager messager = toolkit.getMessager();
+      SCS2Messager messager = toolkit.getMessager();
 
       int currentBufferSize = toolkit.getYoManager().getBufferSize();
       configuration.setBufferSize(currentBufferSize);

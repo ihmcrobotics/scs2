@@ -36,7 +36,7 @@ import logger_msgs.LogProperties;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import us.ihmc.commons.lists.PairList;
 import us.ihmc.log.LogTools;
-import us.ihmc.messager.javafx.JavaFXMessager;
+import us.ihmc.scs2.sessionVisualizer.jfx.messager.SCS2Messager;
 import us.ihmc.scs2.session.log.ChildLogData;
 import us.ihmc.scs2.session.log.ChildLogSynchronization;
 import us.ihmc.scs2.session.log.LogDataReader;
@@ -121,7 +121,7 @@ public class LogSessionManagerController implements SessionControlsController
 
    private Stage stage;
    private SessionVisualizerTopics topics;
-   private JavaFXMessager messager;
+   private SCS2Messager messager;
 
    @Override
    public void initialize(SessionVisualizerToolkit toolkit)

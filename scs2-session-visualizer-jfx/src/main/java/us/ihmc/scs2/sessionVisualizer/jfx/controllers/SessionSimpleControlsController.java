@@ -3,7 +3,7 @@ package us.ihmc.scs2.sessionVisualizer.jfx.controllers;
 import javafx.fxml.FXML;
 import javafx.scene.Node;
 import javafx.scene.layout.HBox;
-import us.ihmc.messager.javafx.JavaFXMessager;
+import us.ihmc.scs2.sessionVisualizer.jfx.messager.SCS2Messager;
 import us.ihmc.scs2.session.SessionMode;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerTopics;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerWindowToolkit;
@@ -12,7 +12,7 @@ import static us.ihmc.scs2.sessionVisualizer.jfx.controllers.SessionAdvancedCont
 
 public class SessionSimpleControlsController implements VisualizerController
 {
-   private JavaFXMessager messager;
+   private SCS2Messager messager;
    private SessionVisualizerTopics topics;
    private SessionVisualizerWindowToolkit toolkit;
 

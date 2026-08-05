@@ -5,7 +5,7 @@ import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.Property;
 import javafx.beans.property.ReadOnlyObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
-import us.ihmc.messager.javafx.JavaFXMessager;
+import us.ihmc.scs2.sessionVisualizer.jfx.messager.SCS2Messager;
 import us.ihmc.scs2.session.Session;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerTopics;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.FXCoalescedUpdater;
@@ -18,14 +18,14 @@ public class KeyFrameManager implements Manager
    private final ObjectProperty<int[]> keyFrameIndicesProperty = new SimpleObjectProperty<int[]>(this, "keyFrameIndices", null);
    private final TIntArrayList keyFrameIndices = new TIntArrayList();
    private final Property<YoBufferPropertiesReadOnly> bufferProperties = new SimpleObjectProperty<>(this, "bufferProperties", null);
-   private final JavaFXMessager messager;
+   private final SCS2Messager messager;
    private final SessionVisualizerTopics topics;
 
    private Session session;
    private Consumer<YoBufferPropertiesReadOnly> bufferPropertiesListener;
    private final FXCoalescedUpdater<YoBufferPropertiesReadOnly> bufferPropertiesUpdater = new FXCoalescedUpdater<>(bufferProperties::setValue);
 
-   public KeyFrameManager(JavaFXMessager messager, SessionVisualizerTopics topics)
+   public KeyFrameManager(SCS2Messager messager, SessionVisualizerTopics topics)
    {
       this.messager = messager;
       this.topics = topics;

@@ -4,16 +4,14 @@ import javafx.event.EventHandler;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.stage.Window;
-import us.ihmc.messager.Messager;
 import us.ihmc.scs2.session.Session;
-import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerTopics;
 
 public class WindowShortcutManager
 {
    private final Window owner;
    private final EventHandler<KeyEvent> currentIndexSteppingListener;
 
-   public WindowShortcutManager(Window owner, SessionVisualizerWindowToolkit windowToolkit, Messager messager, SessionVisualizerTopics topics)
+   public WindowShortcutManager(Window owner, SessionVisualizerWindowToolkit windowToolkit)
    {
       this.owner = owner;
       currentIndexSteppingListener = keyEvent ->

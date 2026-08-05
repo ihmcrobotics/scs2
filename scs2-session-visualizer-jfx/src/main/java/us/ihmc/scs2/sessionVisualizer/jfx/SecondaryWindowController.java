@@ -22,7 +22,7 @@ import javafx.util.Pair;
 import org.apache.commons.lang3.mutable.MutableBoolean;
 import org.kordamp.ikonli.javafx.FontIcon;
 import us.ihmc.log.LogTools;
-import us.ihmc.messager.TopicListener;
+import us.ihmc.scs2.sessionVisualizer.jfx.messager.TopicListener;
 import us.ihmc.scs2.definition.yoChart.YoChartGroupConfigurationDefinition;
 import us.ihmc.scs2.definition.yoChart.YoChartGroupConfigurationListDefinition;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.SecondaryWindowControlsController;
@@ -34,7 +34,7 @@ import us.ihmc.scs2.sessionVisualizer.jfx.controllers.menu.MainWindowMenuBarCont
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SecondaryWindowManager;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerWindowToolkit;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.MenuTools;
-import us.ihmc.scs2.sessionVisualizer.jfx.tools.SCS2JavaFXMessager;
+import us.ihmc.scs2.sessionVisualizer.jfx.messager.SCS2Messager;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.TabPaneTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.xml.XMLTools;
 
@@ -158,7 +158,7 @@ public class SecondaryWindowController implements VisualizerController
       if (tabPane.getTabs().isEmpty())
          tabPane.getTabs().add(newChartGroupTab());
 
-      SCS2JavaFXMessager messager = toolkit.getMessager();
+      SCS2Messager messager = toolkit.getMessager();
       SessionVisualizerTopics topics = toolkit.getTopics();
       messager.addFXTopicListener(topics.getYoChartGroupLoadConfiguration(), loadChartGroupConfigurationListener);
       messager.addFXTopicListener(topics.getYoChartGroupSaveConfiguration(), saveChartGroupConfigurationListener);
@@ -612,7 +612,7 @@ public class SecondaryWindowController implements VisualizerController
       tabPane.getTabs().clear();
       stage.close();
 
-      SCS2JavaFXMessager messager = toolkit.getMessager();
+      SCS2Messager messager = toolkit.getMessager();
       SessionVisualizerTopics topics = toolkit.getTopics();
       toolkit.getBackgroundExecutorManager().executeInBackground(() ->
                                                                  {

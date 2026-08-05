@@ -3,8 +3,8 @@ package us.ihmc.scs2.sessionVisualizer.jfx.managers;
 import javafx.application.Platform;
 import javafx.scene.Node;
 import us.ihmc.log.LogTools;
-import us.ihmc.messager.SynchronizeHint;
-import us.ihmc.messager.javafx.JavaFXMessager;
+import us.ihmc.scs2.sessionVisualizer.jfx.messager.SynchronizeHint;
+import us.ihmc.scs2.sessionVisualizer.jfx.messager.SCS2Messager;
 import us.ihmc.scs2.definition.DefinitionIOTools;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicDefinition;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicListDefinition;
@@ -38,7 +38,7 @@ public class YoGraphicFXManager extends ObservedAnimationTimer implements Manage
    // TODO Not sure if that belongs here.
    private final YoGraphicFXResourceManager yoGraphicFXResourceManager = new YoGraphicFXResourceManager();
 
-   public YoGraphicFXManager(JavaFXMessager messager,
+   public YoGraphicFXManager(SCS2Messager messager,
                              SessionVisualizerTopics topics,
                              YoManager yoManager,
                              BackgroundExecutorManager backgroundExecutorManager,

@@ -12,7 +12,7 @@ import javafx.scene.control.TabPane;
 import javafx.stage.Window;
 import org.kordamp.ikonli.javafx.FontIcon;
 import us.ihmc.log.LogTools;
-import us.ihmc.messager.javafx.JavaFXMessager;
+import us.ihmc.scs2.sessionVisualizer.jfx.messager.SCS2Messager;
 import us.ihmc.scs2.definition.yoEntry.YoEntryConfigurationDefinition;
 import us.ihmc.scs2.definition.yoEntry.YoEntryListDefinition;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerIOTools;
@@ -100,7 +100,7 @@ public class YoEntryTabPaneController
                                                                                }
                                                                             });
 
-      JavaFXMessager messager = toolkit.getMessager();
+      SCS2Messager messager = toolkit.getMessager();
       SessionVisualizerTopics topics = toolkit.getTopics();
       toolkit.addAndTriggerSessionChangedListener((previousSession, newSession) ->
       {

@@ -7,7 +7,7 @@ import javafx.collections.ObservableList;
 import javafx.scene.Group;
 import us.ihmc.log.LogTools;
 import us.ihmc.mecano.multiBodySystem.interfaces.RigidBodyReadOnly;
-import us.ihmc.messager.javafx.JavaFXMessager;
+import us.ihmc.scs2.sessionVisualizer.jfx.messager.SCS2Messager;
 import us.ihmc.scs2.definition.robot.RobotDefinition;
 import us.ihmc.scs2.definition.robot.SixDoFJointDefinition;
 import us.ihmc.scs2.session.Session;
@@ -38,7 +38,7 @@ public class YoRobotFXManager extends ObservedAnimationTimer implements Manager
    private Session session;
    private final Consumer<SessionRobotDefinitionListChange> robotDefinitionListChangeListener = change -> Platform.runLater(() -> handleSessionRobotDefinitionListChangeState(change));
 
-   public YoRobotFXManager(JavaFXMessager messager,
+   public YoRobotFXManager(SCS2Messager messager,
                            SessionVisualizerTopics topics,
                            YoManager yoManager,
                            ReferenceFrameManager referenceFrameManager,

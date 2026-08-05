@@ -6,7 +6,7 @@ import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.stage.Window;
 import javafx.util.Pair;
-import us.ihmc.messager.javafx.JavaFXMessager;
+import us.ihmc.scs2.sessionVisualizer.jfx.messager.SCS2Messager;
 import us.ihmc.scs2.session.Session;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerTopics;
 import us.ihmc.scs2.sessionVisualizer.jfx.charts.ChartIntegerBounds;
@@ -20,7 +20,7 @@ public class ChartZoomManager extends ObservedAnimationTimer
 {
    private final Window owner;
    private final SessionVisualizerTopics topics;
-   private final JavaFXMessager messager;
+   private final SCS2Messager messager;
    private final SessionVisualizerWindowToolkit windowToolkit;
 
    private final Property<ChartIntegerBounds> currentBoundsProperty = new SimpleObjectProperty<>(this, "currentBoundsProperty", null);
@@ -36,7 +36,7 @@ public class ChartZoomManager extends ObservedAnimationTimer
 
    private boolean initialize = true;
 
-   public ChartZoomManager(Window owner, SessionVisualizerWindowToolkit windowToolkit, JavaFXMessager messager, SessionVisualizerTopics topics)
+   public ChartZoomManager(Window owner, SessionVisualizerWindowToolkit windowToolkit, SCS2Messager messager, SessionVisualizerTopics topics)
    {
       this.owner = owner;
       this.windowToolkit = windowToolkit;

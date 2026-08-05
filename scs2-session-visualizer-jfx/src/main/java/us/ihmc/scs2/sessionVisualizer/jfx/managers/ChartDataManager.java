@@ -6,7 +6,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
-import us.ihmc.messager.javafx.JavaFXMessager;
 import us.ihmc.scs2.session.Session;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerTopics;
 import us.ihmc.scs2.sessionVisualizer.jfx.charts.YoVariableChartData;
@@ -22,17 +21,15 @@ public class ChartDataManager implements Manager
    private final Map<YoVariable, LinkedYoVariable<?>> linkedVariableMap = new HashMap<>();
    private final Map<YoVariable, YoVariableChartData> chartDataMap = new ConcurrentHashMap<>();
    private final SessionVisualizerTopics topics;
-   private final JavaFXMessager messager;
    private final YoManager yoManager;
    private final BackgroundExecutorManager backgroundExecutorManager;
 
    private Future<?> activeTask;
    private Session session;
 
-   public ChartDataManager(JavaFXMessager messager, SessionVisualizerTopics topics, YoManager yoManager, BackgroundExecutorManager backgroundExecutorManager)
+   public ChartDataManager(SessionVisualizerTopics topics, YoManager yoManager, BackgroundExecutorManager backgroundExecutorManager)
    {
       this.topics = topics;
-      this.messager = messager;
       this.yoManager = yoManager;
       this.backgroundExecutorManager = backgroundExecutorManager;
    }

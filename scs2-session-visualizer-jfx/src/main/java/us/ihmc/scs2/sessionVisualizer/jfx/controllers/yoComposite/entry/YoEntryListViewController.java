@@ -8,8 +8,8 @@ import javafx.scene.control.ListView;
 import javafx.scene.control.SelectionMode;
 import javafx.scene.input.*;
 import us.ihmc.log.LogTools;
-import us.ihmc.messager.MessagerAPIFactory.Topic;
-import us.ihmc.messager.javafx.JavaFXMessager;
+import us.ihmc.scs2.sessionVisualizer.jfx.messager.Topic;
+import us.ihmc.scs2.sessionVisualizer.jfx.messager.SCS2Messager;
 import us.ihmc.scs2.definition.yoEntry.YoEntryDefinition;
 import us.ihmc.scs2.definition.yoEntry.YoEntryListDefinition;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerTopics;
@@ -40,7 +40,7 @@ public class YoEntryListViewController
    private final StringProperty nameProperty = new SimpleStringProperty(this, "name", null);
    private YoManager yoManager;
    private YoCompositeSearchManager yoCompositeSearchManager;
-   private JavaFXMessager messager;
+   private SCS2Messager messager;
    private Topic<List<String>> yoCompositeSelectedTopic;
    private AtomicReference<List<String>> yoCompositeSelected;
 
