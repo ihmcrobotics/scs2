@@ -7,10 +7,13 @@ import org.bytedeco.javacpp.BytePointer;
 import org.bytedeco.javacpp.DoublePointer;
 
 import us.ihmc.euclid.tuple3D.interfaces.Vector3DReadOnly;
+import us.ihmc.log.LogTools;
 import us.ihmc.scs2.simulation.mujoco.Mujoco;
 import us.ihmc.scs2.simulation.mujoco.Mujoco.mjContact;
 import us.ihmc.scs2.simulation.mujoco.Mujoco.mjData;
 import us.ihmc.scs2.simulation.mujoco.Mujoco.mjModel;
+import us.ihmc.scs2.simulation.mujoco.Mujoco.mjOption;
+import us.ihmc.scs2.simulation.mujoco.physicsEngine.parameters.YoMujocoOptions;
 
 /**
  * Owns the compiled `mjModel` and the runtime `mjData` for a single MuJoCo simulation.
@@ -118,6 +121,64 @@ public class MujocoMultiBodyDynamicsWorld
          Mujoco.mj_step(model, data);
       Mujoco.mj_rnePostConstraint(model, data);
    }
+
+   private boolean warnedShortSolrefTimeconst = false;
+
+   /**
+    * Pushes all runtime-tunable options into {@code mjModel.opt}; effective on the next
+    * {@code mj_step}. Physics thread only. {@code timestep} and {@code gravity} are engine-owned.
+    */
+   public void writeOptions(YoMujocoOptions options)
+   {
+      if (model == null)
+         return;
+
+      mjOption opt = model.opt();
+      opt.impratio(options.impratio.getValue());
+      opt.tolerance(options.tolerance.getValue());
+      opt.ls_tolerance(options.ls_tolerance.getValue());
+      opt.noslip_tolerance(options.noslip_tolerance.getValue());
+      opt.ccd_tolerance(options.ccd_tolerance.getValue());
+      opt.iterations(options.iterations.getValue());
+      opt.ls_iterations(options.ls_iterations.getValue());
+      opt.noslip_iterations(options.noslip_iterations.getValue());
+      opt.ccd_iterations(options.ccd_iterations.getValue());
+      opt.solver(options.solver.getEnumValue().toMujocoValue());
+      opt.cone(options.cone.getEnumValue().toMujocoValue());
+      opt.jacobian(options.jacobian.getEnumValue().toMujocoValue());
+      opt.integrator(options.integrator.getEnumValue().toMujocoValue());
+
+      // Only touch the two bits this class manages; other enable flags may be owned elsewhere.
+      int enableflags = opt.enableflags();
+      enableflags = options.enableOverride.getValue() ? enableflags | Mujoco.mjENBL_OVERRIDE : enableflags & ~Mujoco.mjENBL_OVERRIDE;
+      enableflags = options.enableEnergy.getValue() ? enableflags | Mujoco.mjENBL_ENERGY : enableflags & ~Mujoco.mjENBL_ENERGY;
+      opt.enableflags(enableflags);
+
+      opt.o_margin(options.o_margin.getValue());
+      opt.o_solref(0, options.o_solrefTimeconst.getValue());
+      opt.o_solref(1, options.o_solrefDampratio.getValue());
+      opt.o_solimp(0, options.o_solimpDmin.getValue());
+      opt.o_solimp(1, options.o_solimpDmax.getValue());
+      opt.o_solimp(2, options.o_solimpWidth.getValue());
+      opt.o_solimp(3, options.o_solimpMidpoint.getValue());
+      opt.o_solimp(4, options.o_solimpPower.getValue());
+      opt.o_friction(0, options.o_frictionSlide.getValue());
+      opt.o_friction(1, options.o_frictionSlide.getValue());
+      opt.o_friction(2, options.o_frictionSpin.getValue());
+      opt.o_friction(3, options.o_frictionRoll.getValue());
+      opt.o_friction(4, options.o_frictionRoll.getValue());
+
+      // MuJoCo's refsafe guard only clamps solref coming from MJCF, not runtime struct writes.
+      double timeconst = options.o_solrefTimeconst.getValue();
+      if (options.enableOverride.getValue() && timeconst > 0.0 && timeconst < 2.0 * opt.timestep() && !warnedShortSolrefTimeconst)
+      {
+         warnedShortSolrefTimeconst = true;
+         LogTools.warn("o_solrefTimeconst ({}) is below MuJoCo's stability requirement of 2*timestep ({}); expect contact instability.",
+                       timeconst,
+                       2.0 * opt.timestep());
+      }
+   }
+
 
    public double getTimestep()
    {

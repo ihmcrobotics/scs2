@@ -48,6 +48,14 @@ import us.ihmc.scs2.simulation.robot.Robot;
  */
 public final class MujocoMultiBodyRobotFactory
 {
+   // Collision groups: the coarse foot box would self-collide (swing foot catching the stance
+   // foot) in ways the real robot doesn't, so contype/conaffinity restrict robot geoms to test
+   // only against terrain (robot=1/2, terrain=2/1), mirroring ContactPointBased.
+   private static final int ROBOT_CONTYPE = 1;
+   private static final int ROBOT_CONAFFINITY = 2;
+   private static final int TERRAIN_CONTYPE = 2;
+   private static final int TERRAIN_CONAFFINITY = 1;
+
    private MujocoMultiBodyRobotFactory()
    {
    }
@@ -65,40 +73,34 @@ public final class MujocoMultiBodyRobotFactory
 
       StringBuilder mjcf = new StringBuilder();
       mjcf.append("<mujoco>\n");
-      // impratio: frictional-to-normal constraint impedance ratio. cone: pyramidal (default) or
-      // elliptic friction cone. Both are key levers for foot slip under shear loads (see the
-      // contact tuning notes below and MujocoSimulationParameters).
-      mjcf.append("  <option gravity=\"0 0 -9.81\" integrator=\"implicitfast\" solver=\"Newton\" iterations=\"")
-          .append(parameters.getSolverIterations())
-          .append("\" noslip_iterations=\"").append(parameters.getNoslipIterations())
-          .append("\" impratio=\"").append(parameters.getImpratio())
-          .append("\" cone=\"").append(parameters.getUseEllipticFrictionCone() ? "elliptic" : "pyramidal")
-          .append("\">\n");
+      // mjOption values (solver, integrator, tolerances, ...) are deliberately not emitted: the
+      // engine pushes the full YoMujocoOptions group into the compiled model before the first step,
+      // and the session pushes gravity every tick. Only the structural flag lives in the MJCF.
+      mjcf.append("  <option>\n");
       mjcf.append("    <flag filterparent=\"").append(parameters.getFilterParentCollisions() ? "enable" : "disable").append("\"/>\n");
       mjcf.append("  </option>\n");
       mjcf.append("  <compiler angle=\"radian\"/>\n");
-      // Contact tuning (empirical, for closed-loop locomotion):
-      // * friction "(slide torsional rolling)": slide is parameter-driven; rolling 0.01 (vs MuJoCo's
-      //   0.0001) so spheres settle in finite time; torsional 0.05 balances turn-in-place authority
-      //   against stance-foot yaw wobble.
-      // * solref "<timeconst> <damp>": critically damped contact. 0.005 s is the empirical sweet
-      //   spot -- 0.02 (MuJoCo default) is too soft for the controller; 0.002 gives harsh touchdowns.
-      // * condim=4 (normal + 2D tangential + torsional): the flat foot makes 4 corner contacts, and
-      //   per-corner torsional friction stops yaw-induced lateral foot slip (condim=3 wobbles).
-      // Collision groups: the coarse foot box would self-collide (swing foot catching the stance
-      // foot) in ways the real robot doesn't, so contype/conaffinity restrict robot geoms to test
-      // only against terrain (robot=1/2, terrain=2/1), mirroring ContactPointBased.
+      // Compile-time seeds; live-tunable after compile via the MujocoOptions o_* contact override.
       mjcf.append("  <default>\n");
-      mjcf.append("    <geom friction=\"").append(parameters.getFrictionSlide()).append(" 0.05 0.01\" solref=\"")
-          .append(parameters.getContactSolrefTimeconst()).append(" ").append(parameters.getContactSolrefDampRatio()).append("\" solimp=\"")
-          .append(parameters.getContactSolimpDmin()).append(" ")
-          .append(parameters.getContactSolimpDmax()).append(" 0.0007 0.5 2\" condim=\"4\"/>\n");
+      mjcf.append("    <geom friction=\"").append(parameters.getFrictionSlide())
+          .append(' ').append(parameters.getFrictionTorsional())
+          .append(' ').append(parameters.getFrictionRolling())
+          .append("\" solref=\"").append(parameters.getContactSolrefTimeconst()).append(' ').append(parameters.getContactSolrefDampRatio())
+          .append("\" solimp=\"").append(parameters.getContactSolimpDmin())
+          .append(' ').append(parameters.getContactSolimpDmax())
+          .append(' ').append(parameters.getContactSolimpWidth())
+          .append(' ').append(parameters.getContactSolimpMidpoint())
+          .append(' ').append(parameters.getContactSolimpPower())
+          .append("\" condim=\"").append(parameters.getCondim())
+          .append("\" margin=\"").append(parameters.getContactMargin())
+          .append("\" gap=\"").append(parameters.getContactGap())
+          .append("\"/>\n");
       mjcf.append("    <joint armature=\"").append(parameters.getJointArmature()).append("\"/>\n");
       mjcf.append("    <default class=\"robot\">\n");
-      mjcf.append("      <geom contype=\"1\" conaffinity=\"2\"/>\n");
+      mjcf.append("      <geom contype=\"").append(ROBOT_CONTYPE).append("\" conaffinity=\"").append(ROBOT_CONAFFINITY).append("\"/>\n");
       mjcf.append("    </default>\n");
       mjcf.append("    <default class=\"terrain\">\n");
-      mjcf.append("      <geom contype=\"2\" conaffinity=\"1\"/>\n");
+      mjcf.append("      <geom contype=\"").append(TERRAIN_CONTYPE).append("\" conaffinity=\"").append(TERRAIN_CONAFFINITY).append("\"/>\n");
       mjcf.append("    </default>\n");
       mjcf.append("  </default>\n");
       // <asset> (mesh terrain) must precede <worldbody>. Only emitted when some terrain shape needs a

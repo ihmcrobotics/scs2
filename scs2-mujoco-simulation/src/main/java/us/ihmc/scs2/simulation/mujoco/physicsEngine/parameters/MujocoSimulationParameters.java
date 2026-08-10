@@ -1,44 +1,33 @@
 package us.ihmc.scs2.simulation.mujoco.physicsEngine.parameters;
 
 /**
- * Holds tunable MuJoCo simulation parameters that map onto entries in {@code mjOption}. Applied
- * once at world compile time.
- * <p>
- * Intent: keep defaults as close to MuJoCo's own {@code mjOption} defaults as possible. Any
- * deliberate deviation should be documented on the field with the MuJoCo default value noted.
- * </p>
+ * Compile-time MuJoCo simulation seeds; see {@link MujocoSimulationParametersReadOnly}. This class
+ * is the single home of the default values.
  */
 public class MujocoSimulationParameters implements MujocoSimulationParametersBasics
 {
-   private int solverIterations = 25;
    private int subSteps = 1;
    private double contactSolrefTimeconst = 0.02;
    private double contactSolrefDampRatio = 1.0;
    private double contactSolimpDmin = 0.9;
    private double contactSolimpDmax = 0.99;
-   private int noslipIterations = 5;
    private double jointArmature = 0.0;
-   private double impratio = 1.0;
-   private boolean useEllipticFrictionCone = false;
    private double frictionSlide = 1.0;
    private double timestep = 0.0;
    private boolean filterParentCollisions = true;
+   private double frictionTorsional = 0.05;
+   private double frictionRolling = 0.01;
+   private double contactSolimpWidth = 0.0007;
+   private double contactSolimpMidpoint = 0.5;
+   private double contactSolimpPower = 2.0;
+   private int condim = 4;
+   private double contactMargin = 0.0;
+   private double contactGap = 0.0;
+   private int perContactDiagnosticsCapacity = 16;
 
    public static MujocoSimulationParameters defaultMujocoSimulationParameters()
    {
       return new MujocoSimulationParameters();
-   }
-
-   @Override
-   public int getSolverIterations()
-   {
-      return solverIterations;
-   }
-
-   @Override
-   public void setSolverIterations(int solverIterations)
-   {
-      this.solverIterations = solverIterations;
    }
 
    @Override
@@ -102,18 +91,6 @@ public class MujocoSimulationParameters implements MujocoSimulationParametersBas
    }
 
    @Override
-   public int getNoslipIterations()
-   {
-      return noslipIterations;
-   }
-
-   @Override
-   public void setNoslipIterations(int noslipIterations)
-   {
-      this.noslipIterations = noslipIterations;
-   }
-
-   @Override
    public double getJointArmature()
    {
       return jointArmature;
@@ -123,30 +100,6 @@ public class MujocoSimulationParameters implements MujocoSimulationParametersBas
    public void setJointArmature(double jointArmature)
    {
       this.jointArmature = jointArmature;
-   }
-
-   @Override
-   public double getImpratio()
-   {
-      return impratio;
-   }
-
-   @Override
-   public void setImpratio(double impratio)
-   {
-      this.impratio = impratio;
-   }
-
-   @Override
-   public boolean getUseEllipticFrictionCone()
-   {
-      return useEllipticFrictionCone;
-   }
-
-   @Override
-   public void setUseEllipticFrictionCone(boolean useEllipticFrictionCone)
-   {
-      this.useEllipticFrictionCone = useEllipticFrictionCone;
    }
 
    @Override
@@ -161,12 +114,14 @@ public class MujocoSimulationParameters implements MujocoSimulationParametersBas
       this.frictionSlide = frictionSlide;
    }
 
+   @Deprecated
    @Override
    public double getTimestep()
    {
       return timestep;
    }
 
+   @Deprecated
    @Override
    public void setTimestep(double timestep)
    {
@@ -183,5 +138,113 @@ public class MujocoSimulationParameters implements MujocoSimulationParametersBas
    public void setFilterParentCollisions(boolean filterParentCollisions)
    {
       this.filterParentCollisions = filterParentCollisions;
+   }
+
+   @Override
+   public double getFrictionTorsional()
+   {
+      return frictionTorsional;
+   }
+
+   @Override
+   public void setFrictionTorsional(double frictionTorsional)
+   {
+      this.frictionTorsional = frictionTorsional;
+   }
+
+   @Override
+   public double getFrictionRolling()
+   {
+      return frictionRolling;
+   }
+
+   @Override
+   public void setFrictionRolling(double frictionRolling)
+   {
+      this.frictionRolling = frictionRolling;
+   }
+
+   @Override
+   public double getContactSolimpWidth()
+   {
+      return contactSolimpWidth;
+   }
+
+   @Override
+   public void setContactSolimpWidth(double contactSolimpWidth)
+   {
+      this.contactSolimpWidth = contactSolimpWidth;
+   }
+
+   @Override
+   public double getContactSolimpMidpoint()
+   {
+      return contactSolimpMidpoint;
+   }
+
+   @Override
+   public void setContactSolimpMidpoint(double contactSolimpMidpoint)
+   {
+      this.contactSolimpMidpoint = contactSolimpMidpoint;
+   }
+
+   @Override
+   public double getContactSolimpPower()
+   {
+      return contactSolimpPower;
+   }
+
+   @Override
+   public void setContactSolimpPower(double contactSolimpPower)
+   {
+      this.contactSolimpPower = contactSolimpPower;
+   }
+
+   @Override
+   public int getCondim()
+   {
+      return condim;
+   }
+
+   @Override
+   public void setCondim(int condim)
+   {
+      this.condim = condim;
+   }
+
+   @Override
+   public double getContactMargin()
+   {
+      return contactMargin;
+   }
+
+   @Override
+   public void setContactMargin(double contactMargin)
+   {
+      this.contactMargin = contactMargin;
+   }
+
+   @Override
+   public double getContactGap()
+   {
+      return contactGap;
+   }
+
+   @Override
+   public void setContactGap(double contactGap)
+   {
+      this.contactGap = contactGap;
+   }
+
+   @Override
+   public int getPerContactDiagnosticsCapacity()
+   {
+      return perContactDiagnosticsCapacity;
+   }
+
+   @Override
+   public void setPerContactDiagnosticsCapacity(int perContactDiagnosticsCapacity)
+   {
+      this.perContactDiagnosticsCapacity = perContactDiagnosticsCapacity;
    }
 }

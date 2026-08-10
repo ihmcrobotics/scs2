@@ -9,6 +9,7 @@ import java.util.stream.Collectors;
 
 import us.ihmc.euclid.referenceFrame.ReferenceFrame;
 import us.ihmc.euclid.tuple3D.interfaces.Vector3DReadOnly;
+import us.ihmc.log.LogTools;
 import us.ihmc.mecano.tools.JointStateType;
 import us.ihmc.yoVariables.variable.YoDouble;
 import us.ihmc.yoVariables.variable.YoLong;
@@ -17,8 +18,9 @@ import us.ihmc.scs2.definition.robot.RobotStateDefinition;
 import us.ihmc.scs2.definition.terrain.TerrainObjectDefinition;
 import us.ihmc.scs2.session.YoTimer;
 import us.ihmc.scs2.simulation.mujoco.MujocoNativeLibrary;
+import us.ihmc.scs2.simulation.mujoco.physicsEngine.parameters.MujocoSimulationParameters;
 import us.ihmc.scs2.simulation.mujoco.physicsEngine.parameters.MujocoSimulationParametersReadOnly;
-import us.ihmc.scs2.simulation.mujoco.physicsEngine.parameters.YoMujocoSimulationParameters;
+import us.ihmc.scs2.simulation.mujoco.physicsEngine.parameters.YoMujocoOptions;
 import us.ihmc.scs2.simulation.physicsEngine.PhysicsEngine;
 import us.ihmc.scs2.simulation.robot.Robot;
 import us.ihmc.scs2.simulation.robot.RobotExtension;
@@ -55,7 +57,13 @@ public class MujocoPhysicsEngine implements PhysicsEngine
    private final List<TerrainObjectDefinition> terrainObjectDefinitions = new ArrayList<>();
 
    private final MujocoMultiBodyDynamicsWorld dynamicsWorld = new MujocoMultiBodyDynamicsWorld();
-   private final YoMujocoSimulationParameters globalSimulationParameters;
+   // Compile-time seeds, consumed once at MJCF generation; the MujocoOptions registry is the only
+   // Yo mirror of runtime-tunable values.
+   private final MujocoSimulationParameters seedParameters = new MujocoSimulationParameters();
+   private final YoInteger subSteps;
+   private final YoMujocoOptions options;
+   private final MujocoPhysicsEngineStatistics statistics = new MujocoPhysicsEngineStatistics(physicsEngineRegistry);
+   private final YoMujocoContactPool contactPool;
    private final YoBoolean hasBeenCompiled;
 
    private static final int REALTIME_RATE_SAMPLES = 100;
@@ -68,7 +76,6 @@ public class MujocoPhysicsEngine implements PhysicsEngine
    private final YoDouble mujocoSimulateTimeMs = new YoDouble("MujocoSimulateTime[ms]", physicsEngineRegistry);
    private final YoLong mujocoTick = new YoLong("MujocoTick", physicsEngineRegistry);
    private final YoTimer stepTimer = new YoTimer("mujocoStep", TimeUnit.MILLISECONDS, physicsEngineRegistry);
-   private final YoInteger nContacts = new YoInteger("mujocoNContacts", physicsEngineRegistry);
 
    private File workingDirectory;
    private boolean hasBeenInitialized = false;
@@ -77,9 +84,27 @@ public class MujocoPhysicsEngine implements PhysicsEngine
    {
       this.inertialFrame = inertialFrame;
       this.rootRegistry = rootRegistry;
-      this.globalSimulationParameters = new YoMujocoSimulationParameters("globalMujoco", physicsEngineRegistry);
+      seedParameters.set(parameters);
+      this.subSteps = new YoInteger("subSteps", "Number of mj_step calls per SCS2 tick; MuJoCo timestep = session dt / subSteps. Live.", physicsEngineRegistry);
+      subSteps.set(parameters.getSubSteps());
+      this.options = new YoMujocoOptions(physicsEngineRegistry);
       this.hasBeenCompiled = new YoBoolean("mujocoHasBeenCompiled", physicsEngineRegistry);
-      globalSimulationParameters.set(parameters);
+      // Slot capacity must be fixed here: the YoVariables have to exist before the session buffer
+      // is wired, well before the model compiles on the first simulate().
+      int perContactCapacity = Math.max(0, parameters.getPerContactDiagnosticsCapacity());
+      this.contactPool = perContactCapacity > 0 ? new YoMujocoContactPool(perContactCapacity, inertialFrame, physicsEngineRegistry) : null;
+   }
+
+   /** The live {@code mjOption} mirror; edits are pushed into the native model on the next {@code simulate()} tick. */
+   public YoMujocoOptions getOptions()
+   {
+      return options;
+   }
+
+   /** The native world wrapper; the model/data are null until the first {@code simulate()} compiles the world. */
+   public MujocoMultiBodyDynamicsWorld getDynamicsWorld()
+   {
+      return dynamicsWorld;
    }
 
    @Override
@@ -107,7 +132,11 @@ public class MujocoPhysicsEngine implements PhysicsEngine
       }
 
       simulateDt = dt;
-      dynamicsWorld.setTimestep(dt / globalSimulationParameters.getSubSteps());
+      // Edits (from any thread) only trip a dirty flag; the native write happens here on the
+      // physics thread, cleared-before-apply so a concurrent edit lands next tick.
+      if (options.pollUpdateRequest())
+         dynamicsWorld.writeOptions(options);
+      dynamicsWorld.setTimestep(dt / Math.max(1, subSteps.getValue()));
       long now = System.nanoTime();
       if (simulateCallStartTime != 0)
          mujocoSimulateTimeMs.set((now - simulateCallStartTime) * 1.0e-6);
@@ -154,10 +183,13 @@ public class MujocoPhysicsEngine implements PhysicsEngine
       }
 
       stepTimer.start();
-      dynamicsWorld.step(globalSimulationParameters.getSubSteps());
+      dynamicsWorld.step(Math.max(1, subSteps.getValue()));
       stepTimer.stop();
 
-      nContacts.set(dynamicsWorld.getData().ncon());
+      statistics.update();
+      statistics.updateEnergy(options.enableEnergy.getValue());
+      if (contactPool != null)
+         contactPool.update();
 
       for (MujocoRobot robot : robotList)
          robot.pullStateFromMujoco(gravity,
@@ -172,20 +204,30 @@ public class MujocoPhysicsEngine implements PhysicsEngine
       if (hasBeenCompiled.getValue())
          return;
 
-      try
+      String workingDirectoryProperty = System.getProperty("scs2.mujoco.workingDirectory");
+      if (workingDirectoryProperty != null)
       {
-         workingDirectory = Files.createTempDirectory("scs2-mujoco-").toFile();
+         workingDirectory = new File(workingDirectoryProperty);
       }
-      catch (java.io.IOException e)
+      else
       {
-         throw new RuntimeException("Could not create MuJoCo working directory", e);
+         try
+         {
+            workingDirectory = Files.createTempDirectory("scs2-mujoco-").toFile();
+         }
+         catch (java.io.IOException e)
+         {
+            throw new RuntimeException("Could not create MuJoCo working directory", e);
+         }
       }
 
       String mjcf = MujocoMultiBodyRobotFactory.buildWorldMjcf(pendingRobots,
                                                                pendingTerrain,
                                                                workingDirectory,
-                                                               globalSimulationParameters);
-      dynamicsWorld.compile(mjcf, new File(workingDirectory, "world.xml"));
+                                                               seedParameters);
+      File mjcfFile = new File(workingDirectory, "world.xml");
+      dynamicsWorld.compile(mjcf, mjcfFile);
+      LogTools.info("MuJoCo world MJCF written to {}", mjcfFile.getAbsolutePath());
 
       for (Robot robot : pendingRobots)
       {
@@ -202,6 +244,9 @@ public class MujocoPhysicsEngine implements PhysicsEngine
          // physics-engine-specific secondary registry here.
          physicsEngineRegistry.addChild(mujocoRobot.getSecondaryRegistry());
          robotList.add(mujocoRobot);
+
+         if (contactPool != null)
+            mujocoRobot.createContactAggregates(inertialFrame).forEach(contactPool::addBodyAggregate);
       }
       for (TerrainObjectDefinition terrain : pendingTerrain)
       {
@@ -212,6 +257,30 @@ public class MujocoPhysicsEngine implements PhysicsEngine
       }
       pendingRobots.clear();
       pendingTerrain.clear();
+
+      // The MJCF emits no mjOption values, so the options group is the sole truth: push it into the
+      // compiled model (this also applies values set before the first tick). The o_* override
+      // entries first get the <default> geom block's values so flipping enableOverride on is
+      // behavior-continuous; with the flag off they have no effect on the dynamics.
+      options.o_margin.set(seedParameters.getContactMargin());
+      options.o_solrefTimeconst.set(seedParameters.getContactSolrefTimeconst());
+      options.o_solrefDampratio.set(seedParameters.getContactSolrefDampRatio());
+      options.o_solimpDmin.set(seedParameters.getContactSolimpDmin());
+      options.o_solimpDmax.set(seedParameters.getContactSolimpDmax());
+      options.o_solimpWidth.set(seedParameters.getContactSolimpWidth());
+      options.o_solimpMidpoint.set(seedParameters.getContactSolimpMidpoint());
+      options.o_solimpPower.set(seedParameters.getContactSolimpPower());
+      options.o_frictionSlide.set(seedParameters.getFrictionSlide());
+      options.o_frictionSpin.set(seedParameters.getFrictionTorsional());
+      options.o_frictionRoll.set(seedParameters.getFrictionRolling());
+      dynamicsWorld.writeOptions(options);
+      options.pollUpdateRequest(); // Discard the dirty flag the seeding just tripped.
+
+      MujocoTools.logEffectiveModelSummary(dynamicsWorld.getModel());
+
+      statistics.bind(dynamicsWorld.getModel(), dynamicsWorld.getData());
+      if (contactPool != null)
+         contactPool.bind(dynamicsWorld.getModel(), dynamicsWorld.getData());
 
       hasBeenCompiled.set(true);
    }

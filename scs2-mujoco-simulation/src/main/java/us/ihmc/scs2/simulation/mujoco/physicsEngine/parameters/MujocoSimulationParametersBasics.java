@@ -1,30 +1,32 @@
 package us.ihmc.scs2.simulation.mujoco.physicsEngine.parameters;
 
 /**
- * Read-write view of the MuJoCo simulation parameters. Implemented by the plain
- * {@link MujocoSimulationParameters} POJO and the {@link YoMujocoSimulationParameters} Yo-backed
- * mirror.
+ * Read-write view of the MuJoCo simulation parameters, implemented by the
+ * {@link MujocoSimulationParameters} POJO.
  */
 public interface MujocoSimulationParametersBasics extends MujocoSimulationParametersReadOnly
 {
    default void set(MujocoSimulationParametersReadOnly other)
    {
-      setSolverIterations(other.getSolverIterations());
       setSubSteps(other.getSubSteps());
       setContactSolrefTimeconst(other.getContactSolrefTimeconst());
       setContactSolrefDampRatio(other.getContactSolrefDampRatio());
       setContactSolimpDmin(other.getContactSolimpDmin());
       setContactSolimpDmax(other.getContactSolimpDmax());
-      setNoslipIterations(other.getNoslipIterations());
       setJointArmature(other.getJointArmature());
-      setImpratio(other.getImpratio());
-      setUseEllipticFrictionCone(other.getUseEllipticFrictionCone());
       setFrictionSlide(other.getFrictionSlide());
       setTimestep(other.getTimestep());
       setFilterParentCollisions(other.getFilterParentCollisions());
+      setFrictionTorsional(other.getFrictionTorsional());
+      setFrictionRolling(other.getFrictionRolling());
+      setContactSolimpWidth(other.getContactSolimpWidth());
+      setContactSolimpMidpoint(other.getContactSolimpMidpoint());
+      setContactSolimpPower(other.getContactSolimpPower());
+      setCondim(other.getCondim());
+      setContactMargin(other.getContactMargin());
+      setContactGap(other.getContactGap());
+      setPerContactDiagnosticsCapacity(other.getPerContactDiagnosticsCapacity());
    }
-
-   void setSolverIterations(int solverIterations);
 
    void setSubSteps(int subSteps);
 
@@ -36,17 +38,34 @@ public interface MujocoSimulationParametersBasics extends MujocoSimulationParame
 
    void setContactSolimpDmax(double contactSolimpDmax);
 
-   void setNoslipIterations(int noslipIterations);
-
    void setJointArmature(double jointArmature);
-
-   void setImpratio(double impratio);
-
-   void setUseEllipticFrictionCone(boolean useEllipticFrictionCone);
 
    void setFrictionSlide(double frictionSlide);
 
+   /**
+    * @deprecated Never read: the effective MuJoCo timestep is the session dt divided by
+    *             {@link #getSubSteps()}, set every tick in {@code MujocoPhysicsEngine.simulate}.
+    */
+   @Deprecated
    void setTimestep(double timestep);
 
    void setFilterParentCollisions(boolean filterParentCollisions);
+
+   void setFrictionTorsional(double frictionTorsional);
+
+   void setFrictionRolling(double frictionRolling);
+
+   void setContactSolimpWidth(double contactSolimpWidth);
+
+   void setContactSolimpMidpoint(double contactSolimpMidpoint);
+
+   void setContactSolimpPower(double contactSolimpPower);
+
+   void setCondim(int condim);
+
+   void setContactMargin(double contactMargin);
+
+   void setContactGap(double contactGap);
+
+   void setPerContactDiagnosticsCapacity(int perContactDiagnosticsCapacity);
 }
