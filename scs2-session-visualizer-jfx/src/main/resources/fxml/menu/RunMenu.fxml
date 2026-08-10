@@ -45,6 +45,17 @@
             </graphic>
         </MenuItem>
         <SeparatorMenuItem/>
+        <MenuItem fx:id="resetMenuItem" onAction="#resetToInitialState" text="Reset to initial state">
+            <graphic>
+                <FontIcon>
+                    <styleClass>
+                        <String fx:value="session-reset-icon-view"/>
+                        <String fx:value="menu-item-icon-view"/>
+                    </styleClass>
+                </FontIcon>
+            </graphic>
+        </MenuItem>
+        <SeparatorMenuItem/>
         <MenuItem onAction="#gotoInPoint" text="Goto In Point">
             <graphic>
                 <FontIcon>

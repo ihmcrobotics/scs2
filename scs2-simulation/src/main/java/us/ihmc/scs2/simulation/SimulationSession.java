@@ -128,6 +128,12 @@ public class SimulationSession extends Session
    }
 
    @Override
+   public boolean isSessionResetSupported()
+   {
+      return true;
+   }
+
+   @Override
    public void shutdownSession()
    {
       super.shutdownSession();
@@ -407,6 +413,17 @@ public class SimulationSession extends Session
       public boolean isSessionShutdown()
       {
          return SimulationSession.this.isSessionShutdown();
+      }
+
+      /** {@inheritDoc} */
+      @Override
+      public void resetToInitialState()
+      {
+         submitSessionResetRequest();
+         if (!hasSessionStarted())
+         { // The session thread is not running, process a tick to perform the reset now.
+            pauseTick();
+         }
       }
 
       // ------------------------------------------------------------------------------- //

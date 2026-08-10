@@ -158,6 +158,27 @@ public interface SimulationSessionControls
    void setPlaybackRealTimeRate(double realTimeRate);
 
    /**
+    * Requests to reset the simulation back to its initial state: every {@code YoVariable} captured
+    * when the simulation was first initialized is restored to its initial value, then the physics
+    * engine re-applies the robots' initial state and every controller gets its
+    * {@code Controller.initialize()} invoked. Variables created after the first initialization keep
+    * their current value.
+    * <p>
+    * If the simulation is running, it is first paused; the simulation then remains paused after the
+    * reset so it can be resumed on demand, e.g. via {@link #simulate()}. The reset state is written in
+    * the buffer at the current index and the buffer in-point and out-point are moved there, giving
+    * the recording a fresh start point; the buffer is not cleared, but the frames outside the new
+    * in-point/out-point are no longer part of the active region and will be overwritten as the
+    * recording continues.
+    * </p>
+    * <p>
+    * If the simulation thread is running, this is a non-blocking request performed on the next
+    * session tick; otherwise the reset is performed immediately.
+    * </p>
+    */
+   void resetToInitialState();
+
+   /**
     * Requests to simulate indefinitely. (asynchronous)
     * <p>
     * This is a non-blocking request, the session will handle the request as soon as possible.

@@ -615,7 +615,8 @@ public class SimulationConstructionSet2 implements YoVariableHolder, SimulationS
    /**
     * Reinitializes the physics engine.
     * <p>
-    * Can be useful for resetting the simulation.
+    * Can be useful for resetting the simulation. Note that unlike {@link #resetToInitialState()},
+    * this does not restore the {@code YoVariable} values nor pause the simulation first.
     * </p>
     * <p>
     * This is a non-blocking operation and schedules the change to be performed as soon as possible.
@@ -624,6 +625,25 @@ public class SimulationConstructionSet2 implements YoVariableHolder, SimulationS
    public void reinitializeSimulation()
    {
       simulationSession.reinitializeSession();
+   }
+
+   /** {@inheritDoc} */
+   @Override
+   public void resetToInitialState()
+   {
+      simulationSessionControls.resetToInitialState();
+   }
+
+   /**
+    * Adds a listener to be notified right after the simulation has been reset to its initial state,
+    * so state living outside {@code YoVariable}s can re-initialize itself, see
+    * {@link Session#addSessionResetListener(Runnable)}.
+    *
+    * @param listener the listener to add.
+    */
+   public void addSessionResetListener(Runnable listener)
+   {
+      simulationSession.addSessionResetListener(listener);
    }
 
    // ------------------------------------------------------------------------------- //

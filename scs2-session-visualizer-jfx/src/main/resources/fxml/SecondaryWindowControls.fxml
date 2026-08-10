@@ -49,6 +49,19 @@
                 <Tooltip text="Pause simulation"/>
             </tooltip>
         </JFXButton>
+        <JFXButton fx:id="resetButton" mnemonicParsing="false" onAction="#resetSession" styleClass="advanced-controls-button">
+            <graphic>
+                <FontIcon>
+                    <styleClass>
+                        <String fx:value="session-reset-icon-view"/>
+                        <String fx:value="advanced-controls-icon-view"/>
+                    </styleClass>
+                </FontIcon>
+            </graphic>
+            <tooltip>
+                <Tooltip text="Reset to initial state"/>
+            </tooltip>
+        </JFXButton>
         <Separator maxHeight="-Infinity" orientation="VERTICAL" prefHeight="40.0"/>
         <JFXButton fx:id="setInPointButton" mnemonicParsing="false" onAction="#setInPoint" styleClass="advanced-controls-button">
             <graphic>

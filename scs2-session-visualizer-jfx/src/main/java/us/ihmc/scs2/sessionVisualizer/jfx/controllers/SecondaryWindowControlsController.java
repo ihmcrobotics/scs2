@@ -15,6 +15,7 @@ import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerTopics;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerWindowToolkit;
 import us.ihmc.scs2.sharedMemory.interfaces.YoBufferPropertiesReadOnly;
 
+import static us.ihmc.scs2.sessionVisualizer.jfx.controllers.SessionAdvancedControlsController.bindSessionResetDisable;
 import static us.ihmc.scs2.sessionVisualizer.jfx.controllers.SessionAdvancedControlsController.setupMainControlsActiveMode;
 
 public class SecondaryWindowControlsController implements VisualizerController
@@ -29,6 +30,8 @@ public class SecondaryWindowControlsController implements VisualizerController
    private FlowPane buttonsContainer;
    @FXML
    private JFXButton previousKeyFrameButton, nextKeyFrameButton;
+   @FXML
+   private JFXButton resetButton;
    @FXML
    private Node runningIconView, playbackIconView, pauseIconView;
 
@@ -63,7 +66,15 @@ public class SecondaryWindowControlsController implements VisualizerController
       previousKeyFrameButton.setDisable(disableKeyFrameButtons);
       nextKeyFrameButton.setDisable(disableKeyFrameButtons);
 
+      bindSessionResetDisable(toolkit.getGlobalToolkit(), resetButton::setDisable);
+
       setupMainControlsActiveMode(this, messager, topics, runningIconView, playbackIconView, pauseIconView);
+   }
+
+   @FXML
+   private void resetSession()
+   {
+      messager.submitMessage(topics.getSessionResetRequest(), true);
    }
 
    @FXML
