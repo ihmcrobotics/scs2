@@ -274,6 +274,7 @@ public class MCAPLogSessionManagerController implements SessionControlsControlle
 
       loadingSpinner.visibleProperty().addListener((o, oldValue, newValue) -> openSessionButton.setDisable(newValue));
       openSessionButton.setOnAction(e -> openLogFile());
+      messager.addTopicListener(topics.getOpenMCAPLogFileRequest(), this::openMCAPLogSession);
 
       endSessionButton.setOnAction(e ->
                                    {
@@ -356,6 +357,15 @@ public class MCAPLogSessionManagerController implements SessionControlsControlle
       if (result == null)
          return;
 
+      openMCAPLogSession(result);
+   }
+
+   /**
+    * Opens the given MCAP log file, replacing the active session if there is one (the usual "save default
+    * configuration?" prompt from {@code MultiSessionManager} applies, same as {@link #openLogFile()}).
+    */
+   public void openMCAPLogSession(File mcapFile)
+   {
       unloadSession();
       setIsLoading(true);
 
@@ -364,12 +374,12 @@ public class MCAPLogSessionManagerController implements SessionControlsControlle
                                                        try
                                                        {
                                                           LogTools.info("Creating log session.");
-                                                          MCAPLogSession newSession = new MCAPLogSession(result,
+                                                          MCAPLogSession newSession = new MCAPLogSession(mcapFile,
                                                                                                          desiredLogDTProperty.get(),
                                                                                                          defaultRobotModelFile);
                                                           LogTools.info("Created log session.");
                                                           JavaFXMissingTools.runLater(getClass(), () -> activeSessionProperty.set(newSession));
-                                                          SessionVisualizerIOTools.setDefaultFilePath(LOG_FILE_KEY, result);
+                                                          SessionVisualizerIOTools.setDefaultFilePath(LOG_FILE_KEY, mcapFile);
                                                        }
                                                        catch (Exception ex)
                                                        {
