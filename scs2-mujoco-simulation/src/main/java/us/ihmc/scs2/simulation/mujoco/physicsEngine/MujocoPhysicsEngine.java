@@ -134,20 +134,20 @@ public class MujocoPhysicsEngine implements PhysicsEngine
       dynamicsWorld.setTimestep(dt / appliedSubSteps);
       long now = System.nanoTime();
       if (simulateCallStartTime != 0)
-         statistics.mujocoSimulateTimeMs.set((now - simulateCallStartTime) * 1.0e-6);
+         statistics.simulateTime.set((now - simulateCallStartTime) * 1.0e-6);
       simulateCallStartTime = now;
       if (realtimeRateSampleCounter == 0)
       {
          if (realtimeRateWindowStartTime != 0)
          {
             double elapsed = (now - realtimeRateWindowStartTime) * 1.0e-9;
-            statistics.mujocoRealtimeRate.set(REALTIME_RATE_SAMPLES * simulateDt / elapsed);
+            statistics.realtimeRate.set(REALTIME_RATE_SAMPLES * simulateDt / elapsed);
          }
          realtimeRateWindowStartTime = now;
          realtimeRateSampleCounter = REALTIME_RATE_SAMPLES;
       }
       realtimeRateSampleCounter--;
-      statistics.mujocoTick.increment();
+      statistics.tick.increment();
 
       dynamicsWorld.setGravity(gravity);
 
@@ -257,17 +257,17 @@ public class MujocoPhysicsEngine implements PhysicsEngine
       // compiled model (this also applies values set before the first tick). The o_* override
       // entries first get the <default> geom block's values so flipping enableOverride on is
       // behavior-continuous; with the flag off they have no effect on the dynamics.
-      options.o_margin.set(seedParameters.getContactMargin());
-      options.o_solrefTimeconst.set(seedParameters.getContactSolrefTimeconst());
-      options.o_solrefDampratio.set(seedParameters.getContactSolrefDampRatio());
-      options.o_solimpDmin.set(seedParameters.getContactSolimpDmin());
-      options.o_solimpDmax.set(seedParameters.getContactSolimpDmax());
-      options.o_solimpWidth.set(seedParameters.getContactSolimpWidth());
-      options.o_solimpMidpoint.set(seedParameters.getContactSolimpMidpoint());
-      options.o_solimpPower.set(seedParameters.getContactSolimpPower());
-      options.o_frictionSlide.set(seedParameters.getFrictionSlide());
-      options.o_frictionSpin.set(seedParameters.getFrictionTorsional());
-      options.o_frictionRoll.set(seedParameters.getFrictionRolling());
+      options.o_margin.set(seedParameters.get_margin());
+      options.o_solref_timeconst.set(seedParameters.get_solref_timeconst());
+      options.o_solref_dampratio.set(seedParameters.get_solref_dampratio());
+      options.o_solimp_dmin.set(seedParameters.get_solimp_dmin());
+      options.o_solimp_dmax.set(seedParameters.get_solimp_dmax());
+      options.o_solimp_width.set(seedParameters.get_solimp_width());
+      options.o_solimp_midpoint.set(seedParameters.get_solimp_midpoint());
+      options.o_solimp_power.set(seedParameters.get_solimp_power());
+      options.o_friction_slide.set(seedParameters.get_friction_slide());
+      options.o_friction_spin.set(seedParameters.get_friction_spin());
+      options.o_friction_roll.set(seedParameters.get_friction_roll());
       dynamicsWorld.writeOptions(options);
       options.pollUpdateRequest(); // Discard the dirty flag the seeding just tripped.
 

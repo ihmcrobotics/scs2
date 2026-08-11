@@ -17,7 +17,8 @@ import us.ihmc.yoVariables.variable.YoLong;
 /**
  * Read-only per-step diagnostics in a {@code MujocoStatistics} child registry; editing these does
  * nothing (the engine overwrites them every step). Names are verbatim {@code mjData} fields where
- * one exists; derived names state their source in the description. Per-phase timers
+ * one exists; derived names state their source in the description. MuJoCo-derived names are
+ * snake_case verbatim; SCS2-owned names (timing, hasBeenCompiled) are camelCase. Per-phase timers
  * ({@code mjData.timer}) are absent: they need the {@code mjcb_time} callback, unmapped in the
  * binding. Per-body contact force totals live in each robot's own registry, not here.
  */
@@ -25,33 +26,35 @@ public class MujocoStatistics
 {
    private final YoRegistry registry = new YoRegistry("MujocoStatistics");
 
-   // Engine-written timing/state gauges; values are pushed by MujocoPhysicsEngine each tick.
-   public final YoDouble mujocoRealtimeRate;
-   public final YoDouble mujocoSimulateTimeMs;
-   public final YoLong mujocoTick;
+   // ---------- SCS2-owned (engine-written gauges) ----------
+   public final YoDouble realtimeRate;
+   public final YoDouble simulateTime;
+   public final YoLong tick;
    public final YoTimer stepTimer;
    public final YoBoolean hasBeenCompiled;
 
+   // ---------- MuJoCo-owned (mjData, in struct order) ----------
+
    private final YoInteger ncon;
-   private final YoInteger nefc;
    private final YoInteger ne;
    private final YoInteger nf;
    private final YoInteger nl;
+   private final YoInteger nefc;
    private final YoInteger nisland;
    private final YoInteger solver_niter;
-   private final YoDouble solverImprovement;
-   private final YoDouble solverGradient;
-   private final YoInteger solverNactive;
-   private final YoInteger solverNchange;
-   private final YoInteger warnInertia;
-   private final YoInteger warnContactFull;
-   private final YoInteger warnCnstrFull;
-   private final YoInteger warnBadQpos;
-   private final YoInteger warnBadQvel;
-   private final YoInteger warnBadQacc;
-   private final YoInteger warnBadCtrl;
-   private final YoDouble energyPotential;
-   private final YoDouble energyKinetic;
+   private final YoDouble solver_improvement;
+   private final YoDouble solver_gradient;
+   private final YoInteger solver_nactive;
+   private final YoInteger solver_nchange;
+   private final YoInteger warning_inertia;
+   private final YoInteger warning_contactfull;
+   private final YoInteger warning_cnstrfull;
+   private final YoInteger warning_badqpos;
+   private final YoInteger warning_badqvel;
+   private final YoInteger warning_badqacc;
+   private final YoInteger warning_badctrl;
+   private final YoDouble energy_potential;
+   private final YoDouble energy_kinetic;
 
    private mjData data;
    // Cached JavaCPP wrappers over mjData's stat arrays; the mjData arena is stable for the life of
@@ -62,33 +65,34 @@ public class MujocoStatistics
    public MujocoStatistics(YoRegistry parentRegistry)
    {
       parentRegistry.addChild(registry);
-      mujocoRealtimeRate = new YoDouble("MujocoRealtimeRate", "Achieved sim-time / wall-time rate, windowed", registry);
-      mujocoSimulateTimeMs = new YoDouble("MujocoSimulateTime[ms]", "Wall time between simulate() calls", registry);
-      mujocoTick = new YoLong("MujocoTick", "Engine tick counter", registry);
-      stepTimer = new YoTimer("mujocoStep", TimeUnit.MILLISECONDS, registry);
-      hasBeenCompiled = new YoBoolean("mujocoHasBeenCompiled", "True once the MJCF world has been compiled; display only, re-asserted every step", registry);
+      realtimeRate = new YoDouble("realtimeRate", "Achieved sim-time / wall-time rate, windowed", registry);
+      simulateTime = new YoDouble("simulateTime[ms]", "Wall time between simulate() calls", registry);
+      tick = new YoLong("tick", "Engine tick counter", registry);
+      stepTimer = new YoTimer("step", TimeUnit.MILLISECONDS, registry);
+      hasBeenCompiled = new YoBoolean("hasBeenCompiled", "True once the MJCF world has been compiled; display only, re-asserted every step", registry);
+
       ncon = new YoInteger("ncon", "Contacts detected this step (mjData.ncon)", registry);
-      nefc = new YoInteger("nefc", "Total constraint rows this step (mjData.nefc)", registry);
       ne = new YoInteger("ne", "Equality constraint rows; contact rows = nefc - ne - nf - nl", registry);
       nf = new YoInteger("nf", "Friction-loss constraint rows", registry);
       nl = new YoInteger("nl", "Joint/tendon limit constraint rows", registry);
+      nefc = new YoInteger("nefc", "Total constraint rows this step (mjData.nefc)", registry);
       nisland = new YoInteger("nisland", "Constraint islands detected; solver stats below cover island 0 only", registry);
       solver_niter = new YoInteger("solver_niter", "Solver iterations used this step (island 0); pinned at the iterations cap = not converging", registry);
-      solverImprovement = new YoDouble("solverImprovement", "mjSolverStat.improvement at the last iteration: cost reduction, near zero when converged", registry);
-      solverGradient = new YoDouble("solverGradient", "mjSolverStat.gradient at the last iteration: gradient norm, small when converged (primal solvers)", registry);
-      solverNactive = new YoInteger("solverNactive", "mjSolverStat.nactive at the last iteration: active constraints", registry);
-      solverNchange = new YoInteger("solverNchange", "mjSolverStat.nchange at the last iteration: constraint state changes", registry);
-      warnInertia = new YoInteger("warnInertia", "Cumulative mjWARN_INERTIA count: (near) singular inertia matrix; any increase mid-run is trouble", registry);
-      warnContactFull = new YoInteger("warnContactFull", "Cumulative mjWARN_CONTACTFULL count: too many contacts", registry);
-      warnCnstrFull = new YoInteger("warnCnstrFull", "Cumulative mjWARN_CNSTRFULL count: too many constraints", registry);
-      warnBadQpos = new YoInteger("warnBadQpos", "Cumulative mjWARN_BADQPOS count: bad number in qpos", registry);
-      warnBadQvel = new YoInteger("warnBadQvel", "Cumulative mjWARN_BADQVEL count: bad number in qvel", registry);
-      warnBadQacc = new YoInteger("warnBadQacc", "Cumulative mjWARN_BADQACC count: bad number in qacc, the earliest sign of a bad contact-parameter set", registry);
-      warnBadCtrl = new YoInteger("warnBadCtrl", "Cumulative mjWARN_BADCTRL count: bad number in ctrl", registry);
-      energyPotential = new YoDouble("energyPotential", "mjData.energy[0]: potential energy; NaN unless MujocoOptions enableEnergy", registry);
-      energyKinetic = new YoDouble("energyKinetic", "mjData.energy[1]: kinetic energy; NaN unless MujocoOptions enableEnergy", registry);
-      energyPotential.set(Double.NaN);
-      energyKinetic.set(Double.NaN);
+      solver_improvement = new YoDouble("solver_improvement", "mjSolverStat.improvement at the last iteration: cost reduction, near zero when converged", registry);
+      solver_gradient = new YoDouble("solver_gradient", "mjSolverStat.gradient at the last iteration: gradient norm, small when converged (primal solvers)", registry);
+      solver_nactive = new YoInteger("solver_nactive", "mjSolverStat.nactive at the last iteration: active constraints", registry);
+      solver_nchange = new YoInteger("solver_nchange", "mjSolverStat.nchange at the last iteration: constraint state changes", registry);
+      warning_inertia = new YoInteger("warning_inertia", "Cumulative mjWARN_INERTIA count: (near) singular inertia matrix; any increase mid-run is trouble", registry);
+      warning_contactfull = new YoInteger("warning_contactfull", "Cumulative mjWARN_CONTACTFULL count: too many contacts", registry);
+      warning_cnstrfull = new YoInteger("warning_cnstrfull", "Cumulative mjWARN_CNSTRFULL count: too many constraints", registry);
+      warning_badqpos = new YoInteger("warning_badqpos", "Cumulative mjWARN_BADQPOS count: bad number in qpos", registry);
+      warning_badqvel = new YoInteger("warning_badqvel", "Cumulative mjWARN_BADQVEL count: bad number in qvel", registry);
+      warning_badqacc = new YoInteger("warning_badqacc", "Cumulative mjWARN_BADQACC count: bad number in qacc, the earliest sign of a bad contact-parameter set", registry);
+      warning_badctrl = new YoInteger("warning_badctrl", "Cumulative mjWARN_BADCTRL count: bad number in ctrl", registry);
+      energy_potential = new YoDouble("energy_potential", "mjData.energy[0]: potential energy; NaN unless MujocoOptions enableEnergy", registry);
+      energy_kinetic = new YoDouble("energy_kinetic", "mjData.energy[1]: kinetic energy; NaN unless MujocoOptions enableEnergy", registry);
+      energy_potential.set(Double.NaN);
+      energy_kinetic.set(Double.NaN);
    }
 
    /** Caches native pointers; call once, right after the model has compiled. */
@@ -106,11 +110,12 @@ public class MujocoStatistics
          return;
 
       hasBeenCompiled.set(true); // Re-asserted so GUI edits/buffer scrubs cannot make this gauge lie.
+
       ncon.set(data.ncon());
-      nefc.set(data.nefc());
       ne.set(data.ne());
       nf.set(data.nf());
       nl.set(data.nl());
+      nefc.set(data.nefc());
       nisland.set(data.nisland());
 
       int niter = data.solver_niter(0);
@@ -121,26 +126,26 @@ public class MujocoStatistics
          // 0's iteration i is simply index i.
          int lastIteration = Math.min(niter, Mujoco.mjNSOLVER) - 1;
          solverStats.position(lastIteration);
-         solverImprovement.set(solverStats.improvement());
-         solverGradient.set(solverStats.gradient());
-         solverNactive.set(solverStats.nactive());
-         solverNchange.set(solverStats.nchange());
+         solver_improvement.set(solverStats.improvement());
+         solver_gradient.set(solverStats.gradient());
+         solver_nactive.set(solverStats.nactive());
+         solver_nchange.set(solverStats.nchange());
       }
       else
       {
-         solverImprovement.set(0.0);
-         solverGradient.set(0.0);
-         solverNactive.set(0);
-         solverNchange.set(0);
+         solver_improvement.set(0.0);
+         solver_gradient.set(0.0);
+         solver_nactive.set(0);
+         solver_nchange.set(0);
       }
 
-      warnInertia.set(warningStats.position(Mujoco.mjWARN_INERTIA).number());
-      warnContactFull.set(warningStats.position(Mujoco.mjWARN_CONTACTFULL).number());
-      warnCnstrFull.set(warningStats.position(Mujoco.mjWARN_CNSTRFULL).number());
-      warnBadQpos.set(warningStats.position(Mujoco.mjWARN_BADQPOS).number());
-      warnBadQvel.set(warningStats.position(Mujoco.mjWARN_BADQVEL).number());
-      warnBadQacc.set(warningStats.position(Mujoco.mjWARN_BADQACC).number());
-      warnBadCtrl.set(warningStats.position(Mujoco.mjWARN_BADCTRL).number());
+      warning_inertia.set(warningStats.position(Mujoco.mjWARN_INERTIA).number());
+      warning_contactfull.set(warningStats.position(Mujoco.mjWARN_CONTACTFULL).number());
+      warning_cnstrfull.set(warningStats.position(Mujoco.mjWARN_CNSTRFULL).number());
+      warning_badqpos.set(warningStats.position(Mujoco.mjWARN_BADQPOS).number());
+      warning_badqvel.set(warningStats.position(Mujoco.mjWARN_BADQVEL).number());
+      warning_badqacc.set(warningStats.position(Mujoco.mjWARN_BADQACC).number());
+      warning_badctrl.set(warningStats.position(Mujoco.mjWARN_BADCTRL).number());
    }
 
    /**
@@ -154,13 +159,13 @@ public class MujocoStatistics
 
       if (energyEnabled)
       {
-         energyPotential.set(data.energy(0));
-         energyKinetic.set(data.energy(1));
+         energy_potential.set(data.energy(0));
+         energy_kinetic.set(data.energy(1));
       }
       else
       {
-         energyPotential.set(Double.NaN);
-         energyKinetic.set(Double.NaN);
+         energy_potential.set(Double.NaN);
+         energy_kinetic.set(Double.NaN);
       }
    }
 }

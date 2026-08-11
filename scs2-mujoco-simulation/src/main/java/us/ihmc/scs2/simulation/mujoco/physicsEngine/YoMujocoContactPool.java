@@ -74,7 +74,7 @@ public class YoMujocoContactPool
       mjContact contact = data.contact();
       IntPointer efcState = data.efc_state();
       DoublePointer efcKBIP = data.efc_KBIP();
-      IntPointer geomBodyId = model.geom_bodyid();
+      IntPointer geom_bodyid = model.geom_bodyid();
       int nefc = data.nefc();
 
       for (int contactId = 0; contactId < ncon; contactId++)
@@ -83,24 +83,24 @@ public class YoMujocoContactPool
          Mujoco.mj_contactForce(model, data, contactId, forceScratch);
 
          if (contactId < slots.length)
-            slots[contactId].update(geomBodyId, contact, forceScratch, efcState, efcKBIP, nefc);
+            slots[contactId].update(geom_bodyid, contact, forceScratch, efcState, efcKBIP, nefc);
 
-         accumulateAggregates(geomBodyId, contact);
+         accumulateAggregates(geom_bodyid, contact);
       }
 
       for (int slotIndex = ncon; slotIndex < slots.length; slotIndex++)
          slots[slotIndex].clear();
    }
 
-   private void accumulateAggregates(IntPointer geomBodyId, mjContact contact)
+   private void accumulateAggregates(IntPointer geom_bodyid, mjContact contact)
    {
       int geomIdA = contact.geom(0);
       int geomIdB = contact.geom(1);
       if (geomIdA < 0 || geomIdB < 0)
          return; // flex contact; no geom-owned bodies to attribute.
 
-      MujocoBodyContactAggregate aggregateA = aggregatesByBodyId.get(geomBodyId.get(geomIdA));
-      MujocoBodyContactAggregate aggregateB = aggregatesByBodyId.get(geomBodyId.get(geomIdB));
+      MujocoBodyContactAggregate aggregateA = aggregatesByBodyId.get(geom_bodyid.get(geomIdA));
+      MujocoBodyContactAggregate aggregateB = aggregatesByBodyId.get(geom_bodyid.get(geomIdB));
       if (aggregateA == null && aggregateB == null)
          return;
 

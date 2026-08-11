@@ -82,20 +82,20 @@ public final class MujocoMultiBodyRobotFactory
       mjcf.append("  <compiler angle=\"radian\"/>\n");
       // Compile-time seeds; live-tunable after compile via the MujocoOptions o_* contact override.
       mjcf.append("  <default>\n");
-      mjcf.append("    <geom friction=\"").append(parameters.getFrictionSlide())
-          .append(' ').append(parameters.getFrictionTorsional())
-          .append(' ').append(parameters.getFrictionRolling())
-          .append("\" solref=\"").append(parameters.getContactSolrefTimeconst()).append(' ').append(parameters.getContactSolrefDampRatio())
-          .append("\" solimp=\"").append(parameters.getContactSolimpDmin())
-          .append(' ').append(parameters.getContactSolimpDmax())
-          .append(' ').append(parameters.getContactSolimpWidth())
-          .append(' ').append(parameters.getContactSolimpMidpoint())
-          .append(' ').append(parameters.getContactSolimpPower())
-          .append("\" condim=\"").append(parameters.getCondim())
-          .append("\" margin=\"").append(parameters.getContactMargin())
-          .append("\" gap=\"").append(parameters.getContactGap())
+      mjcf.append("    <geom friction=\"").append(parameters.get_friction_slide())
+          .append(' ').append(parameters.get_friction_spin())
+          .append(' ').append(parameters.get_friction_roll())
+          .append("\" solref=\"").append(parameters.get_solref_timeconst()).append(' ').append(parameters.get_solref_dampratio())
+          .append("\" solimp=\"").append(parameters.get_solimp_dmin())
+          .append(' ').append(parameters.get_solimp_dmax())
+          .append(' ').append(parameters.get_solimp_width())
+          .append(' ').append(parameters.get_solimp_midpoint())
+          .append(' ').append(parameters.get_solimp_power())
+          .append("\" condim=\"").append(parameters.get_condim())
+          .append("\" margin=\"").append(parameters.get_margin())
+          .append("\" gap=\"").append(parameters.get_gap())
           .append("\"/>\n");
-      mjcf.append("    <joint armature=\"").append(parameters.getJointArmature()).append("\"/>\n");
+      mjcf.append("    <joint armature=\"").append(parameters.get_armature()).append("\"/>\n");
       mjcf.append("    <default class=\"robot\">\n");
       mjcf.append("      <geom contype=\"").append(ROBOT_CONTYPE).append("\" conaffinity=\"").append(ROBOT_CONAFFINITY).append("\"/>\n");
       mjcf.append("    </default>\n");

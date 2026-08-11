@@ -155,25 +155,25 @@ public class MujocoMultiBodyDynamicsWorld
       opt.enableflags(enableflags);
 
       opt.o_margin(options.o_margin.getValue());
-      opt.o_solref(0, options.o_solrefTimeconst.getValue());
-      opt.o_solref(1, options.o_solrefDampratio.getValue());
-      opt.o_solimp(0, options.o_solimpDmin.getValue());
-      opt.o_solimp(1, options.o_solimpDmax.getValue());
-      opt.o_solimp(2, options.o_solimpWidth.getValue());
-      opt.o_solimp(3, options.o_solimpMidpoint.getValue());
-      opt.o_solimp(4, options.o_solimpPower.getValue());
-      opt.o_friction(0, options.o_frictionSlide.getValue());
-      opt.o_friction(1, options.o_frictionSlide.getValue());
-      opt.o_friction(2, options.o_frictionSpin.getValue());
-      opt.o_friction(3, options.o_frictionRoll.getValue());
-      opt.o_friction(4, options.o_frictionRoll.getValue());
+      opt.o_solref(0, options.o_solref_timeconst.getValue());
+      opt.o_solref(1, options.o_solref_dampratio.getValue());
+      opt.o_solimp(0, options.o_solimp_dmin.getValue());
+      opt.o_solimp(1, options.o_solimp_dmax.getValue());
+      opt.o_solimp(2, options.o_solimp_width.getValue());
+      opt.o_solimp(3, options.o_solimp_midpoint.getValue());
+      opt.o_solimp(4, options.o_solimp_power.getValue());
+      opt.o_friction(0, options.o_friction_slide.getValue());
+      opt.o_friction(1, options.o_friction_slide.getValue());
+      opt.o_friction(2, options.o_friction_spin.getValue());
+      opt.o_friction(3, options.o_friction_roll.getValue());
+      opt.o_friction(4, options.o_friction_roll.getValue());
 
       // MuJoCo's refsafe guard only clamps solref coming from MJCF, not runtime struct writes.
-      double timeconst = options.o_solrefTimeconst.getValue();
+      double timeconst = options.o_solref_timeconst.getValue();
       if (options.enableOverride.getValue() && timeconst > 0.0 && timeconst < 2.0 * opt.timestep() && !warnedShortSolrefTimeconst)
       {
          warnedShortSolrefTimeconst = true;
-         LogTools.warn("o_solrefTimeconst ({}) is below MuJoCo's stability requirement of 2*timestep ({}); expect contact instability.",
+         LogTools.warn("o_solref_timeconst ({}) is below MuJoCo's stability requirement of 2*timestep ({}); expect contact instability.",
                        timeconst,
                        2.0 * opt.timestep());
       }
