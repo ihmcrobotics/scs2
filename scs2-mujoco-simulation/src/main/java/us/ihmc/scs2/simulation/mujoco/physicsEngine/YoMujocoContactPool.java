@@ -16,13 +16,14 @@ import us.ihmc.yoVariables.variable.YoInteger;
 
 /**
  * Fixed pool of {@link YoMujocoContact} slots plus per-body {@link MujocoBodyContactAggregate}
- * totals, refreshed from {@code mjData.contact} after every step. Slot detail is capped at the
- * capacity (see {@code contactOverflowCount}); aggregates always cover all {@code ncon} contacts.
- * Capacity is fixed at construction because the variables must exist before the session buffer is
- * set up.
+ * totals, refreshed from {@code mjData.contact} after every step into a read-only
+ * {@code MujocoContactPool} child registry. Slot detail is capped at the capacity (see
+ * {@code contactOverflowCount}); aggregates always cover all {@code ncon} contacts. Capacity is
+ * fixed at construction because the variables must exist before the session buffer is set up.
  */
 public class YoMujocoContactPool
 {
+   private final YoRegistry registry = new YoRegistry("MujocoContactPool");
    private final YoMujocoContact[] slots;
    private final YoInteger contactOverflowCount;
    private final Map<Integer, MujocoBodyContactAggregate> aggregatesByBodyId = new HashMap<>();
@@ -31,8 +32,9 @@ public class YoMujocoContactPool
    private mjData data;
    private DoublePointer forceScratch;
 
-   public YoMujocoContactPool(int capacity, ReferenceFrame worldFrame, YoRegistry registry)
+   public YoMujocoContactPool(int capacity, ReferenceFrame worldFrame, YoRegistry parentRegistry)
    {
+      parentRegistry.addChild(registry);
       slots = new YoMujocoContact[capacity];
       for (int i = 0; i < capacity; i++)
          slots[i] = new YoMujocoContact(i, worldFrame, registry);

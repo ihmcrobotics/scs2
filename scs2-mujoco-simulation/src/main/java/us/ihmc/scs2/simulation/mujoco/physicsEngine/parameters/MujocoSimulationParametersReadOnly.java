@@ -2,8 +2,18 @@ package us.ihmc.scs2.simulation.mujoco.physicsEngine.parameters;
 
 /**
  * Compile-time seeds, consumed once when the composite MJCF is generated on the first
- * {@code simulate()} — except {@link #getSubSteps()}, which the engine mirrors as a live
- * {@code subSteps} YoVariable. Defaults live in {@link MujocoSimulationParameters}.
+ * {@code simulate()} — except {@link #getSubSteps()}, which the engine mirrors live in
+ * {@code MujocoOptions}. Defaults live in {@link MujocoSimulationParameters}.
+ * <p>
+ * Names use MuJoCo's vocabulary verbatim, so each term is directly searchable — the relevant pages
+ * are <a href="https://mujoco.readthedocs.io/en/stable/modeling.html#solver-parameters">Modeling
+ * &gt; Solver parameters</a> (solref/solimp semantics),
+ * <a href="https://mujoco.readthedocs.io/en/stable/modeling.html#contact-parameters">Modeling &gt;
+ * Contact parameters</a> (how per-geom values combine per contact pair), and the
+ * <a href="https://mujoco.readthedocs.io/en/stable/XMLreference.html#geom">XML reference, geom
+ * element</a>. Component suffixes (timeconst, dmin, midpoint, ...) are the docs' tuple names, not
+ * API symbols; each javadoc states the index.
+ * </p>
  * <p>
  * Rule of thumb for where a value belongs: if MuJoCo would need a model recompile to honor a
  * change (per-geom/per-joint attributes, collision structure, allocation sizes), it is a parameter
@@ -14,29 +24,42 @@ package us.ihmc.scs2.simulation.mujoco.physicsEngine.parameters;
  */
 public interface MujocoSimulationParametersReadOnly
 {
-   /** Number of {@code mj_step} calls per SCS2 tick; the MuJoCo timestep is session dt / subSteps. Live (read every tick). */
+   /** Number of {@code mj_step} calls per SCS2 tick; consumed once at construction to seed the live {@code MujocoOptions} subSteps variable. */
    int getSubSteps();
 
    /**
     * MJCF default {@code geom/@solref[0]}: contact settling time constant [s]. Keep &ge;
     * 2&middot;timestep. Empirically for closed-loop locomotion 0.005 s is the sweet spot — 0.02
     * (MuJoCo default) is too soft for the controller; 0.002 gives harsh touchdowns.
+    * @see <a href="https://mujoco.readthedocs.io/en/stable/modeling.html#reference">Modeling: solref</a>
     */
    double getContactSolrefTimeconst();
 
-   /** MJCF default {@code geom/@solref[1]}: contact damping ratio; 1 = critically damped (no bounce). */
+   /**
+    * MJCF default {@code geom/@solref[1]} (dampratio): contact damping ratio; 1 = critically damped, &lt; 1 bouncy, &gt; 1 sluggish.
+    * @see <a href="https://mujoco.readthedocs.io/en/stable/modeling.html#reference">Modeling: solref</a>
+    */
    double getContactSolrefDampRatio();
 
-   /** MJCF default {@code geom/@solimp[0]} (dmin): impedance at first touch. */
+   /**
+    * MJCF default {@code geom/@solimp[0]} (dmin): contact hardness at first touch, 0-1; lower = softer initial contact.
+    * @see <a href="https://mujoco.readthedocs.io/en/stable/modeling.html#impedance">Modeling: solimp</a>
+    */
    double getContactSolimpDmin();
 
-   /** MJCF default {@code geom/@solimp[1]} (dmax): impedance once fully penetrated past width. */
+   /**
+    * MJCF default {@code geom/@solimp[1]} (dmax): contact hardness once penetrated past width, 0-1.
+    * @see <a href="https://mujoco.readthedocs.io/en/stable/modeling.html#impedance">Modeling: solimp</a>
+    */
    double getContactSolimpDmax();
 
    /** MJCF default {@code joint/@armature}: rotor inertia added to every joint DoF. */
    double getJointArmature();
 
-   /** MJCF default {@code geom/@friction[0]}: sliding friction coefficient. */
+   /**
+    * MJCF default {@code geom/@friction[0]}: sliding friction coefficient.
+    * @see <a href="https://mujoco.readthedocs.io/en/stable/modeling.html#contact-parameters">Modeling: contact parameters</a>
+    */
    double getFrictionSlide();
 
    /**
@@ -55,32 +78,52 @@ public interface MujocoSimulationParametersReadOnly
    /**
     * MJCF default {@code geom/@friction[1]}: torsional ("spin") friction coefficient. 0.05
     * empirically balances turn-in-place authority against stance-foot yaw wobble.
+    * @see <a href="https://mujoco.readthedocs.io/en/stable/modeling.html#contact-parameters">Modeling: contact parameters</a>
     */
    double getFrictionTorsional();
 
-   /** MJCF default {@code geom/@friction[2]}: rolling friction coefficient. 0.01 (vs MuJoCo default 1e-4) so spheres settle in finite time. */
+   /**
+    * MJCF default {@code geom/@friction[2]}: rolling friction coefficient. 0.01 (vs MuJoCo default 1e-4) so spheres settle in finite time.
+    * @see <a href="https://mujoco.readthedocs.io/en/stable/modeling.html#contact-parameters">Modeling: contact parameters</a>
+    */
    double getFrictionRolling();
 
-   /** MJCF default {@code geom/@solimp[2]} (width): softening-zone thickness [m]. */
+   /**
+    * MJCF default {@code geom/@solimp[2]} (width) [m]: penetration depth over which hardness ramps dmin to dmax.
+    * @see <a href="https://mujoco.readthedocs.io/en/stable/modeling.html#impedance">Modeling: solimp</a>
+    */
    double getContactSolimpWidth();
 
-   /** MJCF default {@code geom/@solimp[3]} (midpoint): impedance sigmoid inflection point. */
+   /**
+    * MJCF default {@code geom/@solimp[3]} (midpoint): hardness ramp inflection point, 0-1 fraction of width.
+    * @see <a href="https://mujoco.readthedocs.io/en/stable/modeling.html#impedance">Modeling: solimp</a>
+    */
    double getContactSolimpMidpoint();
 
-   /** MJCF default {@code geom/@solimp[4]} (power): impedance sigmoid sharpness, &ge; 1. */
+   /**
+    * MJCF default {@code geom/@solimp[4]} (power): hardness ramp sharpness, &ge; 1 (1 = linear).
+    * @see <a href="https://mujoco.readthedocs.io/en/stable/modeling.html#impedance">Modeling: solimp</a>
+    */
    double getContactSolimpPower();
 
    /**
     * MJCF default {@code geom/@condim}: contact dimensionality (1 frictionless, 3 sliding, 4
     * +torsional, 6 +rolling). Default 4: per-corner torsional friction stops yaw-induced lateral
     * foot slip on flat feet (condim=3 wobbles).
+    * @see <a href="https://mujoco.readthedocs.io/en/stable/computation/index.html#condim">Computation: condim</a>
     */
    int getCondim();
 
-   /** MJCF default {@code geom/@margin}: contacts are detected at distance &lt; margin [m]. */
+   /**
+    * MJCF default {@code geom/@margin}: contacts are detected at distance &lt; margin [m].
+    * @see <a href="https://mujoco.readthedocs.io/en/stable/computation/index.html#margin-and-gap">Computation: margin and gap</a>
+    */
    double getContactMargin();
 
-   /** MJCF default {@code geom/@gap}: contacts with distance &gt; gap are detected but inactive; force onset at margin − gap [m]. */
+   /**
+    * MJCF default {@code geom/@gap}: contacts with distance &gt; gap are detected but inactive; force onset at margin − gap [m].
+    * @see <a href="https://mujoco.readthedocs.io/en/stable/computation/index.html#margin-and-gap">Computation: margin and gap</a>
+    */
    double getContactGap();
 
    /**

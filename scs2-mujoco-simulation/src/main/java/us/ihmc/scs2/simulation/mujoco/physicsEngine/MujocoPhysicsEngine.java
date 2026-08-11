@@ -4,19 +4,15 @@ import java.io.File;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import us.ihmc.euclid.referenceFrame.ReferenceFrame;
 import us.ihmc.euclid.tuple3D.interfaces.Vector3DReadOnly;
 import us.ihmc.log.LogTools;
 import us.ihmc.mecano.tools.JointStateType;
-import us.ihmc.yoVariables.variable.YoDouble;
-import us.ihmc.yoVariables.variable.YoLong;
 import us.ihmc.scs2.definition.robot.RobotDefinition;
 import us.ihmc.scs2.definition.robot.RobotStateDefinition;
 import us.ihmc.scs2.definition.terrain.TerrainObjectDefinition;
-import us.ihmc.scs2.session.YoTimer;
 import us.ihmc.scs2.simulation.mujoco.MujocoNativeLibrary;
 import us.ihmc.scs2.simulation.mujoco.physicsEngine.parameters.MujocoSimulationParameters;
 import us.ihmc.scs2.simulation.mujoco.physicsEngine.parameters.MujocoSimulationParametersReadOnly;
@@ -26,8 +22,6 @@ import us.ihmc.scs2.simulation.robot.Robot;
 import us.ihmc.scs2.simulation.robot.RobotExtension;
 import us.ihmc.scs2.simulation.robot.RobotInterface;
 import us.ihmc.yoVariables.registry.YoRegistry;
-import us.ihmc.yoVariables.variable.YoBoolean;
-import us.ihmc.yoVariables.variable.YoInteger;
 
 /**
  * SCS2 {@link PhysicsEngine} backed by MuJoCo via a custom JavaCPP preset.
@@ -60,11 +54,15 @@ public class MujocoPhysicsEngine implements PhysicsEngine
    // Compile-time seeds, consumed once at MJCF generation; the MujocoOptions registry is the only
    // Yo mirror of runtime-tunable values.
    private final MujocoSimulationParameters seedParameters = new MujocoSimulationParameters();
-   private final YoInteger subSteps;
    private final YoMujocoOptions options;
-   private final MujocoPhysicsEngineStatistics statistics = new MujocoPhysicsEngineStatistics(physicsEngineRegistry);
+   private final MujocoStatistics statistics = new MujocoStatistics(physicsEngineRegistry);
    private final YoMujocoContactPool contactPool;
-   private final YoBoolean hasBeenCompiled;
+   // Plain boolean, deliberately not a YoVariable: this is engine control flow, and a GUI edit or
+   // buffer scrub must not be able to flip it. The display mirror is statistics.hasBeenCompiled.
+   private boolean modelCompiled = false;
+   // subSteps value in effect this tick; refreshed only through pollSubStepsRequest so buffer
+   // scrubs cannot change it and the timestep/step-count reads cannot desync mid-tick.
+   private int appliedSubSteps;
 
    private static final int REALTIME_RATE_SAMPLES = 100;
    private double simulateDt = 0.0;
@@ -72,10 +70,6 @@ public class MujocoPhysicsEngine implements PhysicsEngine
    private long realtimeRateWindowStartTime = 0;
    private long realtimeRateSampleCounter = 0;
 
-   private final YoDouble mujocoRealtimeRate = new YoDouble("MujocoRealtimeRate", physicsEngineRegistry);
-   private final YoDouble mujocoSimulateTimeMs = new YoDouble("MujocoSimulateTime[ms]", physicsEngineRegistry);
-   private final YoLong mujocoTick = new YoLong("MujocoTick", physicsEngineRegistry);
-   private final YoTimer stepTimer = new YoTimer("mujocoStep", TimeUnit.MILLISECONDS, physicsEngineRegistry);
 
    private File workingDirectory;
    private boolean hasBeenInitialized = false;
@@ -85,10 +79,9 @@ public class MujocoPhysicsEngine implements PhysicsEngine
       this.inertialFrame = inertialFrame;
       this.rootRegistry = rootRegistry;
       seedParameters.set(parameters);
-      this.subSteps = new YoInteger("subSteps", "Number of mj_step calls per SCS2 tick; MuJoCo timestep = session dt / subSteps. Live.", physicsEngineRegistry);
-      subSteps.set(parameters.getSubSteps());
       this.options = new YoMujocoOptions(physicsEngineRegistry);
-      this.hasBeenCompiled = new YoBoolean("mujocoHasBeenCompiled", physicsEngineRegistry);
+      options.subSteps.set(parameters.getSubSteps());
+      appliedSubSteps = Math.max(1, parameters.getSubSteps());
       // Slot capacity must be fixed here: the YoVariables have to exist before the session buffer
       // is wired, well before the model compiles on the first simulate().
       int perContactCapacity = Math.max(0, parameters.getPerContactDiagnosticsCapacity());
@@ -136,23 +129,25 @@ public class MujocoPhysicsEngine implements PhysicsEngine
       // physics thread, cleared-before-apply so a concurrent edit lands next tick.
       if (options.pollUpdateRequest())
          dynamicsWorld.writeOptions(options);
-      dynamicsWorld.setTimestep(dt / Math.max(1, subSteps.getValue()));
+      if (options.pollSubStepsRequest())
+         appliedSubSteps = Math.max(1, options.subSteps.getValue());
+      dynamicsWorld.setTimestep(dt / appliedSubSteps);
       long now = System.nanoTime();
       if (simulateCallStartTime != 0)
-         mujocoSimulateTimeMs.set((now - simulateCallStartTime) * 1.0e-6);
+         statistics.mujocoSimulateTimeMs.set((now - simulateCallStartTime) * 1.0e-6);
       simulateCallStartTime = now;
       if (realtimeRateSampleCounter == 0)
       {
          if (realtimeRateWindowStartTime != 0)
          {
             double elapsed = (now - realtimeRateWindowStartTime) * 1.0e-9;
-            mujocoRealtimeRate.set(REALTIME_RATE_SAMPLES * simulateDt / elapsed);
+            statistics.mujocoRealtimeRate.set(REALTIME_RATE_SAMPLES * simulateDt / elapsed);
          }
          realtimeRateWindowStartTime = now;
          realtimeRateSampleCounter = REALTIME_RATE_SAMPLES;
       }
       realtimeRateSampleCounter--;
-      mujocoTick.increment();
+      statistics.mujocoTick.increment();
 
       dynamicsWorld.setGravity(gravity);
 
@@ -182,9 +177,9 @@ public class MujocoPhysicsEngine implements PhysicsEngine
          robot.pushExternalWrenchesToMujoco(dynamicsWorld.getData().xfrc_applied());
       }
 
-      stepTimer.start();
-      dynamicsWorld.step(Math.max(1, subSteps.getValue()));
-      stepTimer.stop();
+      statistics.stepTimer.start();
+      dynamicsWorld.step(appliedSubSteps);
+      statistics.stepTimer.stop();
 
       statistics.update();
       statistics.updateEnergy(options.enableEnergy.getValue());
@@ -201,7 +196,7 @@ public class MujocoPhysicsEngine implements PhysicsEngine
 
    private void compileIfNeeded()
    {
-      if (hasBeenCompiled.getValue())
+      if (modelCompiled)
          return;
 
       String workingDirectoryProperty = System.getProperty("scs2.mujoco.workingDirectory");
@@ -282,7 +277,8 @@ public class MujocoPhysicsEngine implements PhysicsEngine
       if (contactPool != null)
          contactPool.bind(dynamicsWorld.getModel(), dynamicsWorld.getData());
 
-      hasBeenCompiled.set(true);
+      modelCompiled = true;
+      statistics.hasBeenCompiled.set(true);
    }
 
    @Override
@@ -299,7 +295,7 @@ public class MujocoPhysicsEngine implements PhysicsEngine
    @Override
    public void addRobot(Robot robot)
    {
-      if (hasBeenCompiled.getValue())
+      if (modelCompiled)
          throw new IllegalStateException("MuJoCo model is already compiled; can't add robot '"
                                          + robot.getRobotDefinition().getName() + "' after simulate() has been called.");
       inertialFrame.checkReferenceFrameMatch(robot.getInertialFrame());
@@ -313,7 +309,7 @@ public class MujocoPhysicsEngine implements PhysicsEngine
    @Override
    public void addTerrainObject(TerrainObjectDefinition terrainObjectDefinition)
    {
-      if (hasBeenCompiled.getValue())
+      if (modelCompiled)
          throw new IllegalStateException("MuJoCo model is already compiled; can't add terrain after simulate().");
       pendingTerrain.add(terrainObjectDefinition);
       // Mirror the eager exposure pattern for terrain so getTerrainObjectDefinitions() returns
@@ -332,7 +328,7 @@ public class MujocoPhysicsEngine implements PhysicsEngine
    {
       // Before compile, fall back to the pending list so SCS2's session setup (which queries
       // this before initialize() runs) sees the robots the user added.
-      if (!hasBeenCompiled.getValue())
+      if (!modelCompiled)
          return new ArrayList<>(pendingRobots);
       return robotList.stream().map(MujocoRobot::getRobot).collect(Collectors.toList());
    }
@@ -340,7 +336,7 @@ public class MujocoPhysicsEngine implements PhysicsEngine
    @Override
    public List<RobotDefinition> getRobotDefinitions()
    {
-      if (!hasBeenCompiled.getValue())
+      if (!modelCompiled)
          return pendingRobots.stream().map(Robot::getRobotDefinition).collect(Collectors.toList());
       return robotList.stream().map(RobotInterface::getRobotDefinition).collect(Collectors.toList());
    }

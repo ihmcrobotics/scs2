@@ -7,13 +7,29 @@ import us.ihmc.yoVariables.variable.YoEnum;
 import us.ihmc.yoVariables.variable.YoInteger;
 
 /**
- * The single home of every runtime-tunable {@code mjOption} value, in a {@code MujocoOptions} child
- * registry with MuJoCo's documented names; the MJCF deliberately emits none of them. Defaults match
- * {@code mj_defaultOption} except the three noted SCS2 deviations; {@code timestep} and
- * {@code gravity} are engine-owned and absent. Edits from any thread only trip a dirty flag (a
- * plain boolean so GUI buffer scrubbing cannot replay it); the engine consumes it via
- * {@link #pollUpdateRequest()} and pushes the values into {@code mjModel.opt} on the physics
- * thread — including once at compile, so values set before the first tick apply from step one.
+ * The single home of every live-tunable value: the full runtime-writable {@code mjOption} struct
+ * plus SCS2's own {@code subSteps}, in a {@code MujocoOptions} child registry; editing any variable
+ * here changes the physics engine. The MJCF deliberately emits none of them. Defaults match
+ * {@code mj_defaultOption} except the noted SCS2 deviations; {@code timestep} and {@code gravity}
+ * are engine-owned and absent.
+ * <p>
+ * Names are verbatim {@code mjOption} field names, so each one is directly searchable: googling
+ * e.g. "mujoco solimp" or "mujoco impratio" lands on the reference. The relevant pages are
+ * <a href="https://mujoco.readthedocs.io/en/stable/modeling.html#solver-parameters">Modeling &gt;
+ * Solver parameters</a> (solref/solimp semantics; the Contact override section there is exactly
+ * the o_* / enableOverride mechanism) and the
+ * <a href="https://mujoco.readthedocs.io/en/stable/XMLreference.html#option">XML reference,
+ * option element</a>.
+ * Array-valued fields get a component suffix — a "shim name" that is not itself an API symbol,
+ * taken from the docs' parameter tuples (solref = (timeconst, dampratio), solimp = (dmin, dmax,
+ * width, midpoint, power)); each description states the exact index it maps to.
+ * </p>
+ * <p>
+ * Edits from any thread only trip a dirty flag (a plain boolean so GUI buffer scrubbing cannot
+ * replay it); the engine consumes it via {@link #pollUpdateRequest()} and pushes the values into
+ * {@code mjModel.opt} on the physics thread — including once at compile, so values set before the
+ * first tick apply from step one.
+ * </p>
  * <p>
  * Rule of thumb for where a value belongs: if the {@code mjOption} struct accepts a change between
  * steps (global solver and contact-override settings), it is an option and goes here, live-tunable
@@ -26,39 +42,82 @@ public class YoMujocoOptions
 {
    private final YoRegistry registry = new YoRegistry("MujocoOptions");
    private boolean updateOptionsRequested = false;
+   private boolean subStepsChangeRequested = false;
 
-   public final YoDouble impratio = var("impratio", "Frictional-to-normal constraint impedance ratio; > 1 stiffens friction (anti-slip, elliptic cones)", 1.0);
-   public final YoDouble tolerance = var("tolerance", "Main solver convergence tolerance", 1.0e-8);
-   public final YoDouble ls_tolerance = var("ls_tolerance", "CG/Newton line-search early-termination tolerance", 0.01);
-   public final YoDouble noslip_tolerance = var("noslip_tolerance", "Convergence tolerance of the noslip post-pass", 1.0e-6);
-   public final YoDouble ccd_tolerance = var("ccd_tolerance", "Convex collision (GJK/EPA) early-termination tolerance", 1.0e-6);
-   public final YoInteger iterations = var("iterations", "Maximum main solver iterations (SCS2 default 25; MuJoCo default 100)", 25);
-   public final YoInteger ls_iterations = var("ls_iterations", "Maximum line-search iterations per solver iteration", 50);
-   public final YoInteger noslip_iterations = var("noslip_iterations", "Noslip post-processing iterations; 0 disables (SCS2 default 5; MuJoCo default 0)", 5);
-   public final YoInteger ccd_iterations = var("ccd_iterations", "Maximum iterations of the convex collision routine", 50);
-   public final YoEnum<MujocoSolver> solver = var("solver", "Constraint solver algorithm (mjtSolver)", MujocoSolver.NEWTON);
-   public final YoEnum<MujocoCone> cone = var("cone", "Friction cone model (mjtCone)", MujocoCone.PYRAMIDAL);
-   public final YoEnum<MujocoJacobian> jacobian = var("jacobian", "Constraint Jacobian representation (mjtJacobian, performance only)", MujocoJacobian.AUTO);
-   public final YoEnum<MujocoIntegrator> integrator = var("integrator", "Numerical integrator (mjtIntegrator; SCS2 default IMPLICITFAST, MuJoCo default EULER)", MujocoIntegrator.IMPLICITFAST);
-   public final YoBoolean enableOverride = var("enableOverride", "mjENBL_OVERRIDE: o_* values override margin/solref/solimp/friction for EVERY contact", false);
-   public final YoBoolean enableEnergy = var("enableEnergy", "mjENBL_ENERGY: compute potential/kinetic energy into mjData.energy", false);
-   public final YoDouble o_margin = var("o_margin", "Override contact detection margin [m] (active when enableOverride)", 0.0);
-   public final YoDouble o_solrefTimeconst = var("o_solrefTimeconst", "o_solref[0]: contact settling time constant [s]; keep >= 2*timestep", 0.02);
-   public final YoDouble o_solrefDampratio = var("o_solrefDampratio", "o_solref[1]: contact damping ratio; 1 = critically damped (no bounce)", 1.0);
-   public final YoDouble o_solimpDmin = var("o_solimpDmin", "o_solimp[0]: impedance at first touch (softness at the surface)", 0.9);
-   public final YoDouble o_solimpDmax = var("o_solimpDmax", "o_solimp[1]: impedance once fully penetrated past width", 0.95);
-   public final YoDouble o_solimpWidth = var("o_solimpWidth", "o_solimp[2]: softening-zone thickness [m] before full hardness", 0.001);
-   public final YoDouble o_solimpMidpoint = var("o_solimpMidpoint", "o_solimp[3]: impedance sigmoid inflection point (curve shape)", 0.5);
-   public final YoDouble o_solimpPower = var("o_solimpPower", "o_solimp[4]: impedance sigmoid sharpness, >= 1 (curve shape)", 2.0);
-   public final YoDouble o_frictionSlide = var("o_frictionSlide", "o_friction[0..1]: sliding friction coefficient", 1.0);
-   public final YoDouble o_frictionSpin = var("o_frictionSpin", "o_friction[2]: torsional (spin) friction coefficient", 0.005);
-   public final YoDouble o_frictionRoll = var("o_frictionRoll", "o_friction[3..4]: rolling friction coefficient", 1.0e-4);
+   public final YoDouble impratio = var("impratio",
+         "Frictional-to-normal constraint impedance ratio; raise (with cone = ELLIPTIC) to fight slip", 1.0);
+   public final YoDouble tolerance = var("tolerance",
+         "Main solver termination tolerance; smaller = more accurate, more iterations", 1.0e-8);
+   public final YoDouble ls_tolerance = var("ls_tolerance",
+         "CG/Newton line-search termination tolerance; rarely tuned", 0.01);
+   public final YoDouble noslip_tolerance = var("noslip_tolerance",
+         "Noslip post-pass termination tolerance (active when noslip_iterations > 0)", 1.0e-6);
+   public final YoDouble ccd_tolerance = var("ccd_tolerance",
+         "Convex-mesh narrowphase (GJK/EPA) termination tolerance", 1.0e-6);
+   public final YoInteger iterations = var("iterations",
+         "Max main solver iterations per step (SCS2 default 25, MuJoCo 100)", 25);
+   public final YoInteger ls_iterations = var("ls_iterations",
+         "Max line-search iterations per solver iteration", 50);
+   public final YoInteger noslip_iterations = var("noslip_iterations",
+         "Non-physical noslip post-pass iterations suppressing residual contact drift; 0 disables (SCS2 default 5, MuJoCo 0)", 5);
+   public final YoInteger ccd_iterations = var("ccd_iterations",
+         "Max convex-mesh narrowphase (GJK/EPA) iterations", 50);
+   public final YoEnum<MujocoSolver> solver = var("solver",
+         "Constraint solver (mjtSolver); NEWTON converges fastest", MujocoSolver.NEWTON);
+   public final YoEnum<MujocoCone> cone = var("cone",
+         "Friction cone model (mjtCone); ELLIPTIC + impratio > 1 fights slip", MujocoCone.PYRAMIDAL);
+   public final YoEnum<MujocoJacobian> jacobian = var("jacobian",
+         "Constraint Jacobian storage (mjtJacobian); performance only", MujocoJacobian.AUTO);
+   public final YoEnum<MujocoIntegrator> integrator = var("integrator",
+         "Integrator (mjtIntegrator); SCS2 default IMPLICITFAST handles high joint damping, MuJoCo default EULER", MujocoIntegrator.IMPLICITFAST);
+   public final YoBoolean enableOverride = var("enableOverride",
+         "mjENBL_OVERRIDE: o_* values replace margin/solref/solimp/friction on EVERY contact", false);
+   public final YoBoolean enableEnergy = var("enableEnergy",
+         "mjENBL_ENERGY: compute energy into the MujocoStatistics energy variables", false);
+   public final YoDouble o_margin = var("o_margin",
+         "Override contact detection margin [m]", 0.0);
+   public final YoDouble o_solrefTimeconst = var("o_solrefTimeconst",
+         "Override solref[0], contact settling time constant [s]; smaller = harder contact, keep >= 2*timestep", 0.02);
+   public final YoDouble o_solrefDampratio = var("o_solrefDampratio",
+         "Override solref[1], contact damping ratio; 1 = critically damped, < 1 bouncy", 1.0);
+   public final YoDouble o_solimpDmin = var("o_solimpDmin",
+         "Override solimp[0] (solver impedance dmin): hardness at first touch, 0-1; lower = softer", 0.9);
+   public final YoDouble o_solimpDmax = var("o_solimpDmax",
+         "Override solimp[1] (dmax): hardness once penetrated past width, 0-1", 0.95);
+   public final YoDouble o_solimpWidth = var("o_solimpWidth",
+         "Override solimp[2] (width) [m]: penetration depth over which hardness ramps dmin to dmax", 0.001);
+   public final YoDouble o_solimpMidpoint = var("o_solimpMidpoint",
+         "Override solimp[3] (midpoint): ramp inflection point, 0-1 fraction of width", 0.5);
+   public final YoDouble o_solimpPower = var("o_solimpPower",
+         "Override solimp[4] (power): ramp sharpness, >= 1 (1 = linear)", 2.0);
+   public final YoDouble o_frictionSlide = var("o_frictionSlide",
+         "Override sliding friction, both tangential directions (o_friction[0..1])", 1.0);
+   public final YoDouble o_frictionSpin = var("o_frictionSpin",
+         "Override torsional (spin) friction about the contact normal (o_friction[2])", 0.005);
+   public final YoDouble o_frictionRoll = var("o_frictionRoll",
+         "Override rolling friction (o_friction[3..4])", 1.0e-4);
+   /** Not an {@code mjOption} field — SCS2's own stepping knob, placed here because it is live. */
+   public final YoInteger subSteps = var("subSteps",
+         "SCS2-owned, not an mjOption field: mj_step calls per SCS2 tick; MuJoCo timestep = session dt / subSteps", 1);
 
    public YoMujocoOptions(YoRegistry parentRegistry)
    {
       parentRegistry.addChild(registry);
-      // Attached after the defaults above, so construction leaves the dirty flag untouched.
+      // Attached after the defaults above, so construction leaves the dirty flags untouched.
+      // subSteps gets its own flag: it is not an mjOption field, so its edits must not trigger a
+      // native option push, and the engine must only pick it up through the poll (buffer scrubs
+      // restore values without firing listeners, so polled changes are deliberate edits only).
       registry.getVariables().forEach(variable -> variable.addListener(v -> updateOptionsRequested = true));
+      subSteps.removeListeners();
+      subSteps.addListener(v -> subStepsChangeRequested = true);
+   }
+
+   /** Consume-and-clear the subSteps dirty flag; physics thread only. */
+   public boolean pollSubStepsRequest()
+   {
+      boolean requested = subStepsChangeRequested;
+      subStepsChangeRequested = false;
+      return requested;
    }
 
    /**
