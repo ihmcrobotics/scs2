@@ -213,7 +213,7 @@ public class MainWindowController extends ObservedAnimationTimer implements Visu
     */
    private void setupLogDirectoryDropTarget()
    {
-      Pane logDropOverlay = new Pane();
+      logDropOverlay = new Pane();
       logDropOverlay.setStyle("-fx-background-color: rgba(0, 0, 0, 0.35);");
       logDropOverlay.setMouseTransparent(true);
       logDropOverlay.setVisible(false);
@@ -222,12 +222,6 @@ public class MainWindowController extends ObservedAnimationTimer implements Visu
       AnchorPane.setRightAnchor(logDropOverlay, 0.0);
       AnchorPane.setBottomAnchor(logDropOverlay, 0.0);
       AnchorPane.setLeftAnchor(logDropOverlay, 0.0);
-
-      // Tracks whether a drag gesture is currently active. Guards against a stray DRAG_OVER that some
-      // platforms deliver right after DRAG_DROPPED on the very first native drag-and-drop into a freshly
-      // shown window, which would otherwise re-show the overlay after the drop already hid it, leaving it
-      // stuck visible with no further DRAG_EXITED/DRAG_DROPPED to clear it.
-      MutableBoolean dragActive = new MutableBoolean(false);
 
       sceneAnchorPane.setOnDragEntered(event ->
       {
@@ -261,6 +255,37 @@ public class MainWindowController extends ObservedAnimationTimer implements Visu
          event.setDropCompleted(droppedSession != null);
          event.consume();
       });
+   }
+
+   // Tracks whether a drag gesture is currently active. Guards against a stray DRAG_OVER that some platforms
+   // deliver right after DRAG_DROPPED on the very first native drag-and-drop into a freshly shown window, which
+   // would otherwise re-show the overlay after the drop already hid it, leaving it stuck visible with no
+   // further DRAG_EXITED/DRAG_DROPPED to clear it.
+   private final MutableBoolean dragActive = new MutableBoolean(false);
+   private Pane logDropOverlay;
+
+   /**
+    * Set by {@link us.ihmc.scs2.sessionVisualizer.jfx.managers.MultiSessionManager} while its "save current
+    * configuration?" confirmation dialog is showing. Some platforms still deliver native drag-and-drop events to
+    * this (modally-disabled) window's scene while that dialog is up - or let a brand new native drag gesture
+    * start altogether while the dialog's nested event loop is running - either of which can otherwise leave the
+    * drop overlay/cursor stuck with no further event to clear it. While this is {@code true}, {@code
+    * sceneAnchorPane} is taken out of mouse/drag picking entirely (rather than merely having its drag handlers
+    * ignore what they're given), so the scene doesn't participate as a drop target at all; on the way back to
+    * {@code false} any leftover overlay/drag-active state is forcibly cleared as a fail-safe.
+    */
+   private boolean sessionSwitchDialogShowing = false;
+
+   public void setSessionSwitchDialogShowing(boolean sessionSwitchDialogShowing)
+   {
+      this.sessionSwitchDialogShowing = sessionSwitchDialogShowing;
+      sceneAnchorPane.setMouseTransparent(sessionSwitchDialogShowing);
+      if (!sessionSwitchDialogShowing)
+      {
+         dragActive.setFalse();
+         if (logDropOverlay != null)
+            logDropOverlay.setVisible(false);
+      }
    }
 
    /**

@@ -82,23 +82,31 @@ public class MultiSessionManager
                                    {
                                       if (toolkit.hasActiveSession())
                                       {
-                                         Alert alert = new Alert(AlertType.CONFIRMATION,
-                                                                 "Do you want to save the default configuration?",
-                                                                 ButtonType.YES,
-                                                                 ButtonType.NO);
-                                         Stage owner;
-                                         if (activeController.get() != null)
-                                            owner = activeController.get().getStage();
-                                         else
-                                            owner = toolkit.getMainWindow();
-                                         alert.initOwner(owner);
-                                         JavaFXMissingTools.centerDialogInOwner(alert);
+                                         mainWindowController.setSessionSwitchDialogShowing(true);
+                                         try
+                                         {
+                                            Alert alert = new Alert(AlertType.CONFIRMATION,
+                                                                    "Do you want to save the default configuration?",
+                                                                    ButtonType.YES,
+                                                                    ButtonType.NO);
+                                            Stage owner;
+                                            if (activeController.get() != null)
+                                               owner = activeController.get().getStage();
+                                            else
+                                               owner = toolkit.getMainWindow();
+                                            alert.initOwner(owner);
+                                            JavaFXMissingTools.centerDialogInOwner(alert);
 
-                                         SessionVisualizerIOTools.addSCSIconToDialog(alert);
-                                         Optional<ButtonType> result = alert.showAndWait();
-                                         stopSession(result.isPresent() && result.get() == ButtonType.YES, true);
-                                         if (oldValue != null)
-                                            oldValue.shutdownSession();
+                                            SessionVisualizerIOTools.addSCSIconToDialog(alert);
+                                            Optional<ButtonType> result = alert.showAndWait();
+                                            stopSession(result.isPresent() && result.get() == ButtonType.YES, true);
+                                            if (oldValue != null)
+                                               oldValue.shutdownSession();
+                                         }
+                                         finally
+                                         {
+                                            mainWindowController.setSessionSwitchDialogShowing(false);
+                                         }
                                       }
                                    });
 
