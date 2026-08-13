@@ -16,6 +16,7 @@ import us.ihmc.mecano.multiBodySystem.interfaces.JointBasics;
 import us.ihmc.mecano.multiBodySystem.interfaces.OneDoFJointBasics;
 import us.ihmc.mecano.multiBodySystem.interfaces.SixDoFJointBasics;
 import us.ihmc.mecano.spatial.Wrench;
+import us.ihmc.scs2.definition.robot.RigidBodyDefinition;
 import us.ihmc.scs2.simulation.mujoco.physicsEngine.MujocoMultiBodyRobot.JointAddress;
 import us.ihmc.scs2.simulation.robot.Robot;
 import us.ihmc.scs2.simulation.robot.RobotExtension;
@@ -90,6 +91,24 @@ public class MujocoRobot extends RobotExtension
    public MujocoMultiBodyRobot getMujocoMultiBodyRobot()
    {
       return mujocoMultiBodyRobot;
+   }
+
+   /**
+    * Creates a per-body contact-total group for every body with collision geometry, keyed by MuJoCo
+    * body id, in this robot's registry. Populated each tick by the engine's {@link YoMujocoContactPool}.
+    */
+   public Map<Integer, MujocoBodyContactAggregate> createContactAggregates(ReferenceFrame worldFrame)
+   {
+      Map<Integer, MujocoBodyContactAggregate> aggregates = new HashMap<>();
+      for (Map.Entry<Integer, SimRigidBodyBasics> entry : mecanoBodyByMujocoId.entrySet())
+      {
+         String bodyName = entry.getValue().getName();
+         RigidBodyDefinition bodyDefinition = getRobotDefinition().getRigidBodyDefinition(bodyName);
+         if (bodyDefinition == null || bodyDefinition.getCollisionShapeDefinitions().isEmpty())
+            continue;
+         aggregates.put(entry.getKey(), new MujocoBodyContactAggregate(bodyName, worldFrame, yoRegistry));
+      }
+      return aggregates;
    }
 
    /**

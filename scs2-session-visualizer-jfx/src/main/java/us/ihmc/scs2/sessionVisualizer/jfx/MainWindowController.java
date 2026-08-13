@@ -267,7 +267,6 @@ public class MainWindowController extends ObservedAnimationTimer implements Visu
 
       sceneAnchorPane.setOnDragExited(event ->
       {
-         dragActive.setFalse();
          logDropOverlay.setVisible(false);
          dragOverWatchdog.stop();
          event.consume();
