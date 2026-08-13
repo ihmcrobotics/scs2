@@ -223,9 +223,21 @@ public class MainWindowController extends ObservedAnimationTimer implements Visu
       AnchorPane.setBottomAnchor(logDropOverlay, 0.0);
       AnchorPane.setLeftAnchor(logDropOverlay, 0.0);
 
+      // Tracks whether a drag gesture is currently active. Guards against a stray DRAG_OVER that some
+      // platforms deliver right after DRAG_DROPPED on the very first native drag-and-drop into a freshly
+      // shown window, which would otherwise re-show the overlay after the drop already hid it, leaving it
+      // stuck visible with no further DRAG_EXITED/DRAG_DROPPED to clear it.
+      MutableBoolean dragActive = new MutableBoolean(false);
+
+      sceneAnchorPane.setOnDragEntered(event ->
+      {
+         dragActive.setTrue();
+         event.consume();
+      });
+
       sceneAnchorPane.setOnDragOver(event ->
       {
-         boolean canDrop = event.getGestureSource() != sceneAnchorPane && resolveDroppedSession(event.getDragboard()) != null;
+         boolean canDrop = dragActive.isTrue() && event.getGestureSource() != sceneAnchorPane && resolveDroppedSession(event.getDragboard()) != null;
          if (canDrop)
             event.acceptTransferModes(TransferMode.COPY);
          logDropOverlay.setVisible(canDrop);
@@ -234,12 +246,14 @@ public class MainWindowController extends ObservedAnimationTimer implements Visu
 
       sceneAnchorPane.setOnDragExited(event ->
       {
+         dragActive.setFalse();
          logDropOverlay.setVisible(false);
          event.consume();
       });
 
       sceneAnchorPane.setOnDragDropped(event ->
       {
+         dragActive.setFalse();
          DroppedSession droppedSession = resolveDroppedSession(event.getDragboard());
          if (droppedSession != null)
             messager.submitMessage(droppedSession.topic(), droppedSession.file());
