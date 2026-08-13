@@ -4,6 +4,7 @@ import com.jfoenix.controls.JFXDrawer;
 import com.jfoenix.controls.JFXDrawer.DrawerDirection;
 import com.jfoenix.controls.JFXHamburger;
 import com.jfoenix.controls.events.JFXDrawerEvent;
+import javafx.animation.PauseTransition;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.Property;
 import javafx.beans.property.SimpleBooleanProperty;
@@ -28,6 +29,7 @@ import javafx.scene.layout.Pane;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
+import javafx.util.Duration;
 import org.apache.commons.lang3.mutable.MutableBoolean;
 import us.ihmc.commons.Conversions;
 import us.ihmc.messager.MessagerAPIFactory.Topic;
@@ -213,7 +215,7 @@ public class MainWindowController extends ObservedAnimationTimer implements Visu
     */
    private void setupLogDirectoryDropTarget()
    {
-      Pane logDropOverlay = new Pane();
+      logDropOverlay = new Pane();
       logDropOverlay.setStyle("-fx-background-color: rgba(0, 0, 0, 0.35);");
       logDropOverlay.setMouseTransparent(true);
       logDropOverlay.setVisible(false);
@@ -223,44 +225,110 @@ public class MainWindowController extends ObservedAnimationTimer implements Visu
       AnchorPane.setBottomAnchor(logDropOverlay, 0.0);
       AnchorPane.setLeftAnchor(logDropOverlay, 0.0);
 
-      // Tracks whether a drag gesture is currently active. Guards against a stray DRAG_OVER that some
-      // platforms deliver right after DRAG_DROPPED on the very first native drag-and-drop into a freshly
-      // shown window, which would otherwise re-show the overlay after the drop already hid it, leaving it
-      // stuck visible with no further DRAG_EXITED/DRAG_DROPPED to clear it.
-      MutableBoolean dragActive = new MutableBoolean(false);
+      // Auto-heals a stuck overlay: a fast/long drag can make the native platform deliver a stray DRAG_ENTERED or
+      // DRAG_OVER for this gesture *after* DRAG_DROPPED already fired (more movement means more queued events and
+      // more chance of them arriving out of order) - with no DRAG_EXITED/DRAG_DROPPED ever following it, since the
+      // real gesture already ended. No amount of state-machine logic can wait for an event that isn't coming, so
+      // instead: every genuine DRAG_OVER that shows the overlay restarts this timer, and if it isn't refreshed
+      // within the timeout - because the drag actually stopped - it forces the overlay closed itself.
+      dragOverWatchdog = new PauseTransition(Duration.millis(500));
+      dragOverWatchdog.setOnFinished(event ->
+      {
+         dragActive.setFalse();
+         logDropOverlay.setVisible(false);
+      });
 
       sceneAnchorPane.setOnDragEntered(event ->
       {
-         dragActive.setTrue();
+         // Belt-and-suspenders alongside sceneAnchorPane.setMouseTransparent(true) (see #setSessionLoadBusy):
+         // stray drag events for a gesture that started before the busy window opened can still slip through, so
+         // every handler also checks the flag directly rather than relying solely on picking being disabled.
+         if (!sessionLoadBusy)
+            dragActive.setTrue();
          event.consume();
       });
 
       sceneAnchorPane.setOnDragOver(event ->
       {
-         boolean canDrop = dragActive.isTrue() && event.getGestureSource() != sceneAnchorPane && resolveDroppedSession(event.getDragboard()) != null;
+         boolean canDrop = !sessionLoadBusy && dragActive.isTrue() && event.getGestureSource() != sceneAnchorPane
+                           && resolveDroppedSession(event.getDragboard()) != null;
          if (canDrop)
+         {
             event.acceptTransferModes(TransferMode.COPY);
+            dragOverWatchdog.playFromStart();
+         }
+         else
+         {
+            dragOverWatchdog.stop();
+         }
          logDropOverlay.setVisible(canDrop);
          event.consume();
       });
 
       sceneAnchorPane.setOnDragExited(event ->
       {
-         dragActive.setFalse();
          logDropOverlay.setVisible(false);
+         dragOverWatchdog.stop();
          event.consume();
       });
 
       sceneAnchorPane.setOnDragDropped(event ->
       {
          dragActive.setFalse();
-         DroppedSession droppedSession = resolveDroppedSession(event.getDragboard());
+         dragOverWatchdog.stop();
+         DroppedSession droppedSession = sessionLoadBusy ? null : resolveDroppedSession(event.getDragboard());
          if (droppedSession != null)
+         {
+            // Mark the scene busy *before* submitting the request: opening a log/mcap session kicks off a
+            // background read that can take a while, and the "save configuration?" dialog (which is what used to
+            // mark the scene busy) doesn't show until well after that finishes. Without marking busy here, a
+            // second drop landing in that gap starts a second, concurrent session load racing the first one,
+            // which corrupts both (stacked dialogs, blank scene once they're dismissed). See
+            // MultiSessionManager#setSessionLoadBusy for the rest of the busy window.
+            setSessionLoadBusy(true);
             messager.submitMessage(droppedSession.topic(), droppedSession.file());
+         }
          logDropOverlay.setVisible(false);
          event.setDropCompleted(droppedSession != null);
          event.consume();
       });
+   }
+
+   // Tracks whether a drag gesture is currently active. Guards against a stray DRAG_OVER that some platforms
+   // deliver right after DRAG_DROPPED on the very first native drag-and-drop into a freshly shown window, which
+   // would otherwise re-show the overlay after the drop already hid it, leaving it stuck visible with no
+   // further DRAG_EXITED/DRAG_DROPPED to clear it.
+   private final MutableBoolean dragActive = new MutableBoolean(false);
+   private Pane logDropOverlay;
+   private PauseTransition dragOverWatchdog;
+
+   /**
+    * Set by this controller as soon as a drop is accepted (before the resulting session even starts loading), and
+    * by {@link us.ihmc.scs2.sessionVisualizer.jfx.managers.MultiSessionManager} for the entire remainder of the
+    * new-session pipeline - through its "save current configuration?" confirmation dialog and the subsequent
+    * session start - until the new session has fully loaded. Some platforms still deliver native drag-and-drop
+    * events to this (modally-disabled) window's scene while that dialog is up - or let a brand new native drag
+    * gesture start altogether while the dialog's nested event loop is running - either of which can otherwise
+    * leave the drop overlay/cursor stuck with no further event to clear it, or worse, start a second concurrent
+    * session load racing the first one. While this is {@code true}, {@code sceneAnchorPane} is taken out of
+    * mouse/drag picking entirely (rather than merely having its drag handlers ignore what they're given), so the
+    * scene doesn't participate as a drop target at all; on the way back to {@code false} any leftover
+    * overlay/drag-active state is forcibly cleared as a fail-safe.
+    */
+   private boolean sessionLoadBusy = false;
+
+   public void setSessionLoadBusy(boolean sessionLoadBusy)
+   {
+      this.sessionLoadBusy = sessionLoadBusy;
+      sceneAnchorPane.setMouseTransparent(sessionLoadBusy);
+      if (!sessionLoadBusy)
+      {
+         dragActive.setFalse();
+         if (dragOverWatchdog != null)
+            dragOverWatchdog.stop();
+         if (logDropOverlay != null)
+            logDropOverlay.setVisible(false);
+      }
    }
 
    /**
