@@ -82,31 +82,23 @@ public class MultiSessionManager
                                    {
                                       if (toolkit.hasActiveSession())
                                       {
-                                         mainWindowController.setSessionSwitchDialogShowing(true);
-                                         try
-                                         {
-                                            Alert alert = new Alert(AlertType.CONFIRMATION,
-                                                                    "Do you want to save the default configuration?",
-                                                                    ButtonType.YES,
-                                                                    ButtonType.NO);
-                                            Stage owner;
-                                            if (activeController.get() != null)
-                                               owner = activeController.get().getStage();
-                                            else
-                                               owner = toolkit.getMainWindow();
-                                            alert.initOwner(owner);
-                                            JavaFXMissingTools.centerDialogInOwner(alert);
+                                         Alert alert = new Alert(AlertType.CONFIRMATION,
+                                                                 "Do you want to save the default configuration?",
+                                                                 ButtonType.YES,
+                                                                 ButtonType.NO);
+                                         Stage owner;
+                                         if (activeController.get() != null)
+                                            owner = activeController.get().getStage();
+                                         else
+                                            owner = toolkit.getMainWindow();
+                                         alert.initOwner(owner);
+                                         JavaFXMissingTools.centerDialogInOwner(alert);
 
-                                            SessionVisualizerIOTools.addSCSIconToDialog(alert);
-                                            Optional<ButtonType> result = alert.showAndWait();
-                                            stopSession(result.isPresent() && result.get() == ButtonType.YES, true);
-                                            if (oldValue != null)
-                                               oldValue.shutdownSession();
-                                         }
-                                         finally
-                                         {
-                                            mainWindowController.setSessionSwitchDialogShowing(false);
-                                         }
+                                         SessionVisualizerIOTools.addSCSIconToDialog(alert);
+                                         Optional<ButtonType> result = alert.showAndWait();
+                                         stopSession(result.isPresent() && result.get() == ButtonType.YES, true);
+                                         if (oldValue != null)
+                                            oldValue.shutdownSession();
                                       }
                                    });
 
@@ -114,24 +106,47 @@ public class MultiSessionManager
                                    {
                                       startSession(newValue, () ->
                                       {
-                                         SessionControlsController controller = activeController.get();
-                                         if (controller == null)
+                                         try
                                          {
-                                            // The session may have been started by a controller that is not showing, e.g. the log session
-                                            // manager's drag-and-drop listener which starts a session without first opening its panel.
-                                            Class<? extends SessionControlsController> controllerType = controllerTypeForSession(newValue);
-                                            if (controllerType != null)
-                                               controller = inactiveControllerMap.get(controllerType);
+                                            SessionControlsController controller = activeController.get();
+                                            if (controller == null)
+                                            {
+                                               // The session may have been started by a controller that is not showing, e.g. the log session
+                                               // manager's drag-and-drop listener which starts a session without first opening its panel.
+                                               Class<? extends SessionControlsController> controllerType = controllerTypeForSession(newValue);
+                                               if (controllerType != null)
+                                                  controller = inactiveControllerMap.get(controllerType);
+                                            }
+                                            if (controller != null)
+                                               controller.notifySessionLoaded();
                                          }
-                                         if (controller != null)
-                                            controller.notifySessionLoaded();
+                                         finally
+                                         {
+                                            // Only now is the new session fully up: it's safe again to accept a drag-and-drop of another
+                                            // log/mcap file onto the 3D scene. See MainWindowController#setSessionLoadBusy for why this needs
+                                            // to stay true for the whole pipeline, not just while the save-configuration dialog above is up.
+                                            mainWindowController.setSessionLoadBusy(false);
+                                         }
                                       });
+                                   }
+                                   else
+                                   {
+                                      mainWindowController.setSessionLoadBusy(false);
                                    }
                                 });
 
       SessionVisualizerTopics topics = toolkit.getTopics();
       JavaFXMessager messager = toolkit.getMessager();
-      messager.addTopicListener(topics.getStartNewSessionRequest(), m -> activeSession.set(m));
+      messager.addTopicListener(topics.getStartNewSessionRequest(), m ->
+      {
+         // Belt-and-suspenders alongside MainWindowController's drag-and-drop guard: covers other ways a new
+         // session request can arrive (e.g. the log/mcap session panels' file choosers) while one is already
+         // loading. mainWindowController.setSessionLoadBusy(true) here is a no-op if the drag-and-drop path
+         // already set it for this same request; it's cleared once the listener above finishes starting the
+         // session (or immediately, if the request turns out to be a no-op with a null session).
+         mainWindowController.setSessionLoadBusy(true);
+         activeSession.set(m);
+      });
       messager.addFXTopicListener(topics.getOpenSessionControlsRequest(), m -> openSessionControls(m));
       messager.addFXTopicListener(topics.getSessionVisualizerConfigurationLoadRequest(), m -> loadSessionConfiguration(m));
       messager.addFXTopicListener(topics.getSessionVisualizerConfigurationSaveRequest(), m -> saveSessionConfiguration(m, toolkit.getSession()));
