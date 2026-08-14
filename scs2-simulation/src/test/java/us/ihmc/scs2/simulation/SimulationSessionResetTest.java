@@ -36,6 +36,9 @@ public class SimulationSessionResetTest
    private SimSixDoFJoint rootJoint;
    private YoDouble kp;
    private YoDouble effortOut;
+   private int controllerInitializeCount;
+   private int controllerResetCount;
+   private boolean initializedBeforeReset;
 
    private SimulationSession createSession()
    {
@@ -67,15 +70,28 @@ public class SimulationSessionResetTest
       robot.getControllerManager().addController(new Controller()
       {
          @Override
+         public void initialize()
+         {
+            // Note that initialize() deliberately does not touch kp so it behaves like a user-tuned parameter.
+            controllerInitializeCount++;
+         }
+
+         @Override
          public void doControl()
          {
             effortOut.set(session.getTime().getValue() + 1.0);
          }
 
          @Override
+         public void reset()
+         {
+            initializedBeforeReset = controllerInitializeCount > controllerResetCount;
+            controllerResetCount++;
+         }
+
+         @Override
          public YoRegistry getYoRegistry()
          {
-            // Note that initialize() deliberately does not touch kp so it behaves like a user-tuned parameter.
             return controllerRegistry;
          }
       });
@@ -94,6 +110,7 @@ public class SimulationSessionResetTest
       assertNotEquals(0.0, session.getTime().getValue());
       assertNotEquals(INITIAL_HEIGHT, rootJoint.getJointPose().getPosition().getZ());
       assertNotEquals(0.0, effortOut.getValue());
+      assertEquals(0, controllerResetCount); // Controller.reset() is only for session resets, not for starting up.
 
       int currentIndexBeforeReset = controls.getBufferCurrentIndex();
       assertEquals(controls.getBufferOutPoint(), currentIndexBeforeReset);
@@ -108,6 +125,8 @@ public class SimulationSessionResetTest
       assertEquals(kpInitialValue, kp.getValue(), EPSILON);
       assertEquals(0.0, effortOut.getValue(), EPSILON); // Back to its value at the first initialization.
       assertEquals(SessionMode.PAUSE, session.getActiveMode());
+      assertEquals(1, controllerResetCount);
+      assertTrue(initializedBeforeReset, "Controller.reset() should be called after Controller.initialize()");
 
       // The reset frame becomes the new start point of the buffer without clearing it.
       assertEquals(currentIndexBeforeReset, controls.getBufferCurrentIndex());

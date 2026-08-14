@@ -72,6 +72,13 @@ public class ControllerCollection implements Controller
    }
 
    @Override
+   public void reset()
+   {
+      for (int i = 0; i < controllers.size(); i++)
+         controllers.get(i).reset();
+   }
+
+   @Override
    public String getName()
    {
       return registry.getName();
