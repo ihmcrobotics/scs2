@@ -31,6 +31,7 @@ import java.util.EnumMap;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -330,26 +331,26 @@ public abstract class Session
    /**
     * Listeners that get notified right after the session mode has changed.
     */
-   private final List<SessionModeChangeListener> sessionModeChangeListeners = new ArrayList<>();
+   private final List<SessionModeChangeListener> sessionModeChangeListeners = new CopyOnWriteArrayList<>();
    /**
     * Listeners that get notified right before the session mode has changed.
     */
-   private final List<SessionModeChangeListener> preSessionModeChangeListeners = new ArrayList<>();
-   private final List<Consumer<SessionProperties>> sessionPropertiesListeners = new ArrayList<>();
-   private final List<Consumer<YoBufferPropertiesReadOnly>> currentBufferPropertiesListeners = new ArrayList<>();
-   private final List<Runnable> bufferListenerForceUpdateListeners = new ArrayList<>();
-   private final List<Consumer<CropBufferRequest>> cropBufferRequestListeners = new ArrayList<>();
-   private final List<Consumer<FillBufferRequest>> fillBufferRequestListeners = new ArrayList<>();
-   private final List<Runnable> shutdownListeners = new ArrayList<>();
+   private final List<SessionModeChangeListener> preSessionModeChangeListeners = new CopyOnWriteArrayList<>();
+   private final List<Consumer<SessionProperties>> sessionPropertiesListeners = new CopyOnWriteArrayList<>();
+   private final List<Consumer<YoBufferPropertiesReadOnly>> currentBufferPropertiesListeners = new CopyOnWriteArrayList<>();
+   private final List<Runnable> bufferListenerForceUpdateListeners = new CopyOnWriteArrayList<>();
+   private final List<Consumer<CropBufferRequest>> cropBufferRequestListeners = new CopyOnWriteArrayList<>();
+   private final List<Consumer<FillBufferRequest>> fillBufferRequestListeners = new CopyOnWriteArrayList<>();
+   private final List<Runnable> shutdownListeners = new CopyOnWriteArrayList<>();
 
    // For exception handling
-   private final List<Consumer<Throwable>> runThrowableListeners = new ArrayList<>();
-   private final List<Consumer<Throwable>> playbackThrowableListeners = new ArrayList<>();
+   private final List<Consumer<Throwable>> runThrowableListeners = new CopyOnWriteArrayList<>();
+   private final List<Consumer<Throwable>> playbackThrowableListeners = new CopyOnWriteArrayList<>();
 
    /**
     * Listeners that get notified when a change to the list of robot definitions has been performed.
     */
-   private final List<Consumer<SessionRobotDefinitionListChange>> robotDefinitionListChangeListeners = new ArrayList<>();
+   private final List<Consumer<SessionRobotDefinitionListChange>> robotDefinitionListChangeListeners = new CopyOnWriteArrayList<>();
    protected final SessionUserField<SessionRobotDefinitionListChange> pendingRobotDefinitionListChange = new SessionUserField<>();
    protected final SessionUserField<YoEquationListChange> pendingEquationListChange = new SessionUserField<>();
 

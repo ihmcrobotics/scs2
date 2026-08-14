@@ -125,6 +125,7 @@ public class SessionVisualizerMessagerAPI
       public static final Topic<OpenSessionControlsRequest> OpenSessionControlsRequest = new Topic<>("SessionAPI.OpenSessionControlsRequest");
       public static final Topic<OpenAddLogRequest> OpenAddLogRequest = new Topic<>("SessionAPI.OpenAddLogRequest");
       public static final Topic<File> OpenLogDirectoryRequest = new Topic<>("SessionAPI.OpenLogDirectoryRequest");
+      public static final Topic<File> OpenMCAPLogFileRequest = new Topic<>("SessionAPI.OpenMCAPLogFileRequest");
       public static final Topic<BindSynchronizingVariablesRequest> BindSynchronizingVariablesRequest = new Topic<>("SessionAPI.BindSynchronizingVariablesRequest");
    }
 }
