@@ -44,8 +44,7 @@
                 </FontIcon>
             </graphic>
         </MenuItem>
-        <SeparatorMenuItem/>
-        <MenuItem fx:id="resetMenuItem" onAction="#resetToInitialState" text="Reset to initial state">
+        <MenuItem fx:id="resetMenuItem" onAction="#resetToInitialState" text="Reset to initial state" visible="false">
             <graphic>
                 <FontIcon>
                     <styleClass>

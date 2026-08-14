@@ -49,7 +49,7 @@
                 <Tooltip text="Pause simulation"/>
             </tooltip>
         </JFXButton>
-        <JFXButton fx:id="resetButton" mnemonicParsing="false" onAction="#resetSession" styleClass="advanced-controls-button">
+        <JFXButton fx:id="resetButton" managed="false" mnemonicParsing="false" onAction="#resetSession" styleClass="advanced-controls-button" visible="false">
             <graphic>
                 <FontIcon>
                     <styleClass>

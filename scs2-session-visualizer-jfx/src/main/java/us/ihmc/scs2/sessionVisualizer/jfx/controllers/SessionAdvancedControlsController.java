@@ -78,21 +78,26 @@ public class SessionAdvancedControlsController implements VisualizerController
       previousKeyFrameButton.setDisable(disableKeyFrameButtons);
       nextKeyFrameButton.setDisable(disableKeyFrameButtons);
 
-      bindSessionResetDisable(toolkit.getGlobalToolkit(), resetButton::setDisable);
+      bindSessionResetControlVisibility(toolkit.getGlobalToolkit(), visible ->
+      {
+         resetButton.setVisible(visible);
+         resetButton.setManaged(visible);
+      });
 
       setupMainControlsActiveMode(this, messager, topics, runningIconView, playbackIconView, pauseIconView);
    }
 
    /**
-    * Keeps a session reset control disabled whenever the active session does not support being reset,
-    * see {@link Session#isSessionResetSupported()}.
+    * Shows a session reset control only when the active session supports being reset, see
+    * {@link Session#isSessionResetSupported()}, e.g. it is hidden when visualizing a log or a remote
+    * session.
     */
-   public static void bindSessionResetDisable(SessionVisualizerToolkit globalToolkit, Consumer<Boolean> disableSetter)
+   public static void bindSessionResetControlVisibility(SessionVisualizerToolkit globalToolkit, Consumer<Boolean> visibleSetter)
    {
-      globalToolkit.addSessionChangedListener((previousSession, newSession) -> Platform.runLater(() -> disableSetter.accept(newSession == null
-                                                                                                                           || !newSession.isSessionResetSupported())));
+      globalToolkit.addSessionChangedListener((previousSession, newSession) -> Platform.runLater(() -> visibleSetter.accept(newSession != null
+                                                                                                                            && newSession.isSessionResetSupported())));
       Session activeSession = globalToolkit.getSession();
-      disableSetter.accept(activeSession == null || !activeSession.isSessionResetSupported());
+      visibleSetter.accept(activeSession != null && activeSession.isSessionResetSupported());
    }
 
    public static void setupMainControlsActiveMode(Object bean,

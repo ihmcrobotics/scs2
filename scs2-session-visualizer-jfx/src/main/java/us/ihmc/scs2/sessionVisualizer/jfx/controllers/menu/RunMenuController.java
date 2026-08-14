@@ -86,7 +86,7 @@ public class RunMenuController implements VisualizerController
       MenuTools.configureTextFieldForCustomMenuItem(playbackRealTimeRateMenuItem, playbackRealTimeRateTextField);
       MenuTools.configureTextFieldForCustomMenuItem(runMaxDurationMenuItem, runMaxDurationTextField);
 
-      SessionAdvancedControlsController.bindSessionResetDisable(toolkit.getGlobalToolkit(), resetMenuItem::setDisable);
+      SessionAdvancedControlsController.bindSessionResetControlVisibility(toolkit.getGlobalToolkit(), resetMenuItem::setVisible);
    }
 
    @FXML
