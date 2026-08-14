@@ -114,6 +114,8 @@ public class SessionVisualizerTopics
    private Topic<Session> startNewSessionRequest;
    private Topic<OpenSessionControlsRequest> openSessionControlsRequest;
    private Topic<OpenAddLogRequest> openAddLogRequest;
+   private Topic<File> openLogDirectoryRequest;
+   private Topic<File> openMCAPLogFileRequest;
    private Topic<BindSynchronizingVariablesRequest> bindSynchronizingVariablesRequest;
 
    private Topic<SessionRobotDefinitionListChange> sessionRobotDefinitionListChangeRequest;
@@ -217,6 +219,8 @@ public class SessionVisualizerTopics
       startNewSessionRequest = SessionVisualizerMessagerAPI.SessionAPI.StartNewSessionRequest;
       openSessionControlsRequest = SessionVisualizerMessagerAPI.SessionAPI.OpenSessionControlsRequest;
       openAddLogRequest = SessionVisualizerMessagerAPI.SessionAPI.OpenAddLogRequest;
+      openLogDirectoryRequest = SessionVisualizerMessagerAPI.SessionAPI.OpenLogDirectoryRequest;
+      openMCAPLogFileRequest = SessionVisualizerMessagerAPI.SessionAPI.OpenMCAPLogFileRequest;
       bindSynchronizingVariablesRequest = SessionVisualizerMessagerAPI.SessionAPI.BindSynchronizingVariablesRequest;
 
       sessionRobotDefinitionListChangeRequest = SessionMessagerAPI.SessionRobotDefinitionListChangeRequest;
@@ -594,6 +598,16 @@ public class SessionVisualizerTopics
    public Topic<OpenAddLogRequest> getOpenAddLogRequest()
    {
       return openAddLogRequest;
+   }
+
+   public Topic<File> getOpenLogDirectoryRequest()
+   {
+      return openLogDirectoryRequest;
+   }
+
+   public Topic<File> getOpenMCAPLogFileRequest()
+   {
+      return openMCAPLogFileRequest;
    }
 
    public Topic<BindSynchronizingVariablesRequest> getBindSynchronizingVariablesRequest()

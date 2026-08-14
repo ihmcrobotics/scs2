@@ -7,6 +7,10 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 
+import org.bytedeco.javacpp.BytePointer;
+import org.bytedeco.javacpp.DoublePointer;
+import org.bytedeco.javacpp.IntPointer;
+
 import us.ihmc.euclid.orientation.interfaces.Orientation3DReadOnly;
 import us.ihmc.euclid.shape.convexPolytope.interfaces.Vertex3DReadOnly;
 import us.ihmc.euclid.transform.interfaces.RigidBodyTransformReadOnly;
@@ -28,6 +32,11 @@ import us.ihmc.scs2.definition.geometry.Sphere3DDefinition;
 import us.ihmc.scs2.definition.robot.JointDefinition;
 import us.ihmc.scs2.definition.robot.OneDoFJointDefinition;
 import us.ihmc.scs2.definition.robot.PrismaticJointDefinition;
+import us.ihmc.scs2.simulation.mujoco.Mujoco;
+import us.ihmc.scs2.simulation.mujoco.physicsEngine.parameters.MujocoCone;
+import us.ihmc.scs2.simulation.mujoco.physicsEngine.parameters.MujocoIntegrator;
+import us.ihmc.scs2.simulation.mujoco.physicsEngine.parameters.MujocoJacobian;
+import us.ihmc.scs2.simulation.mujoco.physicsEngine.parameters.MujocoSolver;
 import us.ihmc.scs2.definition.robot.RevoluteJointDefinition;
 import us.ihmc.scs2.definition.robot.RigidBodyDefinition;
 import us.ihmc.scs2.definition.robot.SixDoFJointDefinition;
@@ -341,5 +350,59 @@ public final class MujocoTools
    static boolean isIdentity(RigidBodyTransformReadOnly transform)
    {
       return !transform.hasRotation() && !transform.hasTranslation();
+   }
+
+   private static final int MODEL_SUMMARY_MAX_GEOMS = 8;
+
+   /** Logs the compiled model's effective option and per-geom contact values — what MuJoCo actually runs vs what was requested. */
+   public static void logEffectiveModelSummary(Mujoco.mjModel model)
+   {
+      Mujoco.mjOption opt = model.opt();
+      StringBuilder summary = new StringBuilder("MuJoCo compiled model summary:\n");
+      summary.append(String.format("  option: timestep=%s integrator=%s solver=%s cone=%s jacobian=%s iterations=%d ls_iterations=%d tolerance=%s"
+                                   + " impratio=%s noslip_iterations=%d%n",
+                                   opt.timestep(),
+                                   MujocoIntegrator.fromMujocoValue(opt.integrator()),
+                                   MujocoSolver.fromMujocoValue(opt.solver()),
+                                   MujocoCone.fromMujocoValue(opt.cone()),
+                                   MujocoJacobian.fromMujocoValue(opt.jacobian()),
+                                   opt.iterations(),
+                                   opt.ls_iterations(),
+                                   opt.tolerance(),
+                                   opt.impratio(),
+                                   opt.noslip_iterations()));
+
+      int ngeom = (int) model.ngeom();
+      int printed = Math.min(ngeom, MODEL_SUMMARY_MAX_GEOMS);
+      DoublePointer friction = model.geom_friction();
+      DoublePointer solref = model.geom_solref();
+      DoublePointer solimp = model.geom_solimp();
+      DoublePointer margin = model.geom_margin();
+      DoublePointer gap = model.geom_gap();
+      IntPointer condim = model.geom_condim();
+      for (int geomId = 0; geomId < printed; geomId++)
+      {
+         BytePointer namePointer = Mujoco.mj_id2name(model, Mujoco.mjOBJ_GEOM, geomId);
+         String name = namePointer == null || namePointer.isNull() ? "(unnamed)" : namePointer.getString();
+         summary.append(String.format("  geom[%d] %s: friction=(%s %s %s) solref=(%s %s) solimp=(%s %s %s %s %s) condim=%d margin=%s gap=%s%n",
+                                      geomId,
+                                      name,
+                                      friction.get(3 * geomId),
+                                      friction.get(3 * geomId + 1),
+                                      friction.get(3 * geomId + 2),
+                                      solref.get(2L * geomId),
+                                      solref.get(2L * geomId + 1),
+                                      solimp.get(5L * geomId),
+                                      solimp.get(5L * geomId + 1),
+                                      solimp.get(5L * geomId + 2),
+                                      solimp.get(5L * geomId + 3),
+                                      solimp.get(5L * geomId + 4),
+                                      condim.get(geomId),
+                                      margin.get(geomId),
+                                      gap.get(geomId)));
+      }
+      if (ngeom > printed)
+         summary.append("  ... ").append(ngeom - printed).append(" more geoms elided\n");
+      LogTools.info(summary.toString());
    }
 }

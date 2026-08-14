@@ -82,6 +82,7 @@ public class MainViewport3DManager implements SingleViewport3DManager
       container = new Pane(subScene);
       subScene.heightProperty().bind(heightProperty());
       subScene.widthProperty().bind(widthProperty());
+      setupMaximizeRenderWorkaround();
 
       // Creating camera
       camera = new PerspectiveCamera(true);
@@ -102,6 +103,43 @@ public class MainViewport3DManager implements SingleViewport3DManager
          focusPointViz.visibleProperty().bind(subScene.focusedProperty());
       }
       setupContextMenu(cameraController, yoCompositeSearchManager, yoManager, referenceFrameManager, subScene);
+   }
+
+   /**
+    * Works around a JavaFX/Prism bug where an embedded 3D {@link SubScene}'s rendered content goes blank
+    * (falls back to flat {@link #VIEWPORT_BACKGROUND_COLOR} fill) after its owning {@link Stage} is maximized:
+    * the sub-scene's logical width/height update fine via the bindings above, but its backing render target
+    * isn't correctly reallocated by the maximize transition. This is most visible the first time a session is
+    * started after launching the app, since that's when a saved "main window was maximized" configuration gets
+    * applied (see {@code MultiSessionManager.isFirstSession}) - by then the robot is already attached to the
+    * scene graph and rendering, so the maximize is what blanks it out afterward. Removing and re-adding the
+    * sub-scene forces JavaFX to recreate its rendering peer, which reliably restores the picture.
+    */
+   private void setupMaximizeRenderWorkaround()
+   {
+      container.sceneProperty().addListener((o, oldScene, newScene) ->
+      {
+         if (newScene != null)
+         {
+            newScene.windowProperty().addListener((o2, oldWindow, newWindow) ->
+            {
+               if (newWindow instanceof Stage stage)
+               {
+                  stage.maximizedProperty().addListener((o3, wasMaximized, isMaximized) ->
+                  {
+                     if (isMaximized)
+                     {
+                        JavaFXMissingTools.runNFramesLater(2, () ->
+                        {
+                           container.getChildren().remove(subScene);
+                           container.getChildren().add(subScene);
+                        });
+                     }
+                  });
+               }
+            });
+         }
+      });
    }
 
    @Override

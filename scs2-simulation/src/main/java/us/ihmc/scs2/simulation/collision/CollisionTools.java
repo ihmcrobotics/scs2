@@ -339,6 +339,8 @@ public class CollisionTools
 
    public static ConvexPolytope3D toConvexPolytope3D(RigidBodyTransformReadOnly originPose, ModelFileGeometryDefinition definition)
    {
+      if (definition.getFileName() == null)
+         throw new UnsupportedOperationException("No file name specified for model file geometry.");
       if (!FilenameUtils.isExtension(definition.getFileName().toLowerCase(), "obj"))
          throw new UnsupportedOperationException("Only Wavefront OBJ files are supported.");
 
