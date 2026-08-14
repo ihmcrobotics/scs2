@@ -4,6 +4,7 @@ import com.jfoenix.controls.JFXDrawer;
 import com.jfoenix.controls.JFXDrawer.DrawerDirection;
 import com.jfoenix.controls.JFXHamburger;
 import com.jfoenix.controls.events.JFXDrawerEvent;
+import javafx.animation.PauseTransition;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.Property;
 import javafx.beans.property.SimpleBooleanProperty;
@@ -28,8 +29,10 @@ import javafx.scene.layout.Pane;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
+import javafx.util.Duration;
 import org.apache.commons.lang3.mutable.MutableBoolean;
 import us.ihmc.commons.Conversions;
+import us.ihmc.messager.MessagerAPIFactory.Topic;
 import us.ihmc.scs2.sessionVisualizer.jfx.messager.SCS2Messager;
 import us.ihmc.scs2.sessionVisualizer.jfx.HamburgerAnimationTransition.FrameType;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.SessionAdvancedControlsController;
@@ -205,13 +208,14 @@ public class MainWindowController extends ObservedAnimationTimer implements Visu
    }
 
    /**
-    * Lets a log directory (or the {@code *.log} property file inside it) be dropped directly onto the 3D scene to
-    * open it, as an alternative to the log session panel's file chooser. Only single-item drops are handled; drops
-    * that don't resolve to a log directory are silently rejected (no drop feedback, no error dialog).
+    * Lets a log directory (or the {@code *.log} property file inside it) or a {@code *.mcap} file be dropped
+    * directly onto the 3D scene to open it, as an alternative to the log/MCAP session panels' file choosers. Only
+    * single-item drops are handled; drops that don't resolve to a supported session are silently rejected (no drop
+    * feedback, no error dialog).
     */
    private void setupLogDirectoryDropTarget()
    {
-      Pane logDropOverlay = new Pane();
+      logDropOverlay = new Pane();
       logDropOverlay.setStyle("-fx-background-color: rgba(0, 0, 0, 0.35);");
       logDropOverlay.setMouseTransparent(true);
       logDropOverlay.setVisible(false);
@@ -221,11 +225,42 @@ public class MainWindowController extends ObservedAnimationTimer implements Visu
       AnchorPane.setBottomAnchor(logDropOverlay, 0.0);
       AnchorPane.setLeftAnchor(logDropOverlay, 0.0);
 
+      // Auto-heals a stuck overlay: a fast/long drag can make the native platform deliver a stray DRAG_ENTERED or
+      // DRAG_OVER for this gesture *after* DRAG_DROPPED already fired (more movement means more queued events and
+      // more chance of them arriving out of order) - with no DRAG_EXITED/DRAG_DROPPED ever following it, since the
+      // real gesture already ended. No amount of state-machine logic can wait for an event that isn't coming, so
+      // instead: every genuine DRAG_OVER that shows the overlay restarts this timer, and if it isn't refreshed
+      // within the timeout - because the drag actually stopped - it forces the overlay closed itself.
+      dragOverWatchdog = new PauseTransition(Duration.millis(500));
+      dragOverWatchdog.setOnFinished(event ->
+      {
+         dragActive.setFalse();
+         logDropOverlay.setVisible(false);
+      });
+
+      sceneAnchorPane.setOnDragEntered(event ->
+      {
+         // Belt-and-suspenders alongside sceneAnchorPane.setMouseTransparent(true) (see #setSessionLoadBusy):
+         // stray drag events for a gesture that started before the busy window opened can still slip through, so
+         // every handler also checks the flag directly rather than relying solely on picking being disabled.
+         if (!sessionLoadBusy)
+            dragActive.setTrue();
+         event.consume();
+      });
+
       sceneAnchorPane.setOnDragOver(event ->
       {
-         boolean canDrop = event.getGestureSource() != sceneAnchorPane && resolveLogDirectory(event.getDragboard()) != null;
+         boolean canDrop = !sessionLoadBusy && dragActive.isTrue() && event.getGestureSource() != sceneAnchorPane
+                           && resolveDroppedSession(event.getDragboard()) != null;
          if (canDrop)
+         {
             event.acceptTransferModes(TransferMode.COPY);
+            dragOverWatchdog.playFromStart();
+         }
+         else
+         {
+            dragOverWatchdog.stop();
+         }
          logDropOverlay.setVisible(canDrop);
          event.consume();
       });
@@ -233,26 +268,76 @@ public class MainWindowController extends ObservedAnimationTimer implements Visu
       sceneAnchorPane.setOnDragExited(event ->
       {
          logDropOverlay.setVisible(false);
+         dragOverWatchdog.stop();
          event.consume();
       });
 
       sceneAnchorPane.setOnDragDropped(event ->
       {
-         File logDirectory = resolveLogDirectory(event.getDragboard());
-         if (logDirectory != null)
-            messager.submitMessage(topics.getOpenLogDirectoryRequest(), logDirectory);
+         dragActive.setFalse();
+         dragOverWatchdog.stop();
+         DroppedSession droppedSession = sessionLoadBusy ? null : resolveDroppedSession(event.getDragboard());
+         if (droppedSession != null)
+         {
+            // Mark the scene busy *before* submitting the request: opening a log/mcap session kicks off a
+            // background read that can take a while, and the "save configuration?" dialog (which is what used to
+            // mark the scene busy) doesn't show until well after that finishes. Without marking busy here, a
+            // second drop landing in that gap starts a second, concurrent session load racing the first one,
+            // which corrupts both (stacked dialogs, blank scene once they're dismissed). See
+            // MultiSessionManager#setSessionLoadBusy for the rest of the busy window.
+            setSessionLoadBusy(true);
+            messager.submitMessage(droppedSession.topic(), droppedSession.file());
+         }
          logDropOverlay.setVisible(false);
-         event.setDropCompleted(logDirectory != null);
+         event.setDropCompleted(droppedSession != null);
          event.consume();
       });
    }
 
+   // Tracks whether a drag gesture is currently active. Guards against a stray DRAG_OVER that some platforms
+   // deliver right after DRAG_DROPPED on the very first native drag-and-drop into a freshly shown window, which
+   // would otherwise re-show the overlay after the drop already hid it, leaving it stuck visible with no
+   // further DRAG_EXITED/DRAG_DROPPED to clear it.
+   private final MutableBoolean dragActive = new MutableBoolean(false);
+   private Pane logDropOverlay;
+   private PauseTransition dragOverWatchdog;
+
    /**
-    * @return the log directory to open for the current drag, or {@code null} if the drag isn't a single item that
-    *       resolves to one (not exactly one file/directory dropped, a directory with no {@code *.log} file directly
-    *       in it, or a file that isn't itself a {@code *.log} file).
+    * Set by this controller as soon as a drop is accepted (before the resulting session even starts loading), and
+    * by {@link us.ihmc.scs2.sessionVisualizer.jfx.managers.MultiSessionManager} for the entire remainder of the
+    * new-session pipeline - through its "save current configuration?" confirmation dialog and the subsequent
+    * session start - until the new session has fully loaded. Some platforms still deliver native drag-and-drop
+    * events to this (modally-disabled) window's scene while that dialog is up - or let a brand new native drag
+    * gesture start altogether while the dialog's nested event loop is running - either of which can otherwise
+    * leave the drop overlay/cursor stuck with no further event to clear it, or worse, start a second concurrent
+    * session load racing the first one. While this is {@code true}, {@code sceneAnchorPane} is taken out of
+    * mouse/drag picking entirely (rather than merely having its drag handlers ignore what they're given), so the
+    * scene doesn't participate as a drop target at all; on the way back to {@code false} any leftover
+    * overlay/drag-active state is forcibly cleared as a fail-safe.
     */
-   private static File resolveLogDirectory(Dragboard dragboard)
+   private boolean sessionLoadBusy = false;
+
+   public void setSessionLoadBusy(boolean sessionLoadBusy)
+   {
+      this.sessionLoadBusy = sessionLoadBusy;
+      sceneAnchorPane.setMouseTransparent(sessionLoadBusy);
+      if (!sessionLoadBusy)
+      {
+         dragActive.setFalse();
+         if (dragOverWatchdog != null)
+            dragOverWatchdog.stop();
+         if (logDropOverlay != null)
+            logDropOverlay.setVisible(false);
+      }
+   }
+
+   /**
+    * @return the session file (paired with the topic to open it with) to open for the current drag, or
+    *       {@code null} if the drag isn't a single item that resolves to one (not exactly one file/directory
+    *       dropped, a directory with no {@code *.log} file directly in it, or a file that isn't itself a
+    *       {@code *.log} or {@code *.mcap} file).
+    */
+   private DroppedSession resolveDroppedSession(Dragboard dragboard)
    {
       if (!dragboard.hasFiles())
          return null;
@@ -266,16 +351,24 @@ public class MainWindowController extends ObservedAnimationTimer implements Visu
       if (dropped.isDirectory())
       {
          File[] logPropertyFiles = dropped.listFiles((dir, name) -> name.endsWith(".log"));
-         return logPropertyFiles != null && logPropertyFiles.length == 1 ? dropped : null;
+         return logPropertyFiles != null && logPropertyFiles.length == 1 ? new DroppedSession(topics.getOpenLogDirectoryRequest(), dropped) : null;
       }
       else if (dropped.getName().endsWith(".log"))
       {
-         return dropped.getParentFile();
+         return new DroppedSession(topics.getOpenLogDirectoryRequest(), dropped.getParentFile());
+      }
+      else if (dropped.getName().endsWith(".mcap"))
+      {
+         return new DroppedSession(topics.getOpenMCAPLogFileRequest(), dropped);
       }
       else
       {
          return null;
       }
+   }
+
+   private record DroppedSession(Topic<File> topic, File file)
+   {
    }
 
    private Property<Boolean> showOverheadPlotterProperty;

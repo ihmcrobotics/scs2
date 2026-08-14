@@ -99,6 +99,7 @@ public class SessionVisualizerTopics
    private Topic<OpenSessionControlsRequest> openSessionControlsRequest;
    private Topic<OpenAddLogRequest> openAddLogRequest;
    private Topic<File> openLogDirectoryRequest;
+   private Topic<File> openMCAPLogFileRequest;
    private Topic<BindSynchronizingVariablesRequest> bindSynchronizingVariablesRequest;
 
    public void setupTopics()
@@ -176,6 +177,7 @@ public class SessionVisualizerTopics
       openSessionControlsRequest = SessionVisualizerMessagerAPI.SessionAPI.OpenSessionControlsRequest;
       openAddLogRequest = SessionVisualizerMessagerAPI.SessionAPI.OpenAddLogRequest;
       openLogDirectoryRequest = SessionVisualizerMessagerAPI.SessionAPI.OpenLogDirectoryRequest;
+      openMCAPLogFileRequest = SessionVisualizerMessagerAPI.SessionAPI.OpenMCAPLogFileRequest;
       bindSynchronizingVariablesRequest = SessionVisualizerMessagerAPI.SessionAPI.BindSynchronizingVariablesRequest;
    }
 
@@ -492,6 +494,11 @@ public class SessionVisualizerTopics
    public Topic<File> getOpenLogDirectoryRequest()
    {
       return openLogDirectoryRequest;
+   }
+
+   public Topic<File> getOpenMCAPLogFileRequest()
+   {
+      return openMCAPLogFileRequest;
    }
 
    public Topic<BindSynchronizingVariablesRequest> getBindSynchronizingVariablesRequest()
