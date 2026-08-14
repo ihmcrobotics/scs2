@@ -6,7 +6,13 @@ import java.util.Collection;
 
 public class YoVariableBufferList extends AbstractList<YoVariableBuffer<?>>
 {
-   private int size = 0;
+   /**
+    * Volatile so that a reader thread (e.g. the playback tick reading {@link #readBufferAt(int)} with no lock held)
+    * that observes an incremented {@code size} is guaranteed - via the JMM happens-before edge on a volatile write -
+    * to also see the array slot {@link #add(YoVariableBuffer)} just populated. {@code size} must be the *last* thing
+    * written by {@link #add(YoVariableBuffer)} for this to hold.
+    */
+   private volatile int size = 0;
    private YoVariableBuffer<?>[] yoVariableBuffers = new YoVariableBuffer[8];
 
    @Override
@@ -24,9 +30,9 @@ public class YoVariableBufferList extends AbstractList<YoVariableBuffer<?>>
    @Override
    public boolean add(YoVariableBuffer<?> e)
    {
-      size++;
-      ensureCapacity(size);
-      yoVariableBuffers[size - 1] = e;
+      ensureCapacity(size + 1);
+      yoVariableBuffers[size] = e;
+      size++; // Publish last - see the field's javadoc.
       return true;
    }
 

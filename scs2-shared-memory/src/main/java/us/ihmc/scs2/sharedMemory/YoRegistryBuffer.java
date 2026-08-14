@@ -286,8 +286,21 @@ public class YoRegistryBuffer
 
          yoVariableBuffer = YoVariableBuffer.newYoVariableBuffer(duplicate, properties);
          yoVariableBuffer.setBackfillBudget(backfillBudget);
-         yoVariableBuffers.add(yoVariableBuffer);
-         yoVariableFullnameToBufferMap.put(variableFullName, yoVariableBuffer);
+
+         // Same lock registerNewYoVariable takes: this on-demand path can otherwise race the registry's own
+         // add-listener path (registerNewYoVariable) mutating yoVariableBuffers/yoVariableFullnameToBufferMap
+         // from a different thread at the same time.
+         lock.lock();
+         try
+         {
+            yoVariableBuffers.add(yoVariableBuffer);
+            yoVariableFullnameToBufferMap.put(variableFullName, yoVariableBuffer);
+            registryMemorySize += yoVariableBuffer.getVariableMemorySize();
+         }
+         finally
+         {
+            lock.unlock();
+         }
 
          Consumer<YoVariableBuffer<?>> listener = onDemandBufferCreatedListener;
          if (listener != null)

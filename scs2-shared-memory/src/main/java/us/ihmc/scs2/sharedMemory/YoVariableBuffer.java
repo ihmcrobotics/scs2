@@ -90,9 +90,15 @@ public abstract class YoVariableBuffer<T extends YoVariable>
     */
    public void setHistoricalValueBitsSource(HistoricalValueBitsSource source)
    {
-      historicalValueBitsSource = source;
+      // populatedIndices must be initialized before the volatile write below, not after: ensurePopulated (called
+      // from e.g. the playback thread, unsynchronized) does a volatile read of historicalValueBitsSource and, if
+      // non-null, immediately dereferences populatedIndices - a plain field. Writing historicalValueBitsSource
+      // first would let that reader observe the new source with populatedIndices still null (JMM gives no
+      // happens-before for writes made *after* a volatile write), which is exactly what caused a NullPointerException
+      // here previously.
       if (source != null && populatedIndices == null)
          populatedIndices = new BitSet();
+      historicalValueBitsSource = source;
    }
 
    /**
