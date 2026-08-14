@@ -634,18 +634,6 @@ public class SimulationConstructionSet2 implements YoVariableHolder, SimulationS
       simulationSessionControls.resetToInitialState();
    }
 
-   /**
-    * Adds a listener to be notified right after the simulation has been reset to its initial state,
-    * so state living outside {@code YoVariable}s can re-initialize itself, see
-    * {@link Session#addSessionResetListener(Runnable)}.
-    *
-    * @param listener the listener to add.
-    */
-   public void addSessionResetListener(Runnable listener)
-   {
-      simulationSession.addSessionResetListener(listener);
-   }
-
    // ------------------------------------------------------------------------------- //
    // ----------------------------- YoVariables ------------------------------------- //
    // ------------------------------------------------------------------------------- //

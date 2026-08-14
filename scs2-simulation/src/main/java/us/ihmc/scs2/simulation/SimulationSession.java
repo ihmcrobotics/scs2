@@ -105,9 +105,12 @@ public class SimulationSession extends Session
       setSessionMode(SessionMode.PAUSE);
       gravity = new YoFrameVector3D("gravity", inertialFrame, rootRegistry);
       gravity.set(0.0, 0.0, -9.81);
+   }
 
-      // Registered first so the controllers get Controller.reset() before any user reset listener.
-      addSessionResetListener(() -> physicsEngine.getRobots().forEach(robot -> robot.getControllerManager().resetControllers()));
+   @Override
+   protected void sessionResetPerformed()
+   {
+      physicsEngine.getRobots().forEach(robot -> robot.getControllerManager().resetControllers());
    }
 
    public SimulationSessionControls getSimulationSessionControls()

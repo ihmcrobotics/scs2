@@ -382,11 +382,6 @@ public abstract class Session
     */
    private long[] initialStateSnapshotValues = null;
    private boolean initialStateSnapshotCaptured = false;
-   /**
-    * Listeners notified right after this session has been reset to its initial state, see
-    * {@link #addSessionResetListener(Runnable)}.
-    */
-   private final List<Runnable> sessionResetListeners = new ArrayList<>();
 
    // Strictly internal fields
    private final List<SessionTopicListenerManager> sessionTopicListenerManagers = new ArrayList<>();
@@ -1693,21 +1688,19 @@ public abstract class Session
    }
 
    /**
-    * Adds a listener to be notified right after this session has been reset to its initial state,
-    * see {@link #submitSessionResetRequest()}.
+    * Called right after this session has been reset to its initial state, see
+    * {@link #submitSessionResetRequest()}.
     * <p>
     * The reset restores {@link YoVariable} values and re-initializes the session, but knows nothing
     * about state living outside {@code YoVariable}s, e.g. plain Java fields of controllers or
-    * scripts. Such components should register a listener here to re-initialize themselves. Listeners
-    * are invoked on the session thread, after the {@code YoVariable}s have been restored and the
-    * session re-initialized, and before the reset state is recorded in the buffer.
+    * scripts. Sessions should override this method to propagate the notification to such components
+    * so they can re-initialize themselves. This method is invoked on the session thread, after the
+    * {@code YoVariable}s have been restored and the session re-initialized, and before the reset
+    * state is recorded in the buffer.
     * </p>
-    *
-    * @param listener the listener to add.
     */
-   public void addSessionResetListener(Runnable listener)
+   protected void sessionResetPerformed()
    {
-      sessionResetListeners.add(listener);
    }
 
    /**
@@ -1755,9 +1748,8 @@ public abstract class Session
          initializeSession();
          captureInitialStateSnapshot();
          if (isSessionReset)
-         { // Let reset listeners re-initialize state that lives outside YoVariables before recording the reset frame.
-            for (int i = 0; i < sessionResetListeners.size(); i++)
-               sessionResetListeners.get(i).run();
+         { // Let the session re-initialize state that lives outside YoVariables before recording the reset frame.
+            sessionResetPerformed();
          }
          // When running simulation, the session starts in PAUSE, writing in the buffer allows to write the robot initial state.
          sharedBuffer.writeBuffer();
