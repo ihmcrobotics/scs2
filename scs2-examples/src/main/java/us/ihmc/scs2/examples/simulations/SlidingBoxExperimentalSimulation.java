@@ -16,7 +16,7 @@ import us.ihmc.scs2.definition.visual.VisualDefinition;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizer;
 import us.ihmc.scs2.simulation.SimulationSession;
 import us.ihmc.scs2.simulation.parameters.ContactParameters;
-import us.ihmc.scs2.simulation.physicsEngine.PhysicsEngineFactory;
+import us.ihmc.scs2.simulation.physicsEngine.PhysicsEngineFactories;
 
 public class SlidingBoxExperimentalSimulation
 {
@@ -48,7 +48,7 @@ public class SlidingBoxExperimentalSimulation
                                                                                          new MaterialDefinition(ColorDefinitions.Lavender())),
                                                                     new CollisionShapeDefinition(terrainPose, terrainGeometry));
 
-      SimulationSession simulationSession = new SimulationSession(PhysicsEngineFactory.newImpulseBasedPhysicsEngineFactory(contactParameters));
+      SimulationSession simulationSession = new SimulationSession(PhysicsEngineFactories.newImpulseBasedPhysicsEngineFactory(contactParameters));
       simulationSession.addRobot(boxRobot);
       simulationSession.addTerrainObject(terrain);
       SessionVisualizer.startSessionVisualizer(simulationSession);

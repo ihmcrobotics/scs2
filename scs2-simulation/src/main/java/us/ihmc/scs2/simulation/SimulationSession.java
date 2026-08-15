@@ -79,9 +79,19 @@ public class SimulationSession extends Session
       this(DEFAULT_INERTIAL_FRAME, simulationName);
    }
 
+   /**
+    * Creates a new simulation session backed by a {@link DoNothingPhysicsEngine}.
+    * <p>
+    * This is the only physics engine {@code scs2-simulation} can construct without a dependency on
+    * {@code scs2-physics-engine-implementation}. To get an actual simulating physics engine (e.g.
+    * impulse-based, contact-point-based, Bullet, MuJoCo), use
+    * {@link #SimulationSession(ReferenceFrame, String, PhysicsEngineFactory)} with a factory from
+    * {@code PhysicsEngineFactories} in {@code scs2-physics-engine-implementation}.
+    * </p>
+    */
    public SimulationSession(ReferenceFrame inertialFrame, String simulationName)
    {
-      this(inertialFrame, simulationName, PhysicsEngineFactory.newImpulseBasedPhysicsEngineFactory());
+      this(inertialFrame, simulationName, PhysicsEngineFactory.newDoNothingPhysicsEngineFactory());
    }
 
    public SimulationSession(String simulationName, PhysicsEngineFactory physicsEngineFactory)

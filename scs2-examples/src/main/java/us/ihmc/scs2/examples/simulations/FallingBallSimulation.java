@@ -8,6 +8,7 @@ import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizer;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerControls;
 import us.ihmc.scs2.sessionVisualizer.jfx.properties.YoDoubleProperty;
 import us.ihmc.scs2.simulation.SimulationSession;
+import us.ihmc.scs2.simulation.physicsEngine.PhysicsEngineFactories;
 
 public class FallingBallSimulation
 {
@@ -21,7 +22,7 @@ public class FallingBallSimulation
       initialJointState.setVelocity(new Vector3D(10.0, 0.0, 0.0), new Vector3D(-1.0, 0.0, 0.0));
       robotDefinition.getRootJointDefinitions().get(0).setInitialJointState(initialJointState);
 
-      SimulationSession simulationSession = new SimulationSession();
+      SimulationSession simulationSession = new SimulationSession(PhysicsEngineFactories.newImpulseBasedPhysicsEngineFactory());
       simulationSession.addRobot(robotDefinition);
       simulationSession.addTerrainObject(new SlopeGroundDefinition(Math.toRadians(15.0)));
 

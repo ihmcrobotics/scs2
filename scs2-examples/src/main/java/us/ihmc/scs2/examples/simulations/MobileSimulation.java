@@ -2,6 +2,7 @@ package us.ihmc.scs2.examples.simulations;
 
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizer;
 import us.ihmc.scs2.simulation.SimulationSession;
+import us.ihmc.scs2.simulation.physicsEngine.PhysicsEngineFactories;
 
 public class MobileSimulation
 {
@@ -9,7 +10,7 @@ public class MobileSimulation
    {
       MobileDefinition definition = new MobileDefinition();
 
-      SimulationSession simulationSession = new SimulationSession();
+      SimulationSession simulationSession = new SimulationSession(PhysicsEngineFactories.newImpulseBasedPhysicsEngineFactory());
       simulationSession.addRobot(definition);
 
       SessionVisualizer.startSessionVisualizer(simulationSession);

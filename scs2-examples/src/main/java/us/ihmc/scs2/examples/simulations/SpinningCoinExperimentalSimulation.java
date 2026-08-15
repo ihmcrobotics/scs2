@@ -21,7 +21,7 @@ import us.ihmc.scs2.definition.visual.VisualDefinitionFactory;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizer;
 import us.ihmc.scs2.simulation.SimulationSession;
 import us.ihmc.scs2.simulation.parameters.ContactParameters;
-import us.ihmc.scs2.simulation.physicsEngine.PhysicsEngineFactory;
+import us.ihmc.scs2.simulation.physicsEngine.PhysicsEngineFactories;
 
 public class SpinningCoinExperimentalSimulation
 {
@@ -78,7 +78,7 @@ public class SpinningCoinExperimentalSimulation
                                                                                          new MaterialDefinition(ColorDefinitions.DarkGrey())),
                                                                     new CollisionShapeDefinition(terrainPose, terrainGeometry));
 
-      SimulationSession simulationSession = new SimulationSession(PhysicsEngineFactory.newImpulseBasedPhysicsEngineFactory(contactParameters));
+      SimulationSession simulationSession = new SimulationSession(PhysicsEngineFactories.newImpulseBasedPhysicsEngineFactory(contactParameters));
       simulationSession.addRobot(robotDefinition);
       simulationSession.addTerrainObject(terrain);
       SessionVisualizer.startSessionVisualizer(simulationSession);

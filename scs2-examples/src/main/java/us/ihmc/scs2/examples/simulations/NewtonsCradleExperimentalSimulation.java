@@ -17,7 +17,7 @@ import us.ihmc.scs2.definition.visual.VisualDefinitionFactory;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizer;
 import us.ihmc.scs2.simulation.SimulationSession;
 import us.ihmc.scs2.simulation.parameters.ContactParameters;
-import us.ihmc.scs2.simulation.physicsEngine.PhysicsEngineFactory;
+import us.ihmc.scs2.simulation.physicsEngine.PhysicsEngineFactories;
 
 public class NewtonsCradleExperimentalSimulation
 {
@@ -78,7 +78,7 @@ public class NewtonsCradleExperimentalSimulation
          rootBody.addChildJoint(revoluteJoint);
       }
 
-      SimulationSession simulationSession = new SimulationSession(PhysicsEngineFactory.newImpulseBasedPhysicsEngineFactory(contactParameters));
+      SimulationSession simulationSession = new SimulationSession(PhysicsEngineFactories.newImpulseBasedPhysicsEngineFactory(contactParameters));
       simulationSession.addRobot(robotDefinition);
       SessionVisualizer.startSessionVisualizer(simulationSession);
    }
