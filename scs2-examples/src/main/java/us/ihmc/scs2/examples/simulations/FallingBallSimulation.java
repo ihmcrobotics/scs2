@@ -8,7 +8,7 @@ import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizer;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerControls;
 import us.ihmc.scs2.sessionVisualizer.jfx.properties.YoDoubleProperty;
 import us.ihmc.scs2.simulation.SimulationSession;
-import us.ihmc.scs2.simulation.physicsEngine.PhysicsEngineFactories;
+import us.ihmc.scs2.simulation.PhysicsEngineFactories;
 
 public class FallingBallSimulation
 {

@@ -5,7 +5,7 @@ import us.ihmc.euclid.yawPitchRoll.YawPitchRoll;
 import us.ihmc.scs2.definition.state.SixDoFJointState;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizer;
 import us.ihmc.scs2.simulation.SimulationSession;
-import us.ihmc.scs2.simulation.physicsEngine.PhysicsEngineFactories;
+import us.ihmc.scs2.simulation.PhysicsEngineFactories;
 
 public class EllipsoidCylinderSimulation
 {

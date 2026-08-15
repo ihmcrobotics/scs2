@@ -26,7 +26,7 @@ import us.ihmc.scs2.simulation.SimulationSession;
 import us.ihmc.scs2.simulation.TimeConsumer;
 import us.ihmc.scs2.simulation.bullet.physicsEngine.parameters.BulletMultiBodyJointParameters;
 import us.ihmc.scs2.simulation.bullet.physicsEngine.parameters.BulletMultiBodyParameters;
-import us.ihmc.scs2.simulation.physicsEngine.PhysicsEngineFactories;
+import us.ihmc.scs2.simulation.PhysicsEngineFactories;
 import us.ihmc.scs2.simulation.robot.multiBodySystem.SimFloatingRootJoint;
 import us.ihmc.yoVariables.euclid.YoPoint3D;
 import us.ihmc.yoVariables.variable.YoDouble;
