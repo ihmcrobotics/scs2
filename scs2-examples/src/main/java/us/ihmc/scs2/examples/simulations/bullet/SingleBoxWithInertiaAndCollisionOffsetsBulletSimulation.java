@@ -25,15 +25,10 @@ import us.ihmc.scs2.simulation.bullet.physicsEngine.BulletPhysicsEngineFactory;
 
 public class SingleBoxWithInertiaAndCollisionOffsetsBulletSimulation
 {
-   private static final boolean VISUALIZE_WITH_DEBUG_DRAWING = false;
-
    public SingleBoxWithInertiaAndCollisionOffsetsBulletSimulation()
    {
       SimulationSession simulationSession = createSession();
-      if (VISUALIZE_WITH_DEBUG_DRAWING)
-         BulletExampleSimulationTools.startSessionVisualizerWithDebugDrawing(simulationSession);
-      else
-         SessionVisualizer.startSessionVisualizer(simulationSession);
+      SessionVisualizer.startSessionVisualizer(simulationSession);
    }
 
    public static SimulationSession createSession()

@@ -25,7 +25,6 @@ import us.ihmc.scs2.simulation.bullet.physicsEngine.parameters.BulletMultiBodyPa
 public class NewtonsCradleExperimentalBulletSimulation
 {
    private static final String NEWTONS_CRADLE = "NewtonsCradle";
-   private static final boolean VISUALIZE_WITH_DEBUG_DRAWING = true;
    private static final int numberOfBalls = 6;
    private static final double ballRadius = 0.05;
 
@@ -36,15 +35,7 @@ public class NewtonsCradleExperimentalBulletSimulation
    public NewtonsCradleExperimentalBulletSimulation()
    {
       SimulationSession simulationSession = createSession();
-      if (VISUALIZE_WITH_DEBUG_DRAWING)
-      {
-         SessionVisualizer sessionVisualizer = BulletExampleSimulationTools.startSessionVisualizerWithDebugDrawing(simulationSession);
-         sessionVisualizer.getToolkit().getSession().runTick();
-      }
-      else
-      {
-         SessionVisualizer.startSessionVisualizer(simulationSession);
-      }
+      SessionVisualizer.startSessionVisualizer(simulationSession);
    }
 
    public static SimulationSession createSession()

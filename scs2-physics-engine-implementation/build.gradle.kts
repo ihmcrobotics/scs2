@@ -35,11 +35,6 @@ mainDependencies {
    api("us.ihmc:ihmc-native-library-loader:2.0.6")
 }
 
-debugDependencies {
-   api(ihmc.sourceSetProject("main"))
-   api("us.ihmc:scs2-session-visualizer-jfx:source")
-}
-
 testDependencies {
    api("us.ihmc:scs2-session-visualizer-jfx:source")
 }
