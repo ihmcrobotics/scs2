@@ -13,6 +13,7 @@ import us.ihmc.scs2.definition.yoGraphic.YoGraphicDefinition;
 import us.ihmc.scs2.session.Session;
 import us.ihmc.scs2.session.SessionMode;
 import us.ihmc.scs2.session.SessionProperties;
+import us.ihmc.scs2.session.tools.RobotDataLogTools;
 import us.ihmc.scs2.session.tools.RobotModelLoader;
 import us.ihmc.scs2.simulation.robot.Robot;
 
@@ -57,7 +58,7 @@ public class RemoteSession extends Session
 
       rootRegistry.addChild(handshakeParser.getRootRegistry());
       rootRegistry.addChild(debugRegistry.getYoRegistry());
-      yoGraphicDefinitions.addAll(handshakeParser.getSCS2YoGraphics());
+      yoGraphicDefinitions.addAll(RobotDataLogTools.toYoGraphicGroupDefinitions(handshakeParser.getSCS2YoGraphics()));
 
       RobotDefinition robotDefinition = RobotModelLoader.loadModel(handshake.getModelName(),
                                                                    handshake.getModelLoaderClass(),

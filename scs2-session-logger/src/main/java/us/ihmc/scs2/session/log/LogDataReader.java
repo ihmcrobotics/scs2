@@ -457,7 +457,7 @@ public class LogDataReader
 
    public List<YoGraphicGroupDefinition> getLogSCS2YoGraphics()
    {
-      return parser.getSCS2YoGraphics();
+      return RobotDataLogTools.toYoGraphicGroupDefinitions(parser.getSCS2YoGraphics());
    }
 
    public List<JointState> getJointStates()
