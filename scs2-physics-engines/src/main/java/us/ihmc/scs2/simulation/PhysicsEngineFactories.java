@@ -14,7 +14,7 @@ import us.ihmc.scs2.simulation.physicsEngine.PhysicsEngineType;
  * <p>
  * This class is the single place in the {@code scs2} repo allowed to reference all four concrete
  * physics engine implementations at compile time -- that's the entire reason the four engines were
- * consolidated into one Gradle module ({@code scs2-physics-engine-implementation}).
+ * consolidated into one Gradle module ({@code scs2-physics-engines}).
  * </p>
  */
 public class PhysicsEngineFactories

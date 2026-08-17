@@ -20,5 +20,5 @@ mainDependencies {
 
    api("us.ihmc:scs2-simulation-construction-set:source")
    api("us.ihmc:scs2-session-visualizer-jfx:source")
-   api("us.ihmc:scs2-physics-engine-implementation:source")
+   api("us.ihmc:scs2-physics-engines:source")
 }

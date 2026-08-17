@@ -239,12 +239,12 @@ src/main/resources/mujoco/linux-x86_64/libjniMujoco.so
 src/main/resources/mujoco/linux-x86_64/libmujoco.so.3.x.y
 ```
 
-`./gradlew :scs2-physics-engine-implementation:compileJava` then builds the Java side.
+`./gradlew :scs2-physics-engines:compileJava` then builds the Java side.
 
 ### MuJoCo verification
 
 1. **Native smoke test.** Run
-   `./gradlew :scs2-physics-engine-implementation:test --tests MujocoNativeSmokeTest` against the committed
+   `./gradlew :scs2-physics-engines:test --tests MujocoNativeSmokeTest` against the committed
    bindings (or a freshly regenerated one via `./build.sh wrap`). This drops a sphere under
    gravity and asserts z decreases over 1000 steps.
 

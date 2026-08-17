@@ -83,10 +83,10 @@ public class SimulationSession extends Session
     * Creates a new simulation session backed by a {@link DoNothingPhysicsEngine}.
     * <p>
     * This is the only physics engine {@code scs2-simulation} can construct without a dependency on
-    * {@code scs2-physics-engine-implementation}. To get an actual simulating physics engine (e.g.
+    * {@code scs2-physics-engines}. To get an actual simulating physics engine (e.g.
     * impulse-based, contact-point-based, Bullet, MuJoCo), use
     * {@link #SimulationSession(ReferenceFrame, String, PhysicsEngineFactory)} with a factory from
-    * {@code PhysicsEngineFactories} in {@code scs2-physics-engine-implementation}.
+    * {@code PhysicsEngineFactories} in {@code scs2-physics-engines}.
     * </p>
     */
    public SimulationSession(ReferenceFrame inertialFrame, String simulationName)

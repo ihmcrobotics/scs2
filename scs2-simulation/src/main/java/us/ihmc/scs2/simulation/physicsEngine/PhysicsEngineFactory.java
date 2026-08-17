@@ -9,7 +9,7 @@ import us.ihmc.yoVariables.registry.YoRegistry;
  * <p>
  * This interface only provides the trivial {@link #newDoNothingPhysicsEngineFactory()} factory,
  * which has no dependency beyond this module. Factories for the concrete physics engines
- * (contact-point-based, impulse-based, Bullet, MuJoCo) live in {@code scs2-physics-engine-implementation}'s
+ * (contact-point-based, impulse-based, Bullet, MuJoCo) live in {@code scs2-physics-engines}'s
  * {@code PhysicsEngineFactories}, along with the {@link PhysicsEngineType}-based resolver -- that
  * module is the one place allowed to reference all concrete engine implementations at compile time.
  * </p>

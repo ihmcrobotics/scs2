@@ -144,7 +144,7 @@ YoGraphic..._.
   or remote session.
 - `scs2-simulation`: This project provides the implementation for the simulation backend: the robot/session model, collision infrastructure, and the
   `PhysicsEngine`/`PhysicsEngineFactory` abstractions. It has no dependency on any concrete physics engine.
-- `scs2-physics-engine-implementation`: This project provides the concrete physics engines: contact point based (SCS1-like), impulse based, and bridges to
+- `scs2-physics-engines`: This project provides the concrete physics engines: contact point based (SCS1-like), impulse based, and bridges to
   Bullet and MuJoCo. Consolidated into one module so `PhysicsEngineType` can be resolved to any of the four engines without forcing native dependencies onto
   consumers (e.g. the visualizer) that never run physics.
 - `scs2-session-logger`: This project provides the backend for log session and remote session.
