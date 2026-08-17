@@ -41,7 +41,8 @@ import us.ihmc.yoVariables.variable.YoVariable;
 public class LogTimeSummaryRunner
 {
     private static final String[] DEFAULT_TIME_VARIABLE_NAMES = {"SchedulerTick", "EstimatorTick", "ControllerTick"};
-    private static final String LOG_PATH = "/opt/ihmc/LogData/incoming/20260812_090307_Alex002UnifiedControlProcess";
+    // This is where the user can set the log path for debugging the threading rates
+    private static final String LOG_PATH = "/opt/ihmc/LogData/incoming/20260814_084930_Alex002UnifiedControlProcess";
 
     public static void main(String[] args) throws IOException
     {
