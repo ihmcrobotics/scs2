@@ -36,6 +36,7 @@ import us.ihmc.scs2.simulation.mujoco.Mujoco;
 import us.ihmc.scs2.simulation.mujoco.physicsEngine.parameters.MujocoCone;
 import us.ihmc.scs2.simulation.mujoco.physicsEngine.parameters.MujocoIntegrator;
 import us.ihmc.scs2.simulation.mujoco.physicsEngine.parameters.MujocoJacobian;
+import us.ihmc.scs2.simulation.mujoco.physicsEngine.parameters.MujocoSimulationParametersReadOnly;
 import us.ihmc.scs2.simulation.mujoco.physicsEngine.parameters.MujocoSolver;
 import us.ihmc.scs2.definition.robot.RevoluteJointDefinition;
 import us.ihmc.scs2.definition.robot.RigidBodyDefinition;
@@ -311,7 +312,7 @@ public final class MujocoTools
    }
 
    /** Emit a joint's MJCF element: {@code <freejoint>} for the root, {@code <joint>} for 1-DoF. */
-   static void appendJoint(StringBuilder sb, JointDefinition joint, String namePrefix, int indent)
+   static void appendJoint(StringBuilder sb, JointDefinition joint, String namePrefix, int indent, MujocoSimulationParametersReadOnly parameters)
    {
       String pad = "  ".repeat(indent);
       if (joint instanceof SixDoFJointDefinition)
@@ -320,11 +321,11 @@ public final class MujocoTools
       }
       else if (joint instanceof RevoluteJointDefinition rev)
       {
-         appendOneDofJoint(sb, pad, "hinge", namePrefix, rev);
+         appendOneDofJoint(sb, pad, "hinge", namePrefix, rev, parameters);
       }
       else if (joint instanceof PrismaticJointDefinition pris)
       {
-         appendOneDofJoint(sb, pad, "slide", namePrefix, pris);
+         appendOneDofJoint(sb, pad, "slide", namePrefix, pris, parameters);
       }
       else
       {
@@ -333,7 +334,12 @@ public final class MujocoTools
       }
    }
 
-   private static void appendOneDofJoint(StringBuilder sb, String pad, String mjcfType, String namePrefix, OneDoFJointDefinition jointDef)
+   private static void appendOneDofJoint(StringBuilder sb,
+                                         String pad,
+                                         String mjcfType,
+                                         String namePrefix,
+                                         OneDoFJointDefinition jointDef,
+                                         MujocoSimulationParametersReadOnly parameters)
    {
       Tuple3DReadOnly axis = jointDef.getAxis();
       sb.append(pad).append("<joint name=\"").append(namePrefix).append(jointDef.getName())
@@ -343,6 +349,12 @@ public final class MujocoTools
       // Damping
       if (jointDef.getDamping() > 0.0)
          sb.append(" damping=\"").append(jointDef.getDamping()).append('"');
+
+      // Armature override: joints with no entry here fall through to the world-wide <default>
+      // armature (MujocoSimulationParametersReadOnly#get_armature) instead of repeating it per joint.
+      Double armatureOverride = parameters.get_armature_overrides().get(jointDef.getName());
+      if (armatureOverride != null)
+         sb.append(" armature=\"").append(armatureOverride).append('"');
       sb.append("/>\n");
    }
 

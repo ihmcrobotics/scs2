@@ -1,5 +1,9 @@
 package us.ihmc.scs2.simulation.mujoco.physicsEngine.parameters;
 
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * Compile-time MuJoCo simulation seeds; see {@link MujocoSimulationParametersReadOnly}. This class
  * is the single home of the default values. Members are grouped SCS2-owned (camelCase) first, then
@@ -26,6 +30,7 @@ public class MujocoSimulationParameters implements MujocoSimulationParametersBas
    private double margin = 0.0;
    private double gap = 0.0;
    private double armature = 0.0;
+   private final Map<String, Double> armatureOverrides = new HashMap<>();
 
    public static MujocoSimulationParameters defaultMujocoSimulationParameters()
    {
@@ -252,5 +257,17 @@ public class MujocoSimulationParameters implements MujocoSimulationParametersBas
    public void set_armature(double armature)
    {
       this.armature = armature;
+   }
+
+   @Override
+   public Map<String, Double> get_armature_overrides()
+   {
+      return Collections.unmodifiableMap(armatureOverrides);
+   }
+
+   @Override
+   public void set_armature(String jointName, double armature)
+   {
+      armatureOverrides.put(jointName, armature);
    }
 }

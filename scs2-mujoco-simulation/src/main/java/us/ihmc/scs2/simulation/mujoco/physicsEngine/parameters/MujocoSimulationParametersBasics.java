@@ -28,6 +28,7 @@ public interface MujocoSimulationParametersBasics extends MujocoSimulationParame
       set_margin(other.get_margin());
       set_gap(other.get_gap());
       set_armature(other.get_armature());
+      other.get_armature_overrides().forEach(this::set_armature);
    }
 
    // ---------- SCS2-owned ----------
@@ -74,4 +75,7 @@ public interface MujocoSimulationParametersBasics extends MujocoSimulationParame
    void set_gap(double gap);
 
    void set_armature(double armature);
+
+   /** Sets a per-joint {@link #set_armature(double)} override; see {@link MujocoSimulationParametersReadOnly#get_armature_overrides()}. */
+   void set_armature(String jointName, double armature);
 }

@@ -1,5 +1,7 @@
 package us.ihmc.scs2.simulation.mujoco.physicsEngine.parameters;
 
+import java.util.Map;
+
 /**
  * Compile-time seeds, consumed once when the composite MJCF is generated on the first
  * {@code simulate()} — except {@link #getSubSteps()}, which the engine mirrors live in
@@ -143,4 +145,13 @@ public interface MujocoSimulationParametersReadOnly
 
    /** MJCF default {@code joint/@armature}: rotor inertia added to every joint DoF. */
    double get_armature();
+
+   /**
+    * Per-joint override of {@link #get_armature()}, keyed by the joint's (unprefixed)
+    * {@code JointDefinition} name -- the same motor/gearbox package is often reused across several
+    * joints, so this is populated once per actuator rather than requiring a distinct value per
+    * joint. Joints with no entry here inherit {@link #get_armature()} via the MJCF {@code <default>}
+    * block at compile.
+    */
+   Map<String, Double> get_armature_overrides();
 }

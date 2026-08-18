@@ -127,7 +127,7 @@ public final class MujocoMultiBodyRobotFactory
       {
          RobotDefinition robotDefinition = robot.getRobotDefinition();
          Set<String> ignoredJointNames = new HashSet<>(robotDefinition.getNameOfJointsToIgnore());
-         appendRobotBodies(mjcf, robotDefinition, ignoredJointNames, 2);
+         appendRobotBodies(mjcf, robotDefinition, ignoredJointNames, 2, parameters);
       }
       mjcf.append("  </worldbody>\n");
       if (parameters.getFilterParentCollisions())
@@ -202,13 +202,17 @@ public final class MujocoMultiBodyRobotFactory
       }
    }
 
-   private static void appendRobotBodies(StringBuilder sb, RobotDefinition robotDefinition, Set<String> ignoredJointNames, int indentLevel)
+   private static void appendRobotBodies(StringBuilder sb,
+                                         RobotDefinition robotDefinition,
+                                         Set<String> ignoredJointNames,
+                                         int indentLevel,
+                                         MujocoSimulationParametersReadOnly parameters)
    {
       String namePrefix = robotDefinition.getName() + "_";
       List<JointDefinition> rootJoints = robotDefinition.getRootJointDefinitions();
       for (JointDefinition rootJoint : rootJoints)
       {
-         appendBody(sb, rootJoint, rootJoint.getSuccessor(), namePrefix, ignoredJointNames, indentLevel);
+         appendBody(sb, rootJoint, rootJoint.getSuccessor(), namePrefix, ignoredJointNames, indentLevel, parameters);
       }
    }
 
@@ -217,7 +221,8 @@ public final class MujocoMultiBodyRobotFactory
                                   RigidBodyDefinition body,
                                   String namePrefix,
                                   Set<String> ignoredJointNames,
-                                  int indent)
+                                  int indent,
+                                  MujocoSimulationParametersReadOnly parameters)
    {
       String pad = "  ".repeat(indent);
 
@@ -230,7 +235,7 @@ public final class MujocoMultiBodyRobotFactory
          sb.append(' ').append(MujocoTools.toPosQuatAttributes(spawnTransform));
       sb.append(">\n");
 
-      MujocoTools.appendJoint(sb, joint, namePrefix, indent + 1);
+      MujocoTools.appendJoint(sb, joint, namePrefix, indent + 1, parameters);
       MujocoTools.appendInertial(sb, body, indent + 1);
 
       int geomIndex = 0;
@@ -246,7 +251,7 @@ public final class MujocoMultiBodyRobotFactory
             continue;
          if (ignoredJointNames.contains(childJoint.getName()))
             continue;
-         appendBody(sb, childJoint, childJoint.getSuccessor(), namePrefix, ignoredJointNames, indent + 1);
+         appendBody(sb, childJoint, childJoint.getSuccessor(), namePrefix, ignoredJointNames, indent + 1, parameters);
       }
 
       sb.append(pad).append("</body>\n");
