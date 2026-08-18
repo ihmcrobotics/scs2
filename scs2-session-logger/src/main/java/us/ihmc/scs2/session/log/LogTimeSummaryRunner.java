@@ -40,191 +40,219 @@ import us.ihmc.yoVariables.variable.YoVariable;
  */
 public class LogTimeSummaryRunner
 {
-    private static final String[] DEFAULT_TIME_VARIABLE_NAMES = {"SchedulerTick", "EstimatorTick", "ControllerTick"};
-    // This is where the user can set the log path for debugging the threading rates
-    private static final String LOG_PATH = "/opt/ihmc/LogData/incoming/20260814_084930_Alex002UnifiedControlProcess";
+   private static final String[] DEFAULT_TIME_VARIABLE_NAMES = {"SchedulerTick", "EstimatorTick", "ControllerTick"};
+   // This is where the user can set the log path for debugging the threading rates
+   private static final String LOG_PATH = "/opt/ihmc/LogData/incoming/20260814_084930_Alex002UnifiedControlProcess";
 
-    public static void main(String[] args) throws IOException
-    {
-        // Locate the log directory and bail out early if it's missing or empty.
-        File logDirectory = new File(LOG_PATH);
-        if (!logDirectory.isDirectory())
-        {
-            System.err.println("Not a directory: " + logDirectory.getAbsolutePath());
-            System.exit(1);
-            return;
-        }
+   public static void main(String[] args) throws IOException
+   {
+      // Locate the log directory and bail out early if it's missing or empty.
+      File logDirectory = new File(LOG_PATH);
+      if (!logDirectory.isDirectory())
+      {
+         System.err.println("Not a directory: " + logDirectory.getAbsolutePath());
+         System.exit(1);
+         return;
+      }
 
-        String[] timeVariableNames = args.length > 0 ? args : DEFAULT_TIME_VARIABLE_NAMES;
+      String[] timeVariableNames = args.length > 0 ? args : DEFAULT_TIME_VARIABLE_NAMES;
 
-        // Opens the handshake + index so we know how many records exist and can seek into the data file.
-        LogDataReader logDataReader = new LogDataReader(logDirectory, new SilentProgressConsumer());
+      // Opens the handshake + index so we know how many records exist and can seek into the data file.
+      LogDataReader logDataReader = new LogDataReader(logDirectory, new SilentProgressConsumer());
 
-        int numberOfEntries = logDataReader.getNumberOfEntries();
-        if (numberOfEntries <= 0)
-        {
-            System.err.println("Log contains no entries.");
-            System.exit(1);
-            return;
-        }
+      int numberOfEntries = logDataReader.getNumberOfEntries();
+      if (numberOfEntries <= 0)
+      {
+         System.err.println("Log contains no entries.");
+         System.exit(1);
+         return;
+      }
 
-        System.out.println("Log directory   : " + logDirectory.getAbsolutePath());
-        System.out.println("Log entries     : " + numberOfEntries + " (raw ticks; not the same as real ticks of any one thread)");
+      System.out.println("Log directory   : " + logDirectory.getAbsolutePath());
+      System.out.println("Log entries     : " + numberOfEntries + " (raw ticks; not the same as real ticks of any one thread)");
 
-        // Each variable is reported independently, using the same LogDataReader; every report
-        // method re-seeks from scratch so runs don't interfere with each other.
-        for (String timeVariableName : timeVariableNames)
-        {
-            System.out.println();
+      // Each variable is reported independently, using the same LogDataReader; every report
+      // method re-seeks from scratch so runs don't interfere with each other.
+      for (String timeVariableName : timeVariableNames)
+      {
+         System.out.println();
 
-            YoVariable timeVariable = findVariable(logDataReader, timeVariableName);
-            if (timeVariable == null)
-            {
-                System.err.println("Could not find a logged variable whose name contains \"" + timeVariableName + "\".");
-                continue;
-            }
+         YoVariable timeVariable = findVariable(logDataReader, timeVariableName);
+         if (timeVariable == null)
+         {
+            System.err.println("Could not find a logged variable whose name contains \"" + timeVariableName + "\".");
+            continue;
+         }
 
-            System.out.println("Time variable   : " + timeVariable.getFullNameString());
+         System.out.println("Time variable   : " + timeVariable.getFullNameString());
 
-            // Long tick counters give an exact answer from just two reads; anything else needs a full scan
-            // to detect real ticks (see the two report* methods below for why).
-            if (timeVariable instanceof YoLong)
-                reportCounterMode(logDataReader, (YoLong) timeVariable, numberOfEntries);
-            else
-                reportChangeDetectionMode(logDataReader, timeVariable, numberOfEntries);
-        }
-    }
+         // Long tick counters give an exact answer from just two reads; anything else needs a full scan
+         // to detect real ticks (see the two report* methods below for why).
+         TickRateSummary summary = timeVariable instanceof YoLong ?
+               reportCounterMode(logDataReader, (YoLong) timeVariable, numberOfEntries) :
+               reportChangeDetectionMode(logDataReader, timeVariable, numberOfEntries);
 
-    /**
-     * Exact mode for a {@code LongYoVariable} tick counter: the difference between its first and
-     * last value over the wall-clock span of those two records is the real tick count, no
-     * scanning required.
-     */
-    private static void reportCounterMode(LogDataReader logDataReader, YoLong counterVariable, int numberOfEntries)
-    {
-        // logDataReader.getTimestamp() is the per-record wall-clock timestamp written by the logger
-        // itself, independent of any thread's own variables - that's what we use as the clock.
-        YoLong timestamp = logDataReader.getTimestamp();
+         System.out.println("Mode            : " + summary.mode);
+         System.out.println("Real ticks      : " + summary.realTicks + summary.realTicksNote);
+         for (String extraLine : summary.extraLines)
+            System.out.println(extraLine);
+         System.out.println("Duration        : " + summary.duration + " s " + summary.durationNote);
+         System.out.println("Frequency       : " + summary.frequency + " Hz");
+      }
+   }
 
-        logDataReader.seek(0);
-        logDataReader.read();
-        long firstTimestamp = timestamp.getLongValue();
-        long firstCount = counterVariable.getLongValue();
+   /**
+    * Exact mode for a {@code LongYoVariable} tick counter: the difference between its first and
+    * last value over the wall-clock span of those two records is the real tick count, no
+    * scanning required.
+    */
+   private static TickRateSummary reportCounterMode(LogDataReader logDataReader, YoLong counterVariable, int numberOfEntries)
+   {
+      // logDataReader.getTimestamp() is the per-record wall-clock timestamp written by the logger
+      // itself, independent of any thread's own variables - that's what we use as the clock.
+      YoLong timestamp = logDataReader.getTimestamp();
 
-        logDataReader.seek(numberOfEntries - 1);
-        logDataReader.read();
-        long lastTimestamp = timestamp.getLongValue();
-        long lastCount = counterVariable.getLongValue();
+      logDataReader.seek(0);
+      logDataReader.read();
+      long firstTimestamp = timestamp.getLongValue();
+      long firstCount = counterVariable.getLongValue();
 
-        // A tick counter only increments once per real tick, so this difference is exact.
-        long realTicks = lastCount - firstCount;
-        double duration = (lastTimestamp - firstTimestamp) / 1.0e9;
-        double frequency = duration > 0 ? realTicks / duration : Double.NaN;
+      logDataReader.seek(numberOfEntries - 1);
+      logDataReader.read();
+      long lastTimestamp = timestamp.getLongValue();
+      long lastCount = counterVariable.getLongValue();
 
-        System.out.println("Mode            : counter (exact difference)");
-        System.out.println("Real ticks      : " + realTicks);
-        System.out.println("Duration        : " + duration + " s (from record timestamps)");
-        System.out.println("Frequency       : " + frequency + " Hz");
-    }
+      // A tick counter only increments once per real tick, so this difference is exact.
+      long realTicks = lastCount - firstCount;
+      double duration = (lastTimestamp - firstTimestamp) / 1.0e9;
+      double frequency = duration > 0 ? realTicks / duration : Double.NaN;
 
-    /**
-     * Fallback for a {@code DoubleYoVariable} clock with no tick counter available: stream the
-     * whole log and count how many times the value actually changes. Duration is measured
-     * between the first record and the record of the last observed change, using each record's
-     * own timestamp - not the variable's value - as the wall clock.
-     */
-    private static void reportChangeDetectionMode(LogDataReader logDataReader, YoVariable timeVariable, int numberOfEntries)
-    {
-        YoLong timestamp = logDataReader.getTimestamp();
+      return new TickRateSummary("counter (exact difference)", realTicks, "", duration, "(from record timestamps)", frequency, List.of());
+   }
 
-        logDataReader.seek(0);
-        logDataReader.read();
-        long firstTimestamp = timestamp.getLongValue();
-        double firstValue = timeVariable.getValueAsDouble();
+   /**
+    * Fallback for a {@code DoubleYoVariable} clock with no tick counter available: stream the
+    * whole log and count how many times the value actually changes. Duration is measured
+    * between the first record and the record of the last observed change, using each record's
+    * own timestamp - not the variable's value - as the wall clock.
+    */
+   private static TickRateSummary reportChangeDetectionMode(LogDataReader logDataReader, YoVariable timeVariable, int numberOfEntries)
+   {
+      YoLong timestamp = logDataReader.getTimestamp();
 
-        double previousValue = firstValue;
-        double lastValue = firstValue;
-        long lastChangeTimestamp = firstTimestamp;
-        long realTicks = 0;
+      logDataReader.seek(0);
+      logDataReader.read();
+      long firstTimestamp = timestamp.getLongValue();
+      double firstValue = timeVariable.getValueAsDouble();
 
-        // Walk every record in order; a real tick is a record where the value differs from the
-        // previous one. Records where the producing thread hasn't run again yet just repeat the
-        // same value and don't count.
-        for (int position = 1; position < numberOfEntries; position++)
-        {
-            logDataReader.read();
-            double currentValue = timeVariable.getValueAsDouble();
-            if (currentValue != previousValue)
-            {
-                realTicks++;
-                lastChangeTimestamp = timestamp.getLongValue();
-                lastValue = currentValue;
-                previousValue = currentValue;
-            }
-        }
+      double previousValue = firstValue;
+      double lastValue = firstValue;
+      long lastChangeTimestamp = firstTimestamp;
+      long realTicks = 0;
 
-        double duration = (lastChangeTimestamp - firstTimestamp) / 1.0e9;
-        double frequency = duration > 0 ? realTicks / duration : Double.NaN;
+      // Walk every record in order; a real tick is a record where the value differs from the
+      // previous one. Records where the producing thread hasn't run again yet just repeat the
+      // same value and don't count.
+      for (int position = 1; position < numberOfEntries; position++)
+      {
+         logDataReader.read();
+         double currentValue = timeVariable.getValueAsDouble();
+         if (currentValue != previousValue)
+         {
+            realTicks++;
+            lastChangeTimestamp = timestamp.getLongValue();
+            lastValue = currentValue;
+            previousValue = currentValue;
+         }
+      }
 
-        System.out.println("Mode            : clock (change-detection, scanned full log)");
-        System.out.println("Real ticks      : " + realTicks + " (times the value actually changed)");
-        System.out.println("First value     : " + firstValue);
-        System.out.println("Last value      : " + lastValue);
-        System.out.println("Duration        : " + duration + " s (from record timestamps, first record to last observed change)");
-        System.out.println("Frequency       : " + frequency + " Hz");
-    }
+      double duration = (lastChangeTimestamp - firstTimestamp) / 1.0e9;
+      double frequency = duration > 0 ? realTicks / duration : Double.NaN;
 
-    /** Returns the first logged variable whose simple name contains {@code variableName}, or {@code null}. */
-    private static YoVariable findVariable(LogDataReader logDataReader, String variableName)
-    {
-        List<YoVariable> yoVariables = logDataReader.getYoVariablesList();
+      List<String> extraLines = List.of("First value     : " + firstValue, "Last value      : " + lastValue);
+      return new TickRateSummary("clock (change-detection, scanned full log)",
+                                 realTicks,
+                                 " (times the value actually changed)",
+                                 duration,
+                                 "(from record timestamps, first record to last observed change)",
+                                 frequency,
+                                 extraLines);
+   }
 
-        YoVariable firstMatch = null;
-        int matchCount = 0;
-        for (YoVariable yoVariable : yoVariables)
-        {
-            if (yoVariable.getName().contains(variableName))
-            {
-                if (firstMatch == null)
-                    firstMatch = yoVariable;
-                matchCount++;
-            }
-        }
+   /** Returns the first logged variable whose simple name contains {@code variableName}, or {@code null}. */
+   private static YoVariable findVariable(LogDataReader logDataReader, String variableName)
+   {
+      List<YoVariable> yoVariables = logDataReader.getYoVariablesList();
 
-        if (matchCount > 1)
-            System.out.println(matchCount + " variables contain \"" + variableName + "\"; using " + firstMatch.getFullNameString()
-                    + ". Pass a more specific name to disambiguate.");
+      YoVariable firstMatch = null;
+      int matchCount = 0;
+      for (YoVariable yoVariable : yoVariables)
+      {
+         if (yoVariable.getName().contains(variableName))
+         {
+            if (firstMatch == null)
+               firstMatch = yoVariable;
+            matchCount++;
+         }
+      }
 
-        return firstMatch;
-    }
+      if (matchCount > 1)
+         System.out.println(matchCount + " variables contain \"" + variableName + "\"; using " + firstMatch.getFullNameString()
+                            + ". Pass a more specific name to disambiguate.");
 
-    /** No-op progress consumer so opening the log stays quiet on the console. */
-    private static class SilentProgressConsumer implements ProgressConsumer
-    {
-        @Override
-        public void started(String task)
-        {
-        }
+      return firstMatch;
+   }
 
-        @Override
-        public void info(String info)
-        {
-        }
+   /** Values shared by both report methods, so the summary is printed in exactly one place. */
+   private static class TickRateSummary
+   {
+      private final String mode;
+      private final long realTicks;
+      private final String realTicksNote;
+      private final double duration;
+      private final String durationNote;
+      private final double frequency;
+      private final List<String> extraLines;
 
-        @Override
-        public void error(String error)
-        {
-            System.err.println(error);
-        }
+      TickRateSummary(String mode, long realTicks, String realTicksNote, double duration, String durationNote, double frequency, List<String> extraLines)
+      {
+         this.mode = mode;
+         this.realTicks = realTicks;
+         this.realTicksNote = realTicksNote;
+         this.duration = duration;
+         this.durationNote = durationNote;
+         this.frequency = frequency;
+         this.extraLines = extraLines;
+      }
+   }
 
-        @Override
-        public void progress(double progressPercentage)
-        {
-        }
+   /** No-op progress consumer so opening the log stays quiet on the console. */
+   private static class SilentProgressConsumer implements ProgressConsumer
+   {
+      @Override
+      public void started(String task)
+      {
+      }
 
-        @Override
-        public void done()
-        {
-        }
-    }
+      @Override
+      public void info(String info)
+      {
+      }
+
+      @Override
+      public void error(String error)
+      {
+         System.err.println(error);
+      }
+
+      @Override
+      public void progress(double progressPercentage)
+      {
+      }
+
+      @Override
+      public void done()
+      {
+      }
+   }
 }
