@@ -234,7 +234,7 @@ public class MujocoPhysicsEngine implements PhysicsEngine
          // robot spawns at q=0 (legs locked straight) and falls before the first controller tick.
          MujocoMultiBodyRobotFactory.seedInitialJointState(robot.getRobotDefinition(), mujocoMultiBodyRobot, dynamicsWorld.getData());
 
-         MujocoRobot mujocoRobot = new MujocoRobot(robot, physicsEngineRegistry, mujocoMultiBodyRobot);
+         MujocoRobot mujocoRobot = new MujocoRobot(robot, physicsEngineRegistry, mujocoMultiBodyRobot, seedParameters);
          // Robot.getRegistry() was already attached to rootRegistry in addRobot. Just attach the
          // physics-engine-specific secondary registry here.
          physicsEngineRegistry.addChild(mujocoRobot.getSecondaryRegistry());

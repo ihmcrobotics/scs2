@@ -20,11 +20,13 @@ import us.ihmc.scs2.definition.robot.RigidBodyDefinition;
 import us.ihmc.scs2.simulation.mujoco.physicsEngine.MujocoMultiBodyRobot.JointAddress;
 import us.ihmc.scs2.simulation.robot.Robot;
 import us.ihmc.scs2.simulation.robot.RobotExtension;
+import us.ihmc.scs2.simulation.mujoco.physicsEngine.parameters.MujocoSimulationParametersReadOnly;
 import us.ihmc.scs2.simulation.robot.RobotPhysicsOutput;
 import us.ihmc.scs2.simulation.robot.multiBodySystem.interfaces.SimJointBasics;
 import us.ihmc.scs2.simulation.robot.multiBodySystem.interfaces.SimRigidBodyBasics;
 import us.ihmc.scs2.simulation.screwTools.RigidBodyWrenchRegistry;
 import us.ihmc.yoVariables.registry.YoRegistry;
+import us.ihmc.yoVariables.variable.YoDouble;
 
 /**
  * SCS2-side wrapper that owns the mecano {@link Robot} and the parallel {@link MujocoMultiBodyRobot}.
@@ -62,7 +64,7 @@ public class MujocoRobot extends RobotExtension
    // Scratch for cacc CoM-to-joint-origin spatial acceleration shift.
    private final Vector3D caccCoMShift = new Vector3D();
 
-   public MujocoRobot(Robot robot, YoRegistry physicsRegistry, MujocoMultiBodyRobot mujocoMultiBodyRobot)
+   public MujocoRobot(Robot robot, YoRegistry physicsRegistry, MujocoMultiBodyRobot mujocoMultiBodyRobot, MujocoSimulationParametersReadOnly parameters)
    {
       super(robot, physicsRegistry);
       this.mujocoMultiBodyRobot = mujocoMultiBodyRobot;
@@ -85,6 +87,17 @@ public class MujocoRobot extends RobotExtension
          int bodyId = mujocoMultiBodyRobot.getBodyId(body.getName());
          if (bodyId >= 0)
             mecanoBodyByMujocoId.put(bodyId, body);
+      }
+
+      // Read-only: reports the armature value MJCF compiled into this joint (per-joint override if
+      // one was set, otherwise the world-wide <default> armature); doesn't reflect back changes,
+      // since armature is baked into mjModel at compile and can't be live-tuned.
+      for (SimJointBasics joint : robot.getAllJoints())
+      {
+         if (!(joint instanceof OneDoFJointBasics))
+            continue;
+         double armature = parameters.get_armature_overrides().getOrDefault(joint.getName(), parameters.get_armature());
+         new YoDouble(joint.getName() + "Armature", "Compiled MuJoCo <joint armature>; static, not live-tunable", yoRegistry).set(armature);
       }
    }
 
