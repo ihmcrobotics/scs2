@@ -1,4 +1,5 @@
 import org.apache.tools.ant.taskdefs.condition.Os
+import org.gradle.api.tasks.application.CreateStartScripts
 
 plugins {
    id("us.ihmc.ihmc-build")
@@ -90,6 +91,24 @@ tasks.getByPath("installDist").dependsOn("compositeJar")
 app.entrypoint(sessionVisualizerExecutableName, "us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizer", listOf("-Djdk.gtk.version=2", "-Dprism.vsync=false"))
 app.entrypoint(mcapRepackAppExecutableName, "us.ihmc.scs2.sessionVisualizer.jfx.session.mcap.MCAPRepackApplication", listOf("-Djdk.gtk.version=2", "-Dprism.vsync=false"))
 
+// Post-process the generated unix launch scripts (installDist, installDistLinux, and the .deb which
+// copies from the install output) so every distribution disables driver VSync itself, without the
+// user needing to set __GL_SYNC_TO_VBLANK. The contains() guard keeps this idempotent.
+tasks.withType<CreateStartScripts>().configureEach {
+   doLast {
+      val script = unixScript
+      val text = script.readText()
+      if (!text.contains("__GL_SYNC_TO_VBLANK")) {
+         script.writeText(
+            text.replaceFirst(
+               "#!/bin/sh",
+               "#!/bin/sh\n# Workaround JDK-8291958: disable driver VSync to fix multi-window playback stutter.\nexport __GL_SYNC_TO_VBLANK=0"
+            )
+         )
+      }
+   }
+}
+
 /**
  * This task is used to compile the project and filter out any dependency not required for Linux.
  */
@@ -133,9 +152,6 @@ tasks.register("buildDebianPackage") {
       fileTree("$sourceFolder/bin").matching {
          exclude(sessionVisualizerExecutableName, mcapRepackAppExecutableName)
       }.forEach(File::delete)
-
-      addVSyncLinuxHackForJavaFXApp(sourceFolder, sessionVisualizerExecutableName)
-      addVSyncLinuxHackForJavaFXApp(sourceFolder, mcapRepackAppExecutableName)
 
       File("$baseFolder/DEBIAN").mkdirs()
       println("Created directory $baseFolder/DEBIAN/: ${File("${baseFolder}/DEBIAN").exists()}")
@@ -193,23 +209,6 @@ tasks.register("buildDebianPackage") {
          ihmc.exec(ProcessBuilder("dpkg", "--build", "scs2-${ihmc.version}").directory(File(debianFolder)))
       }
    }
-}
-
-fun addVSyncLinuxHackForJavaFXApp(sourceFolder: String, javafxappname: String)
-{
-   val launchScriptFile = File("$sourceFolder/bin/$javafxappname")
-   var originalScript = launchScriptFile.readText()
-   originalScript = originalScript.replaceFirst(
-         "#!/bin/sh", """
-         #!/bin/bash
-         # This is a workaround for a bug in JavaFX 17.0.1, disabling vsync to improve framerate with multiple windows.
-         export __GL_SYNC_TO_VBLANK=0
-
-      """.trimIndent()
-   )
-
-   launchScriptFile.delete()
-   launchScriptFile.writeText(originalScript)
 }
 
 // Stable upgrade UUID for the Windows MSI. Must never change across releases:

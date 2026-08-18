@@ -7,6 +7,11 @@ import java.util.concurrent.CountDownLatch;
 import org.apache.commons.lang3.SystemUtils;
 
 import javafx.application.Application;
+import javafx.application.Platform;
+import javafx.scene.control.Alert;
+import javafx.scene.control.Alert.AlertType;
+import javafx.scene.control.ButtonType;
+import javafx.stage.Modality;
 import javafx.stage.Stage;
 
 /**
@@ -58,29 +63,72 @@ public class JavaFXApplicationCreator extends Application
             System.setProperty(prism_vsync_name, "false");
          }
 
-         int glSyncToVBlankIntValue;
-         String glSyncToVBlankProperty = System.getenv(gl_vsync_name);
-         if (glSyncToVBlankProperty == null)
-         {
-            glSyncToVBlankIntValue = -1;
-         }
-         else
-         {
-            try
-            {
-               glSyncToVBlankIntValue = Integer.parseInt(glSyncToVBlankProperty);
-            }
-            catch (NumberFormatException e)
-            {
-               e.printStackTrace();
-               glSyncToVBlankIntValue = -1;
-            }
-         }
-
-         if (glSyncToVBlankIntValue != 0)
+         if (isVSyncMisconfiguredOnLinux())
             System.err.println("%s: JavaFX performance warning: disable VSync for better multi-window performance, run with environment variable: %s=0".formatted(JavaFXApplicationCreator.class.getSimpleName(),
                                                                                                                                                                   gl_vsync_name));
       }
+   }
+
+   /**
+    * Checks whether VSync is left enabled on Linux, i.e. the {@code __GL_SYNC_TO_VBLANK} environment
+    * variable is not set to {@code 0}.
+    * <p>
+    * A {@code null}, unparseable, or non-zero value all count as misconfigured. See
+    * {@link #verifyVSyncDisabledUbuntu()} for the underlying issue.
+    * </p>
+    *
+    * @return {@code true} when running on Linux and {@code __GL_SYNC_TO_VBLANK} is not {@code 0}.
+    */
+   public static boolean isVSyncMisconfiguredOnLinux()
+   {
+      if (!SystemUtils.IS_OS_LINUX)
+         return false;
+
+      String glSyncToVBlankProperty = System.getenv("__GL_SYNC_TO_VBLANK");
+      if (glSyncToVBlankProperty == null)
+         return true;
+
+      try
+      {
+         return Integer.parseInt(glSyncToVBlankProperty) != 0;
+      }
+      catch (NumberFormatException e)
+      {
+         e.printStackTrace();
+         return true;
+      }
+   }
+
+   /**
+    * If VSync is misconfigured on Linux (see {@link #isVSyncMisconfiguredOnLinux()}), pops up a
+    * non-blocking warning dialog explaining that multi-window playback may stutter and how to fix it.
+    * <p>
+    * This complements the console warning emitted by {@link #verifyVSyncDisabledUbuntu()}, which runs
+    * before the JavaFX toolkit is up and thus cannot show a dialog. This method is safe to call from
+    * any thread; the dialog is shown on the JavaFX Application Thread.
+    * </p>
+    */
+   public static void showVSyncWarningDialogIfNeeded()
+   {
+      if (!isVSyncMisconfiguredOnLinux())
+         return;
+
+      Platform.runLater(() ->
+      {
+         Alert alert = new Alert(AlertType.WARNING, "", ButtonType.OK);
+         alert.initModality(Modality.APPLICATION_MODAL);
+         alert.setTitle("Performance Warning");
+         alert.setHeaderText("VSync is not disabled (multi-window playback may stutter)");
+         alert.setContentText("""
+                              The environment variable __GL_SYNC_TO_VBLANK=0 is not set, so multi-window chart playback will stutter.
+
+                              Recommended fix: launch SCS2 via the SCS2SessionVisualizer script, which sets it automatically:
+                                - when running from source: build/install/.../bin/SCS2SessionVisualizer
+                                - or install and run the packaged .deb
+
+                              If running from an IDE, add the environment variable __GL_SYNC_TO_VBLANK=0 to the run configuration.""");
+         alert.show();
+      });
    }
 
    private void setStartUpTest(JavaFXApplicationCreator startUpTest)

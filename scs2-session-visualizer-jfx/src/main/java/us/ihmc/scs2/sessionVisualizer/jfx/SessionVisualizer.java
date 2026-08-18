@@ -140,6 +140,10 @@ public class SessionVisualizer
       // This may be related to the bug reported when using GTK3: https://github.com/javafxports/openjdk-jfx/pull/446, might be fixed in later version.
       initializeStageWithPrimaryScreen();
 
+      // Warn (once, when the main window comes up) if VSync is left enabled on Linux, which is typically the case
+      // when launching from an IDE instead of the SCS2SessionVisualizer script that sets __GL_SYNC_TO_VBLANK=0.
+      JavaFXApplicationCreator.showVSyncWarningDialogIfNeeded();
+
       if (initialSession != null)
       {
          Runnable sessionLoadedCallback = () -> sessionVisualizerControls.visualizerReadyLatch.countDown();
