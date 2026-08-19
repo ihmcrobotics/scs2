@@ -317,7 +317,7 @@ public abstract class Session
    /**
     * Used to keep track of how long the session has been running.
     */
-   private long runTickCounter = 0L;
+   protected long runTickCounter = 0L;
 
    // State listener to publish internal to outside world
    /**
