@@ -179,7 +179,7 @@ tasks.register("buildDebianPackage") {
          Exec=/opt/scs2-${ihmc.version}/bin/$sessionVisualizerExecutableName
          Icon=/opt/scs2-${ihmc.version}/icon/scs-icon.png
          Version=1.0
-         Terminal=true
+         Terminal=false
          Type=Application
          Categories=Utility;Application;
          """.trimIndent()
