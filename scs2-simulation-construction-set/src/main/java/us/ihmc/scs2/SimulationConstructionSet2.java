@@ -42,9 +42,10 @@ import us.ihmc.scs2.simulation.SimulationSession;
 import us.ihmc.scs2.simulation.SimulationSessionControls;
 import us.ihmc.scs2.simulation.SimulationTerminalCondition;
 import us.ihmc.scs2.simulation.TimeConsumer;
-import us.ihmc.scs2.simulation.parameters.ContactParametersReadOnly;
-import us.ihmc.scs2.simulation.parameters.ContactPointBasedContactParameters;
+import us.ihmc.scs2.simulation.impulseBased.physicsEngine.parameters.ContactParametersReadOnly;
+import us.ihmc.scs2.simulation.contactPointBased.physicsEngine.parameters.ContactPointBasedContactParameters;
 import us.ihmc.scs2.simulation.physicsEngine.PhysicsEngine;
+import us.ihmc.scs2.simulation.PhysicsEngineFactories;
 import us.ihmc.scs2.simulation.physicsEngine.PhysicsEngineFactory;
 import us.ihmc.scs2.simulation.robot.Robot;
 import us.ihmc.yoVariables.buffer.interfaces.YoBufferProcessor;
@@ -200,7 +201,7 @@ public class SimulationConstructionSet2 implements YoVariableHolder, SimulationS
     */
    public static PhysicsEngineFactory contactPointBasedPhysicsEngineFactory()
    {
-      return PhysicsEngineFactory.newContactPointBasedPhysicsEngineFactory();
+      return PhysicsEngineFactories.newContactPointBasedPhysicsEngineFactory();
    }
 
    /**
@@ -212,7 +213,7 @@ public class SimulationConstructionSet2 implements YoVariableHolder, SimulationS
     */
    public static PhysicsEngineFactory contactPointBasedPhysicsEngineFactory(ContactPointBasedContactParameters contactParameters)
    {
-      return PhysicsEngineFactory.newContactPointBasedPhysicsEngineFactory(contactParameters);
+      return PhysicsEngineFactories.newContactPointBasedPhysicsEngineFactory(contactParameters);
    }
 
    /**
@@ -235,7 +236,7 @@ public class SimulationConstructionSet2 implements YoVariableHolder, SimulationS
     */
    public static PhysicsEngineFactory impulseBasedPhysicsEngineFactory(ContactParametersReadOnly contactParameters)
    {
-      return PhysicsEngineFactory.newImpulseBasedPhysicsEngineFactory(contactParameters);
+      return PhysicsEngineFactories.newImpulseBasedPhysicsEngineFactory(contactParameters);
    }
 
    /**

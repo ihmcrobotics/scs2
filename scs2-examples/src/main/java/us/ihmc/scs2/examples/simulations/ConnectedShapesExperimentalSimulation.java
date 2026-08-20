@@ -21,8 +21,8 @@ import us.ihmc.scs2.definition.visual.VisualDefinition;
 import us.ihmc.scs2.definition.visual.VisualDefinitionFactory;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizer;
 import us.ihmc.scs2.simulation.SimulationSession;
-import us.ihmc.scs2.simulation.parameters.ContactParameters;
-import us.ihmc.scs2.simulation.physicsEngine.PhysicsEngineFactory;
+import us.ihmc.scs2.simulation.impulseBased.physicsEngine.parameters.ContactParameters;
+import us.ihmc.scs2.simulation.PhysicsEngineFactories;
 
 public class ConnectedShapesExperimentalSimulation
 {
@@ -86,7 +86,7 @@ public class ConnectedShapesExperimentalSimulation
                                                                                          new MaterialDefinition(ColorDefinitions.DarkKhaki())),
                                                                     new CollisionShapeDefinition(terrainPose, terrainGeometry));
 
-      SimulationSession simulationSession = new SimulationSession(PhysicsEngineFactory.newImpulseBasedPhysicsEngineFactory(contactParameters));
+      SimulationSession simulationSession = new SimulationSession(PhysicsEngineFactories.newImpulseBasedPhysicsEngineFactory(contactParameters));
       simulationSession.addRobot(robotDefinition);
       simulationSession.addTerrainObject(terrain);
       SessionVisualizer.startSessionVisualizer(simulationSession);

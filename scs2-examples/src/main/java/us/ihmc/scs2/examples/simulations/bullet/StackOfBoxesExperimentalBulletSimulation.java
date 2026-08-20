@@ -29,20 +29,10 @@ import us.ihmc.scs2.simulation.bullet.physicsEngine.BulletPhysicsEngineFactory;
 
 public class StackOfBoxesExperimentalBulletSimulation
 {
-   private static final boolean VISUALIZE_WITH_DEBUG_DRAWING = false;
-
    public StackOfBoxesExperimentalBulletSimulation()
    {
       SimulationSession simulationSession = createSession();
-      if (VISUALIZE_WITH_DEBUG_DRAWING)
-      {
-         SessionVisualizer sessionVisualizer = BulletExampleSimulationTools.startSessionVisualizerWithDebugDrawing(simulationSession);
-         sessionVisualizer.getToolkit().getSession().runTick();
-      }
-      else
-      {
-         SessionVisualizer.startSessionVisualizer(simulationSession);
-      }
+      SessionVisualizer.startSessionVisualizer(simulationSession);
    }
 
    public static SimulationSession createSession()

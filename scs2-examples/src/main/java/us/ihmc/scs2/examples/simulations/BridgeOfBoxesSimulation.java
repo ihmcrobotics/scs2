@@ -29,8 +29,8 @@ import us.ihmc.scs2.definition.visual.MaterialDefinition;
 import us.ihmc.scs2.definition.visual.VisualDefinition;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizer;
 import us.ihmc.scs2.simulation.SimulationSession;
-import us.ihmc.scs2.simulation.parameters.ContactParameters;
-import us.ihmc.scs2.simulation.physicsEngine.PhysicsEngineFactory;
+import us.ihmc.scs2.simulation.impulseBased.physicsEngine.parameters.ContactParameters;
+import us.ihmc.scs2.simulation.PhysicsEngineFactories;
 import us.ihmc.yoVariables.euclid.referenceFrame.YoFramePoseUsingYawPitchRoll;
 import us.ihmc.yoVariables.registry.YoRegistry;
 
@@ -114,7 +114,7 @@ public class BridgeOfBoxesSimulation
          rightSupportRobot.addControllerDefinition((in, out) -> newSupportController(false, rightSupportPose, in, out, supportMass, bridgeMass));
       }
 
-      SimulationSession simulationSession = new SimulationSession(PhysicsEngineFactory.newImpulseBasedPhysicsEngineFactory(contactParameters));
+      SimulationSession simulationSession = new SimulationSession(PhysicsEngineFactories.newImpulseBasedPhysicsEngineFactory(contactParameters));
       robots.forEach(simulationSession::addRobot);
       simulationSession.addTerrainObject(terrainObjectDefinition);
       SessionVisualizer.startSessionVisualizer(simulationSession);

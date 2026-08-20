@@ -16,7 +16,7 @@ allprojects {
 }
 
 mainDependencies {
-   api("us.ihmc:scs2-simulation:source")
+   api("us.ihmc:scs2-physics-engines:source")
    api("us.ihmc:scs2-session:source")
    api("us.ihmc:scs2-session-logger:source")
    api("us.ihmc:scs2-session-visualizer-jfx:source")
