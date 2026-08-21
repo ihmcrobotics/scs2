@@ -108,6 +108,10 @@ public class NumberSeriesLayer extends ImageView
       }
    };
 
+   // A fresh `this::render` method reference is a distinct object on every evaluation (it captures `this`),
+   // so it can never compare equal to a previously-submitted one
+   private final Runnable renderRunnable = this::render;
+
    private final ChartRenderManager renderManager;
 
    private final ObjectProperty<ChartStyle> chartStyleProperty = new SimpleObjectProperty<>(this, "chartStyle", ChartStyle.RAW);
@@ -156,11 +160,6 @@ public class NumberSeriesLayer extends ImageView
       dataSizeProperty.addListener(dirtyListener);
       updateIndexMarkerVisible.addListener(dirtyListener);
    }
-
-   // Reused across calls so ChartRenderManager can dedup pending requests for this layer by identity.
-   // A fresh `this::render` method reference is a distinct object on every evaluation (it captures `this`),
-   // so it can never compare equal to a previously-submitted one -- that would silently defeat the dedup.
-   private final Runnable renderRunnable = this::render;
 
    public void scheduleRender()
    {
