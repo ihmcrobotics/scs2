@@ -108,6 +108,10 @@ public class NumberSeriesLayer extends ImageView
       }
    };
 
+   // A fresh `this::render` method reference is a distinct object on every evaluation (it captures `this`),
+   // so it can never compare equal to a previously-submitted one
+   private final Runnable renderRunnable = this::render;
+
    private final ChartRenderManager renderManager;
 
    private final ObjectProperty<ChartStyle> chartStyleProperty = new SimpleObjectProperty<>(this, "chartStyle", ChartStyle.RAW);
@@ -162,7 +166,7 @@ public class NumberSeriesLayer extends ImageView
       backgroundExecutor.execute(() ->
       {
          if (updateImage())
-            renderManager.submitRenderRequest(this::render);
+            renderManager.submitRenderRequest(renderRunnable);
       });
    }
 
@@ -173,7 +177,7 @@ public class NumberSeriesLayer extends ImageView
 
       if (isUpdatingImage.get())
       {
-         renderManager.submitRenderRequest(this::render);
+         renderManager.submitRenderRequest(renderRunnable);
          return;
       }
 
