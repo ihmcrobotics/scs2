@@ -298,8 +298,8 @@
 .chart {
     -fx-padding: 0.0px;
     -fx-border-color: darkgrey;
+    -fx-border-width: 1.5px;
     -fx-background-color: -fx-background;
-    -fx-effect: dropshadow(three-pass-box, derive(-fx-background, -15.0%), 2.5, 0.0, 1.5, 1.5);
 }
 
 .chart-plot-background {
