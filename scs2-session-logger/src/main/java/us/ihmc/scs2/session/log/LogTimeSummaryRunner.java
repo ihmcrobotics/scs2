@@ -33,9 +33,11 @@ import us.ihmc.yoVariables.variable.YoVariable;
  * <p>
  * Usage: {@code LogTimeSummaryRunner [timeVariableName ...]}
  * <ul>
- * <li>{@code timeVariableName} — a substring of a logged time variable's name; one or more may be
- * given, each reported separately. Defaults to {@link #DEFAULT_TIME_VARIABLE_NAMES}. The first
- * logged variable whose name contains it is used.
+ * <li>{@code timeVariableName} — the exact simple name (not the full registry path) of a logged
+ * time variable; one or more may be given, each reported separately. Defaults to
+ * {@link #DEFAULT_TIME_VARIABLE_NAMES}. Matching is exact rather than substring so that a variable
+ * name reused across multiple registries - which means it's genuinely logged more than once - is
+ * surfaced instead of silently picking whichever one comes first.
  * </ul>
  */
 public class LogTimeSummaryRunner
@@ -188,7 +190,7 @@ public class LogTimeSummaryRunner
       int matchCount = 0;
       for (YoVariable yoVariable : yoVariables)
       {
-         if (yoVariable.getName().contains(variableName))
+         if (yoVariable.getName().equals(variableName))
          {
             if (firstMatch == null)
                firstMatch = yoVariable;
@@ -197,8 +199,8 @@ public class LogTimeSummaryRunner
       }
 
       if (matchCount > 1)
-         System.out.println(matchCount + " variables contain \"" + variableName + "\"; using " + firstMatch.getFullNameString()
-                            + ". Pass a more specific name to disambiguate.");
+         System.out.println(matchCount + " variables are named \"" + variableName + "\"; using " + firstMatch.getFullNameString()
+                            + ". This means the name is genuinely logged more than once, in different registries.");
 
       return firstMatch;
    }
