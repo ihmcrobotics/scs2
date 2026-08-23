@@ -161,11 +161,6 @@ public class NumberSeriesLayer extends ImageView
       updateIndexMarkerVisible.addListener(dirtyListener);
    }
 
-   // Reused across calls so ChartRenderManager can dedup pending requests for this layer by identity.
-   // A fresh `this::render` method reference is a distinct object on every evaluation (it captures `this`),
-   // so it can never compare equal to a previously-submitted one -- that would silently defeat the dedup.
-   private final Runnable renderRunnable = this::render;
-
    public void scheduleRender()
    {
       backgroundExecutor.execute(() ->
