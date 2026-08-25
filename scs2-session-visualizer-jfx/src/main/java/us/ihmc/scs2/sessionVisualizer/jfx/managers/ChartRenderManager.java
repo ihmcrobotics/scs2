@@ -1,6 +1,8 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.managers;
 
 import java.util.Queue;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 import javafx.beans.property.IntegerProperty;
@@ -12,16 +14,18 @@ public class ChartRenderManager extends ObservedAnimationTimer implements Manage
 {
    private final IntegerProperty numberOfLayersToRenderPerUpdate = new SimpleIntegerProperty(this, "numberOfLayersToRenderPerUpdate", -1);
    private final Queue<Runnable> chartUpdaterToCall = new ConcurrentLinkedQueue<>();
+   private final Set<Runnable> pendingChartUpdaters = ConcurrentHashMap.newKeySet();
 
    public void submitRenderRequest(Runnable chartUpdater)
    {
-      if (!chartUpdaterToCall.contains(chartUpdater))
+      if (pendingChartUpdaters.add(chartUpdater))
          chartUpdaterToCall.add(chartUpdater);
    }
 
    public void clearRequests()
    {
       chartUpdaterToCall.clear();
+      pendingChartUpdaters.clear();
    }
 
    @Override
@@ -38,7 +42,10 @@ public class ChartRenderManager extends ObservedAnimationTimer implements Manage
          Runnable layer = chartUpdaterToCall.poll();
 
          if (layer != null)
+         {
+            pendingChartUpdaters.remove(layer);
             layer.run();
+         }
       }
    }
 
