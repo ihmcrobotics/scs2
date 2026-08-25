@@ -194,21 +194,50 @@ public class SessionVisualizerIOTools
 
    // Cloudy Crown Skybox
    public static final String SKYBOX_CLOUDY_FOLDER = "cloudy/";
-   public static final Image SKYBOX_TOP_IMAGE = loadSkyboxImage(SKYBOX_CLOUDY_FOLDER + "Up.png");
-   public static final Image SKYBOX_BOTTOM_IMAGE = loadSkyboxImage(SKYBOX_CLOUDY_FOLDER + "Down.png");
-   public static final Image SKYBOX_LEFT_IMAGE = loadSkyboxImage(SKYBOX_CLOUDY_FOLDER + "Left.png");
-   public static final Image SKYBOX_RIGHT_IMAGE = loadSkyboxImage(SKYBOX_CLOUDY_FOLDER + "Right.png");
-   public static final Image SKYBOX_FRONT_IMAGE = loadSkyboxImage(SKYBOX_CLOUDY_FOLDER + "Front.png");
-   public static final Image SKYBOX_BACK_IMAGE = loadSkyboxImage(SKYBOX_CLOUDY_FOLDER + "Back.png");
 
    // SCS 1 Skybox
    public static final String SKYBOX_SCS1_FOLDER = "brightSky/";
-   public static final Image SCS1_SKYBOX_TOP_IMAGE = loadSkyboxImage(SKYBOX_SCS1_FOLDER + "Up.png");
-   public static final Image SCS1_SKYBOX_BOTTOM_IMAGE = loadSkyboxImage(SKYBOX_SCS1_FOLDER + "Down.png");
-   public static final Image SCS1_SKYBOX_LEFT_IMAGE = loadSkyboxImage(SKYBOX_SCS1_FOLDER + "Left.png");
-   public static final Image SCS1_SKYBOX_RIGHT_IMAGE = loadSkyboxImage(SKYBOX_SCS1_FOLDER + "Right.png");
-   public static final Image SCS1_SKYBOX_FRONT_IMAGE = loadSkyboxImage(SKYBOX_SCS1_FOLDER + "Front.png");
-   public static final Image SCS1_SKYBOX_BACK_IMAGE = loadSkyboxImage(SKYBOX_SCS1_FOLDER + "Back.png");
+
+   /**
+    * Holds the skybox images for a single theme. Declared as a nested class so the images are only
+    * decoded the first time the theme is actually requested, instead of every skybox theme being
+    * decoded eagerly whenever this class is first touched (e.g. for loading the window icon).
+    */
+   private static class CloudySkyboxImages
+   {
+      static final Image TOP = loadSkyboxImage(SKYBOX_CLOUDY_FOLDER + "Up.png");
+      static final Image BOTTOM = loadSkyboxImage(SKYBOX_CLOUDY_FOLDER + "Down.png");
+      static final Image LEFT = loadSkyboxImage(SKYBOX_CLOUDY_FOLDER + "Left.png");
+      static final Image RIGHT = loadSkyboxImage(SKYBOX_CLOUDY_FOLDER + "Right.png");
+      static final Image FRONT = loadSkyboxImage(SKYBOX_CLOUDY_FOLDER + "Front.png");
+      static final Image BACK = loadSkyboxImage(SKYBOX_CLOUDY_FOLDER + "Back.png");
+
+      /** Order must match {top, bottom, left, right, front, back} expected by {@code Skybox#setupSkybox}. */
+      static final Image[] ALL = {TOP, BOTTOM, LEFT, RIGHT, FRONT, BACK};
+   }
+
+   private static class SCS1SkyboxImages
+   {
+      static final Image TOP = loadSkyboxImage(SKYBOX_SCS1_FOLDER + "Up.png");
+      static final Image BOTTOM = loadSkyboxImage(SKYBOX_SCS1_FOLDER + "Down.png");
+      static final Image LEFT = loadSkyboxImage(SKYBOX_SCS1_FOLDER + "Left.png");
+      static final Image RIGHT = loadSkyboxImage(SKYBOX_SCS1_FOLDER + "Right.png");
+      static final Image FRONT = loadSkyboxImage(SKYBOX_SCS1_FOLDER + "Front.png");
+      static final Image BACK = loadSkyboxImage(SKYBOX_SCS1_FOLDER + "Back.png");
+
+      /** Order must match {top, bottom, left, right, front, back} expected by {@code Skybox#setupSkybox}. */
+      static final Image[] ALL = {TOP, BOTTOM, LEFT, RIGHT, FRONT, BACK};
+   }
+
+   public static Image[] getCloudySkyboxImages()
+   {
+      return CloudySkyboxImages.ALL.clone();
+   }
+
+   public static Image[] getSCS1SkyboxImages()
+   {
+      return SCS1SkyboxImages.ALL.clone();
+   }
 
    public static void addSCSIconToDialog(Dialog<?> dialog)
    {
