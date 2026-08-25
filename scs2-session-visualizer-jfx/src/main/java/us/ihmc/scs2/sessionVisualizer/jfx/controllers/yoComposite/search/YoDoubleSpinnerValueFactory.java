@@ -75,6 +75,12 @@ public class YoDoubleSpinnerValueFactory extends UnboundedDoubleSpinnerValueFact
     */
    public static double roundToULP(double value)
    {
+      // Infinity/NaN are legitimate YoDouble values (e.g. a filter break frequency of Infinity meaning
+      // "disabled") - rounding is meaningless for them, and Math.ulp(Infinity) is Infinity, which drives
+      // precisionToULP to Long.MIN_VALUE below and trips round()'s "precision cannot be negative" check.
+      if (!Double.isFinite(value))
+         return value;
+
       double ulp = Math.ulp(value);
       long precisionToULP = (long) Math.floor(-Math.log10(2.0 * ulp));
       return round(value, precisionToULP);

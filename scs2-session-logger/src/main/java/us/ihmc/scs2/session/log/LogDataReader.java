@@ -213,6 +213,23 @@ public class LogDataReader
       return parser.getDt();
    }
 
+   /**
+    * Opens an independent, read-only random-access view of this log's data file for
+    * {@link LogRandomAccessValueReader#readVariableValueBitsAt} - its own {@link FileChannel} and batch-decompression
+    * cursor, entirely decoupled from this reader's own live sequential-playback cursor. See
+    * {@link LogRandomAccessValueReader}'s class doc for why history backfilling (e.g. for a chart) needs that
+    * decoupling rather than reusing this reader's channel.
+    */
+   public LogRandomAccessValueReader openRandomAccessValueReader() throws IOException
+   {
+      return new LogRandomAccessValueReader(RobotDataLogTools.logDataFile(logDirectory, logProperties, true),
+                                             compressed,
+                                             compressionType,
+                                             logIndex,
+                                             batchSize,
+                                             singleTickSize);
+   }
+
    public void setToNaN()
    {
       timestamp.set(-1);
@@ -443,6 +460,25 @@ public class LogDataReader
    public int getCurrentLogPosition()
    {
       return currentRecordTick.getValue();
+   }
+
+   /**
+    * The variable backing {@link #getCurrentLogPosition()}.
+    * <p>
+    * It lives in {@link #getLocalYoRegistry()} rather than under {@link #getLogRootRegistry()}, so it is always given
+    * a buffer eagerly (see {@code LogSession.isEagerLogVariable}). Its buffer is therefore a per-buffer-index record
+    * of which log tick was read into that index, which is the only way to map a buffer index back to a log position -
+    * the two only coincide when a log is played straight through from tick 0 with a buffer record period of 1 and no
+    * wrapping, scrubbing, or cropping. See {@code LogSession.logPositionAtBufferIndex}.
+    * </p>
+    * <p>
+    * Beware of the off-by-one: {@link #read()} increments this <i>after</i> reading, and the buffer is written after
+    * that, so the value stored at a buffer index is the log position that was read there <i>plus one</i>.
+    * </p>
+    */
+   public YoInteger getCurrentRecordTickVariable()
+   {
+      return currentRecordTick;
    }
 
    public YoRegistry getLocalYoRegistry()

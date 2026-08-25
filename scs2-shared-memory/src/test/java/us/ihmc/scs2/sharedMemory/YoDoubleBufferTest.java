@@ -2,8 +2,11 @@ package us.ihmc.scs2.sharedMemory;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 
 import org.junit.jupiter.api.Test;
@@ -154,6 +157,174 @@ public class YoDoubleBufferTest
          LinkedYoDouble linkedYoVariable = yoDoubleBuffer.newLinkedYoVariable(linkedDouble, null);
          assertTrue(linkedDouble == linkedYoVariable.getLinkedYoVariable());
          assertTrue(yoDoubleBuffer == linkedYoVariable.getBuffer());
+      }
+   }
+
+   /**
+    * A resize/crop shuffles the data, so the record of which indices hold real data has to be shuffled the same way.
+    * Rebuilding it as empty instead makes the whole cropped range look unpopulated, and the next read re-fetches it
+    * from the {@link HistoricalValueBitsSource} - at indices that now mean something different - overwriting the
+    * correct data the crop had just carried over.
+    */
+   @Test
+   public void testCropKeepsCarriedOverDataInsteadOfRefetchingIt()
+   {
+      YoDouble yoDouble = new YoDouble("var", new YoRegistry("Dummy"));
+      YoBufferProperties properties = new YoBufferProperties(0, 8);
+      YoDoubleBuffer yoDoubleBuffer = new YoDoubleBuffer(yoDouble, properties);
+
+      List<Integer> indicesFetchedFromSource = new ArrayList<>();
+      yoDoubleBuffer.setHistoricalValueBitsSource((variable, from, length, writer) ->
+      {
+         for (int i = 0; i < length; i++)
+         {
+            indicesFetchedFromSource.add(from + i);
+            writer.write(from + i, Double.doubleToLongBits(-1.0));
+         }
+      });
+
+      // Fill every index with real data the way playback would, so nothing is left for the source to supply.
+      for (int i = 0; i < 8; i++)
+      {
+         properties.setCurrentIndexUnsafe(i);
+         yoDouble.set(i);
+         yoDoubleBuffer.writeBuffer();
+      }
+
+      yoDoubleBuffer.copy(0, 8, properties);
+      assertTrue(indicesFetchedFromSource.isEmpty(), "Fully written buffer should never consult the source");
+
+      // Crop down to indices 2..5, mirroring YoSharedBuffer.cropBuffer: resize first, new size published after.
+      yoDoubleBuffer.resizeBuffer(2, 4);
+      properties.setSize(4);
+
+      BufferSample<double[]> croppedSample = yoDoubleBuffer.copy(0, 4, properties);
+
+      assertTrue(indicesFetchedFromSource.isEmpty(), "Cropped-in data is real data and must not be re-fetched");
+      assertArrayEquals(new double[] {2.0, 3.0, 4.0, 5.0}, croppedSample.getSample());
+   }
+
+   /**
+    * The flip side of {@link #testCropKeepsCarriedOverDataInsteadOfRefetchingIt()}: growing the buffer adds indices
+    * that carry over nothing, and those do still have to be backfilled from the source.
+    */
+   @Test
+   public void testGrowBackfillsOnlyTheIndicesThatCarriedOverNothing()
+   {
+      YoDouble yoDouble = new YoDouble("var", new YoRegistry("Dummy"));
+      YoBufferProperties properties = new YoBufferProperties(0, 4);
+      YoDoubleBuffer yoDoubleBuffer = new YoDoubleBuffer(yoDouble, properties);
+
+      List<Integer> indicesFetchedFromSource = new ArrayList<>();
+      yoDoubleBuffer.setHistoricalValueBitsSource((variable, from, length, writer) ->
+      {
+         for (int i = 0; i < length; i++)
+         {
+            indicesFetchedFromSource.add(from + i);
+            writer.write(from + i, Double.doubleToLongBits(-1.0));
+         }
+      });
+
+      for (int i = 0; i < 4; i++)
+      {
+         properties.setCurrentIndexUnsafe(i);
+         yoDouble.set(i);
+         yoDoubleBuffer.writeBuffer();
+      }
+
+      yoDoubleBuffer.resizeBuffer(0, 6);
+      properties.setSize(6);
+
+      yoDoubleBuffer.copy(0, 6, properties);
+
+      assertEquals(List.of(4, 5), indicesFetchedFromSource);
+   }
+
+   /**
+    * A budgeted backfill must stop when the allowance runs out and report the range as incomplete, so the caller
+    * comes back for the rest instead of the buffer manager's thread being held for the whole range at once.
+    */
+   @Test
+   public void testBudgetedBackfillStopsShortAndResumesWhereItLeftOff()
+   {
+      YoDouble yoDouble = new YoDouble("var", new YoRegistry("Dummy"));
+      YoBufferProperties properties = new YoBufferProperties(0, 2048);
+      YoDoubleBuffer yoDoubleBuffer = new YoDoubleBuffer(yoDouble, properties);
+
+      HistoricalBackfillBudget budget = new HistoricalBackfillBudget();
+      budget.setBudgetNanoseconds(2_000_000L); // 2ms
+      yoDoubleBuffer.setBackfillBudget(budget);
+
+      List<Integer> indicesFetchedFromSource = new ArrayList<>();
+      yoDoubleBuffer.setHistoricalValueBitsSource((variable, from, length, writer) ->
+      {
+         for (int i = 0; i < length; i++)
+         {
+            indicesFetchedFromSource.add(from + i);
+            writer.write(from + i, Double.doubleToLongBits(from + i));
+         }
+         // Stand in for the real cost of a source call - decompressing a batch of a log file.
+         sleepMilliseconds(1);
+      });
+
+      budget.startCycle();
+      assertFalse(yoDoubleBuffer.ensurePopulatedWithinBudget(0, 2048), "Should have run out of budget well short of 2048");
+
+      int fetchedInFirstCycle = indicesFetchedFromSource.size();
+      assertTrue(fetchedInFirstCycle > 0, "Should still make progress within the budget");
+      assertTrue(fetchedInFirstCycle < 2048, "Should not have completed the range");
+
+      // Keep handing it cycles until it reports the range complete.
+      int cycles = 0;
+      while (!yoDoubleBuffer.ensurePopulatedWithinBudget(0, 2048))
+      {
+         budget.startCycle();
+         assertTrue(++cycles < 1000, "Backfill should converge, not spin");
+      }
+
+      // Every index fetched exactly once across all cycles, in order: no redundant re-fetching, no gaps.
+      assertEquals(2048, indicesFetchedFromSource.size());
+      for (int i = 0; i < 2048; i++)
+         assertEquals(i, indicesFetchedFromSource.get(i));
+
+      // And an already-complete range costs nothing more.
+      budget.startCycle();
+      assertTrue(yoDoubleBuffer.ensurePopulatedWithinBudget(0, 2048));
+      assertEquals(2048, indicesFetchedFromSource.size());
+   }
+
+   /** An unbudgeted buffer must still backfill a whole range in one go, the way {@link YoVariableBuffer#copy} needs. */
+   @Test
+   public void testUnbudgetedBackfillCompletesInOneCall()
+   {
+      YoDouble yoDouble = new YoDouble("var", new YoRegistry("Dummy"));
+      YoBufferProperties properties = new YoBufferProperties(0, 2048);
+      YoDoubleBuffer yoDoubleBuffer = new YoDoubleBuffer(yoDouble, properties);
+
+      List<Integer> indicesFetchedFromSource = new ArrayList<>();
+      yoDoubleBuffer.setHistoricalValueBitsSource((variable, from, length, writer) ->
+      {
+         for (int i = 0; i < length; i++)
+         {
+            indicesFetchedFromSource.add(from + i);
+            writer.write(from + i, Double.doubleToLongBits(from + i));
+         }
+      });
+
+      assertTrue(yoDoubleBuffer.ensurePopulatedWithinBudget(0, 2048), "No budget installed means no early exit");
+      assertEquals(2048, indicesFetchedFromSource.size());
+   }
+
+   private static void sleepMilliseconds(long milliseconds)
+   {
+      try
+      {
+         Thread.sleep(milliseconds);
+      }
+      catch (InterruptedException e)
+      {
+         Thread.currentThread().interrupt();
+         throw new RuntimeException(e);
       }
    }
 }
