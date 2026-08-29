@@ -86,17 +86,16 @@ public class MagewellVideoDataReader implements VideoDataReader
       {
          currentImage = frameConverter.convert(frameToConvert);
       }
-      WritableImage writableImage = new WritableImage((int) currentImage.getWidth(), (int) currentImage.getHeight());
+      int width = (int) currentImage.getWidth();
+      int height = (int) currentImage.getHeight();
+
+      WritableImage writableImage = new WritableImage(width, height);
       PixelReader pixelReader = currentImage.getPixelReader();
       PixelWriter pixelWriter = writableImage.getPixelWriter();
 
-      for (int y = 0; y < currentImage.getHeight(); y++)
-      {
-         for (int x = 0; x < currentImage.getWidth(); x++)
-         {
-            pixelWriter.setArgb(x, y, pixelReader.getArgb(x, y));
-         }
-      }
+      int[] pixels = new int[width * height];
+      pixelReader.getPixels(0, 0, width, height, PixelFormat.getIntArgbInstance(), pixels, 0, width);
+      pixelWriter.setPixels(0, 0, width, height, PixelFormat.getIntArgbInstance(), pixels, 0, width);
 
       return writableImage;
    }
