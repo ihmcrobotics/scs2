@@ -202,6 +202,7 @@ public class RemoteSession extends Session
          sharedBuffer.setInPoint(sharedBuffer.getProperties().getCurrentIndex());
          sharedBuffer.processLinkedPushRequests(false);
          nextRunBufferRecordTickCounter = 0;
+         runTickCounter = 0L;
          firstRunTick = false;
       }
       else if (nextRunBufferRecordTickCounter <= 0)
