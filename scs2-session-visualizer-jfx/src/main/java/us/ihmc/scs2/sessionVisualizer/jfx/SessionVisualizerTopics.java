@@ -4,29 +4,22 @@ import javafx.stage.Window;
 import javafx.util.Pair;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.ImmutableTriple;
-import us.ihmc.messager.MessagerAPIFactory.Topic;
-import us.ihmc.scs2.definition.robot.CameraSensorDefinition;
 import us.ihmc.scs2.definition.yoChart.YoChartConfigurationDefinition;
 import us.ihmc.scs2.definition.yoComposite.YoTuple2DDefinition;
 import us.ihmc.scs2.definition.yoEntry.YoEntryListDefinition;
 import us.ihmc.scs2.definition.yoGraphic.YoGraphicDefinition;
 import us.ihmc.scs2.definition.yoSlider.*;
 import us.ihmc.scs2.session.*;
-import us.ihmc.scs2.session.SessionMessagerAPI.Sensors.SensorMessage;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.chart.ChartTable2D.ChartTable2DSize;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoComposite.search.SearchEngines;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.NewTerrainVisualRequest;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SecondaryWindowManager.NewWindowRequest;
+import us.ihmc.scs2.sessionVisualizer.jfx.messager.Topic;
 import us.ihmc.scs2.sessionVisualizer.jfx.session.OpenAddLogRequest;
 import us.ihmc.scs2.sessionVisualizer.jfx.session.OpenSessionControlsRequest;
 import us.ihmc.scs2.sessionVisualizer.jfx.session.BindSynchronizingVariablesRequest;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoRobot.NewRobotVisualRequest;
-import us.ihmc.scs2.sharedMemory.CropBufferRequest;
-import us.ihmc.scs2.sharedMemory.FillBufferRequest;
-import us.ihmc.scs2.sharedMemory.interfaces.YoBufferPropertiesReadOnly;
-import us.ihmc.scs2.symbolic.YoEquationManager.YoEquationListChange;
 
-import java.awt.image.BufferedImage;
 import java.io.File;
 import java.util.List;
 
@@ -102,39 +95,12 @@ public class SessionVisualizerTopics
    private Topic<SessionDataFilterParameters> sessionDataFilterParametersAddRequest;
 
    // Session topics
-   private Topic<SessionState> sessionCurrentState;
-   private Topic<SessionMode> sessionCurrentMode;
-   private Topic<Boolean> runAtRealTimeRate;
-   private Topic<Long> sessionDTNanoseconds;
-   private Topic<Double> playbackRealTimeRate;
-   private Topic<Integer> bufferRecordTickPeriod;
-   private Topic<Integer> initializeBufferRecordTickPeriod;
-   private Topic<Long> runMaxDuration;
-   private Topic<SessionDataExportRequest> sessionDataExportRequest;
    private Topic<Session> startNewSessionRequest;
    private Topic<OpenSessionControlsRequest> openSessionControlsRequest;
    private Topic<OpenAddLogRequest> openAddLogRequest;
    private Topic<File> openLogDirectoryRequest;
    private Topic<File> openMCAPLogFileRequest;
    private Topic<BindSynchronizingVariablesRequest> bindSynchronizingVariablesRequest;
-
-   private Topic<SessionRobotDefinitionListChange> sessionRobotDefinitionListChangeRequest;
-   private Topic<SessionRobotDefinitionListChange> sessionRobotDefinitionListChangeState;
-
-   private Topic<YoEquationListChange> sessionYoEquationListChangeRequest;
-   private Topic<YoEquationListChange> sessionYoEquationListChangeState;
-
-   private Topic<Integer> yoBufferCurrentIndexRequest;
-   private Topic<Integer> yoBufferIncrementCurrentIndexRequest, yoBufferDecrementCurrentIndexRequest;
-   private Topic<Integer> yoBufferInPointIndexRequest, yoBufferOutPointIndexRequest;
-   private Topic<CropBufferRequest> yoBufferCropRequest;
-   private Topic<FillBufferRequest> yoBufferFillRequest;
-   private Topic<Integer> yoBufferCurrentSizeRequest;
-   private Topic<Integer> yoBufferInitializeSize;
-   private Topic<YoBufferPropertiesReadOnly> yoBufferCurrentProperties;
-   private Topic<Boolean> yoBufferForceListenerUpdate;
-   private Topic<SensorMessage<CameraSensorDefinition>> cameraSensorDefinitionData;
-   private Topic<SensorMessage<BufferedImage>> cameraSensorFrame;
 
    public void setupTopics()
    {
@@ -207,42 +173,12 @@ public class SessionVisualizerTopics
 
       sessionDataFilterParametersAddRequest = SessionVisualizerMessagerAPI.SessionDataFilterParametersAddRequest;
 
-      sessionCurrentState = SessionMessagerAPI.SessionCurrentState;
-      sessionCurrentMode = SessionMessagerAPI.SessionCurrentMode;
-      runAtRealTimeRate = SessionMessagerAPI.RunAtRealTimeRate;
-      sessionDTNanoseconds = SessionMessagerAPI.SessionDTNanoseconds;
-      playbackRealTimeRate = SessionMessagerAPI.PlaybackRealTimeRate;
-      bufferRecordTickPeriod = SessionMessagerAPI.BufferRecordTickPeriod;
-      initializeBufferRecordTickPeriod = SessionMessagerAPI.InitializeBufferRecordTickPeriod;
-      runMaxDuration = SessionMessagerAPI.RunMaxDuration;
-      sessionDataExportRequest = SessionMessagerAPI.SessionDataExportRequest;
       startNewSessionRequest = SessionVisualizerMessagerAPI.SessionAPI.StartNewSessionRequest;
       openSessionControlsRequest = SessionVisualizerMessagerAPI.SessionAPI.OpenSessionControlsRequest;
       openAddLogRequest = SessionVisualizerMessagerAPI.SessionAPI.OpenAddLogRequest;
       openLogDirectoryRequest = SessionVisualizerMessagerAPI.SessionAPI.OpenLogDirectoryRequest;
       openMCAPLogFileRequest = SessionVisualizerMessagerAPI.SessionAPI.OpenMCAPLogFileRequest;
       bindSynchronizingVariablesRequest = SessionVisualizerMessagerAPI.SessionAPI.BindSynchronizingVariablesRequest;
-
-      sessionRobotDefinitionListChangeRequest = SessionMessagerAPI.SessionRobotDefinitionListChangeRequest;
-      sessionRobotDefinitionListChangeState = SessionMessagerAPI.SessionRobotDefinitionListChangeState;
-
-      sessionYoEquationListChangeRequest = SessionMessagerAPI.SessionYoEquationListChangeRequest;
-      sessionYoEquationListChangeState = SessionMessagerAPI.SessionYoEquationListChangeState;
-
-      yoBufferCurrentIndexRequest = YoSharedBufferMessagerAPI.CurrentIndexRequest;
-      yoBufferIncrementCurrentIndexRequest = YoSharedBufferMessagerAPI.IncrementCurrentIndexRequest;
-      yoBufferDecrementCurrentIndexRequest = YoSharedBufferMessagerAPI.DecrementCurrentIndexRequest;
-      yoBufferInPointIndexRequest = YoSharedBufferMessagerAPI.InPointIndexRequest;
-      yoBufferOutPointIndexRequest = YoSharedBufferMessagerAPI.OutPointIndexRequest;
-      yoBufferCropRequest = YoSharedBufferMessagerAPI.CropRequest;
-      yoBufferFillRequest = YoSharedBufferMessagerAPI.FillRequest;
-      yoBufferCurrentSizeRequest = YoSharedBufferMessagerAPI.CurrentBufferSizeRequest;
-      yoBufferInitializeSize = YoSharedBufferMessagerAPI.InitializeBufferSize;
-      yoBufferCurrentProperties = YoSharedBufferMessagerAPI.CurrentBufferProperties;
-      yoBufferForceListenerUpdate = YoSharedBufferMessagerAPI.ForceListenerUpdate;
-
-      cameraSensorDefinitionData = SessionMessagerAPI.Sensors.CameraSensorDefinitionData;
-      cameraSensorFrame = SessionMessagerAPI.Sensors.CameraSensorFrame;
    }
 
    public Topic<Boolean> getDisableUserControls()
@@ -540,51 +476,6 @@ public class SessionVisualizerTopics
       return sessionDataFilterParametersAddRequest;
    }
 
-   public Topic<SessionState> getSessionCurrentState()
-   {
-      return sessionCurrentState;
-   }
-
-   public Topic<SessionMode> getSessionCurrentMode()
-   {
-      return sessionCurrentMode;
-   }
-
-   public Topic<Boolean> getRunAtRealTimeRate()
-   {
-      return runAtRealTimeRate;
-   }
-
-   public Topic<Long> getSessionDTNanoseconds()
-   {
-      return sessionDTNanoseconds;
-   }
-
-   public Topic<Double> getPlaybackRealTimeRate()
-   {
-      return playbackRealTimeRate;
-   }
-
-   public Topic<Integer> getBufferRecordTickPeriod()
-   {
-      return bufferRecordTickPeriod;
-   }
-
-   public Topic<Integer> getInitializeBufferRecordTickPeriod()
-   {
-      return initializeBufferRecordTickPeriod;
-   }
-
-   public Topic<Long> getRunMaxDuration()
-   {
-      return runMaxDuration;
-   }
-
-   public Topic<SessionDataExportRequest> getSessionDataExportRequest()
-   {
-      return sessionDataExportRequest;
-   }
-
    public Topic<Session> getStartNewSessionRequest()
    {
       return startNewSessionRequest;
@@ -613,90 +504,5 @@ public class SessionVisualizerTopics
    public Topic<BindSynchronizingVariablesRequest> getBindSynchronizingVariablesRequest()
    {
       return bindSynchronizingVariablesRequest;
-   }
-
-   public Topic<SessionRobotDefinitionListChange> getSessionRobotDefinitionListChangeRequest()
-   {
-      return sessionRobotDefinitionListChangeRequest;
-   }
-
-   public Topic<SessionRobotDefinitionListChange> getSessionRobotDefinitionListChangeState()
-   {
-      return sessionRobotDefinitionListChangeState;
-   }
-
-   public Topic<YoEquationListChange> getSessionYoEquationListChangeRequest()
-   {
-      return sessionYoEquationListChangeRequest;
-   }
-
-   public Topic<YoEquationListChange> getSessionYoEquationListChangeState()
-   {
-      return sessionYoEquationListChangeState;
-   }
-
-   public Topic<Integer> getYoBufferCurrentIndexRequest()
-   {
-      return yoBufferCurrentIndexRequest;
-   }
-
-   public Topic<Integer> getYoBufferIncrementCurrentIndexRequest()
-   {
-      return yoBufferIncrementCurrentIndexRequest;
-   }
-
-   public Topic<Integer> getYoBufferDecrementCurrentIndexRequest()
-   {
-      return yoBufferDecrementCurrentIndexRequest;
-   }
-
-   public Topic<Integer> getYoBufferInPointIndexRequest()
-   {
-      return yoBufferInPointIndexRequest;
-   }
-
-   public Topic<Integer> getYoBufferOutPointIndexRequest()
-   {
-      return yoBufferOutPointIndexRequest;
-   }
-
-   public Topic<CropBufferRequest> getYoBufferCropRequest()
-   {
-      return yoBufferCropRequest;
-   }
-
-   public Topic<FillBufferRequest> getYoBufferFillRequest()
-   {
-      return yoBufferFillRequest;
-   }
-
-   public Topic<Integer> getYoBufferCurrentSizeRequest()
-   {
-      return yoBufferCurrentSizeRequest;
-   }
-
-   public Topic<Integer> getYoBufferInitializeSize()
-   {
-      return yoBufferInitializeSize;
-   }
-
-   public Topic<YoBufferPropertiesReadOnly> getYoBufferCurrentProperties()
-   {
-      return yoBufferCurrentProperties;
-   }
-
-   public Topic<Boolean> getYoBufferForceListenerUpdate()
-   {
-      return yoBufferForceListenerUpdate;
-   }
-
-   public Topic<SensorMessage<CameraSensorDefinition>> getCameraSensorDefinitionData()
-   {
-      return cameraSensorDefinitionData;
-   }
-
-   public Topic<SensorMessage<BufferedImage>> getCameraSensorFrame()
-   {
-      return cameraSensorFrame;
    }
 }

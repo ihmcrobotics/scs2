@@ -11,6 +11,7 @@ import us.ihmc.yoVariables.registry.YoRegistry;
 import us.ihmc.yoVariables.variable.YoDouble;
 
 import java.util.*;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Consumer;
 
 public class YoEquationManager
@@ -21,7 +22,7 @@ public class YoEquationManager
 
    private final Map<String, Equation> equations = new LinkedHashMap<>();
 
-   private final List<Consumer<YoEquationListChange>> changeListeners = new ArrayList<>();
+   private final List<Consumer<YoEquationListChange>> changeListeners = new CopyOnWriteArrayList<>();
    private final YoDouble yoTime;
    private final YoRegistry userRegistry;
 

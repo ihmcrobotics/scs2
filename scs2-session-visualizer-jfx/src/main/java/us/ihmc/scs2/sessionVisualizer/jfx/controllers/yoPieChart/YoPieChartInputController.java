@@ -19,8 +19,8 @@ import javafx.scene.input.PickResult;
 import javafx.scene.input.TransferMode;
 import javafx.scene.layout.Region;
 import javafx.scene.text.Text;
-import us.ihmc.messager.MessagerAPIFactory.Topic;
-import us.ihmc.messager.javafx.JavaFXMessager;
+import us.ihmc.scs2.sessionVisualizer.jfx.messager.Topic;
+import us.ihmc.scs2.sessionVisualizer.jfx.messager.SCS2Messager;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerToolkit;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.YoCompositeSearchManager;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.YoManager;
@@ -53,7 +53,7 @@ public class YoPieChartInputController
    private YoVariable yoVariable;
 
    private final SimpleObjectProperty<ContextMenu> contextMenuProperty = new SimpleObjectProperty<>(this, "buttonContextMenu", null);
-   private JavaFXMessager messager;
+   private SCS2Messager messager;
    private Topic<List<String>> yoCompositeSelectedTopic;
    private AtomicReference<List<String>> yoCompositeSelected;
    private final String defaultText = "Drop YoVariable here";

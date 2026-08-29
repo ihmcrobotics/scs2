@@ -20,33 +20,41 @@ import us.ihmc.codecs.generated.EProfileIdc;
 import us.ihmc.codecs.generated.EUsageType;
 import us.ihmc.commons.Conversions;
 import us.ihmc.log.LogTools;
+import us.ihmc.scs2.session.Session;
 import us.ihmc.scs2.session.SessionMode;
+import us.ihmc.scs2.session.SessionProperties;
 import us.ihmc.scs2.sessionVisualizer.jfx.SceneVideoRecordingRequest;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerIOTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerTopics;
-import us.ihmc.scs2.sessionVisualizer.jfx.tools.SCS2JavaFXMessager;
+import us.ihmc.scs2.sessionVisualizer.jfx.messager.SCS2Messager;
 import us.ihmc.scs2.sharedMemory.interfaces.YoBufferPropertiesReadOnly;
 import us.ihmc.scs2.sharedMemory.tools.SharedMemoryTools;
+
+import java.util.function.Consumer;
 
 public class VideoRecordingManager
 {
    private final SubScene scene;
    private final Group mainView3DRoot;
    private final SessionVisualizerTopics topics;
-   private final SCS2JavaFXMessager messager;
+   private final SCS2Messager messager;
 
-   private final AtomicReference<YoBufferPropertiesReadOnly> currentBufferProperties;
-   private final AtomicReference<SessionMode> currentSessionMode;
-   private final AtomicReference<Long> sessionDT;
-   private final AtomicReference<Integer> bufferRecordTickPeriod;
+   private final AtomicReference<YoBufferPropertiesReadOnly> currentBufferProperties = new AtomicReference<>();
+   private final AtomicReference<SessionMode> currentSessionMode = new AtomicReference<>();
+   private final AtomicReference<Long> sessionDT = new AtomicReference<>();
+   private final AtomicReference<Integer> bufferRecordTickPeriod = new AtomicReference<>();
 
    private final AtomicReference<Recorder> activeRecorder = new AtomicReference<>(null);
    private final BackgroundExecutorManager backgroundExecutorManager;
 
+   private Session session;
+   private Consumer<YoBufferPropertiesReadOnly> bufferPropertiesListener;
+   private Consumer<SessionProperties> sessionPropertiesListener;
+
    public VideoRecordingManager(SubScene scene,
                                 Group mainView3DRoot,
                                 SessionVisualizerTopics topics,
-                                SCS2JavaFXMessager messager,
+                                SCS2Messager messager,
                                 BackgroundExecutorManager backgroundExecutorManager)
    {
       this.scene = scene;
@@ -55,12 +63,40 @@ public class VideoRecordingManager
       this.topics = topics;
       this.backgroundExecutorManager = backgroundExecutorManager;
 
-      currentBufferProperties = messager.createInput(topics.getYoBufferCurrentProperties());
-      currentSessionMode = messager.createInput(topics.getSessionCurrentMode());
-      sessionDT = messager.createInput(topics.getSessionDTNanoseconds());
-      bufferRecordTickPeriod = messager.createInput(topics.getBufferRecordTickPeriod());
-
       messager.addTopicListener(topics.getSceneVideoRecordingRequest(), request -> submitRequest(request));
+   }
+
+   public void startSession(Session session)
+   {
+      this.session = session;
+
+      bufferPropertiesListener = currentBufferProperties::set;
+      session.addCurrentBufferPropertiesListener(bufferPropertiesListener);
+
+      sessionPropertiesListener = properties ->
+      {
+         currentSessionMode.set(properties.getActiveMode());
+         sessionDT.set(properties.getSessionDTNanoseconds());
+         bufferRecordTickPeriod.set(properties.getBufferRecordTickPeriod());
+      };
+      session.addSessionPropertiesListener(sessionPropertiesListener);
+      sessionPropertiesListener.accept(session.getSessionProperties());
+   }
+
+   public void stopSession()
+   {
+      if (session != null)
+      {
+         session.removeCurrentBufferPropertiesListener(bufferPropertiesListener);
+         session.removeSessionPropertiesListener(sessionPropertiesListener);
+      }
+      session = null;
+      bufferPropertiesListener = null;
+      sessionPropertiesListener = null;
+      currentBufferProperties.set(null);
+      currentSessionMode.set(null);
+      sessionDT.set(null);
+      bufferRecordTickPeriod.set(null);
    }
 
    private void submitRequest(SceneVideoRecordingRequest request)
@@ -214,7 +250,7 @@ public class VideoRecordingManager
       {
          if (currentSessionMode.get() != SessionMode.PAUSE)
          {
-            messager.submitMessage(topics.getSessionCurrentMode(), SessionMode.PAUSE);
+            session.setSessionMode(SessionMode.PAUSE);
             return;
          }
 
@@ -259,7 +295,7 @@ public class VideoRecordingManager
 
          currentRecordingBufferIndex = inPoint;
          numberOfBufferTicks = SharedMemoryTools.computeSubLength(inPoint, outPoint, bufferProperties.getSize());
-         messager.submitMessage(topics.getYoBufferCurrentIndexRequest(), currentRecordingBufferIndex);
+         session.submitBufferIndexRequest(currentRecordingBufferIndex);
 
          return true;
       }
@@ -277,7 +313,7 @@ public class VideoRecordingManager
             return true;
 
          currentRecordingBufferIndex = SharedMemoryTools.increment(currentRecordingBufferIndex, bufferIndexIncrement, bufferProperties.getSize());
-         messager.submitMessage(topics.getYoBufferCurrentIndexRequest(), currentRecordingBufferIndex);
+         session.submitBufferIndexRequest(currentRecordingBufferIndex);
 
          return false;
       }

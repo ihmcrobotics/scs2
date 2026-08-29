@@ -36,7 +36,7 @@ import logger_msgs.LogProperties;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import us.ihmc.commons.lists.PairList;
 import us.ihmc.log.LogTools;
-import us.ihmc.messager.javafx.JavaFXMessager;
+import us.ihmc.scs2.sessionVisualizer.jfx.messager.SCS2Messager;
 import us.ihmc.scs2.session.log.ChildLogData;
 import us.ihmc.scs2.session.log.ChildLogSynchronization;
 import us.ihmc.scs2.session.log.LogDataReader;
@@ -48,6 +48,7 @@ import us.ihmc.scs2.sessionVisualizer.jfx.managers.BackgroundExecutorManager;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerToolkit;
 import us.ihmc.scs2.sessionVisualizer.jfx.session.OpenAddLogRequest;
 import us.ihmc.scs2.sessionVisualizer.jfx.session.SessionControlsController;
+import us.ihmc.scs2.sessionVisualizer.jfx.tools.FXCoalescedUpdater;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
 import us.ihmc.scs2.sharedMemory.interfaces.YoBufferPropertiesReadOnly;
 import us.ihmc.yoVariables.registry.YoRegistry;
@@ -120,7 +121,7 @@ public class LogSessionManagerController implements SessionControlsController
 
    private Stage stage;
    private SessionVisualizerTopics topics;
-   private JavaFXMessager messager;
+   private SCS2Messager messager;
 
    @Override
    public void initialize(SessionVisualizerToolkit toolkit)
@@ -181,28 +182,23 @@ public class LogSessionManagerController implements SessionControlsController
       logPositionSlider.addEventFilter(MouseEvent.MOUSE_DRAGGED, e -> sliderFeedbackEnabled.set(false));
       logPositionSlider.addEventFilter(MouseEvent.MOUSE_RELEASED, e -> sliderFeedbackEnabled.set(true));
 
-      Consumer<YoBufferPropertiesReadOnly> logPositionUpdateListener = properties ->
+      FXCoalescedUpdater<YoBufferPropertiesReadOnly> logPositionUpdater = new FXCoalescedUpdater<>(properties ->
       {
          LogSession logSession = activeSessionProperty.get();
 
-         if (sliderFeedbackEnabled.get())
+         if (logSession == null || logSession.getLogDataReader() == null || !sliderFeedbackEnabled.get())
+            return;
+
+         int currentLogPosition = logSession.getLogDataReader().getCurrentLogPosition();
+
+         if (currentLogPosition != logPositionSlider.valueProperty().intValue())
          {
-            int currentLogPosition = logSession.getLogDataReader().getCurrentLogPosition();
-
-            JavaFXMissingTools.runLater(getClass(), () ->
-            {
-               if (logSession == null || logSession.getLogDataReader() == null)
-                  return;
-
-               if (currentLogPosition != logPositionSlider.valueProperty().intValue())
-               {
-                  logPositionUpdate.set(true);
-                  logPositionSlider.setValue(currentLogPosition);
-                  logPositionUpdate.set(false);
-               }
-            });
+            logPositionUpdate.set(true);
+            logPositionSlider.setValue(currentLogPosition);
+            logPositionUpdate.set(false);
          }
-      };
+      });
+      Consumer<YoBufferPropertiesReadOnly> logPositionUpdateListener = logPositionUpdater::update;
 
       activeSessionProperty.addListener((o, oldValue, newValue) ->
                                         {
@@ -533,20 +529,18 @@ public class LogSessionManagerController implements SessionControlsController
 
          AtomicBoolean logPositionUpdate = new AtomicBoolean(true);
 
-         Consumer<YoBufferPropertiesReadOnly> logPositionUpdateListener = properties ->
+         FXCoalescedUpdater<YoBufferPropertiesReadOnly> logPositionUpdater = new FXCoalescedUpdater<>(properties ->
          {
             int currentLogPosition = logDataReader.getCurrentLogPosition();
 
-            JavaFXMissingTools.runLater(getClass(), () ->
+            if (currentLogPosition != logPositionSlider.valueProperty().intValue())
             {
-               if (currentLogPosition != logPositionSlider.valueProperty().intValue())
-               {
-                  logPositionUpdate.set(true);
-                  logPositionSlider.setValue(currentLogPosition);
-                  logPositionUpdate.set(false);
-               }
-            });
-         };
+               logPositionUpdate.set(true);
+               logPositionSlider.setValue(currentLogPosition);
+               logPositionUpdate.set(false);
+            }
+         });
+         Consumer<YoBufferPropertiesReadOnly> logPositionUpdateListener = logPositionUpdater::update;
          activeSession.addCurrentBufferPropertiesListener(logPositionUpdateListener);
 
          activeSessionProperty.addListener((o, oldValue, newValue) ->

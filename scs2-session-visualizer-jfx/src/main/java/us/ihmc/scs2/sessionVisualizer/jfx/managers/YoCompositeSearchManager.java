@@ -9,8 +9,8 @@ import javafx.collections.MapChangeListener;
 import javafx.collections.ObservableMap;
 import javafx.collections.ObservableSet;
 import us.ihmc.log.LogTools;
-import us.ihmc.messager.SynchronizeHint;
-import us.ihmc.messager.javafx.JavaFXMessager;
+import us.ihmc.scs2.sessionVisualizer.jfx.messager.SynchronizeHint;
+import us.ihmc.scs2.sessionVisualizer.jfx.messager.SCS2Messager;
 import us.ihmc.scs2.session.Session;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerIOTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerTopics;
@@ -90,7 +90,7 @@ public class YoCompositeSearchManager implements Manager
 
    private volatile boolean isSessionActive = false;
 
-   public YoCompositeSearchManager(JavaFXMessager messager,
+   public YoCompositeSearchManager(SCS2Messager messager,
                                    SessionVisualizerTopics topics,
                                    YoManager yoManager,
                                    BackgroundExecutorManager backgroundExecutorManager)

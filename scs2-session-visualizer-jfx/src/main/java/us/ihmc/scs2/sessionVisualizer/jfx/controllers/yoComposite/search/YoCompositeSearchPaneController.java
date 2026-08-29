@@ -21,8 +21,7 @@ import javafx.scene.input.DataFormat;
 import javafx.scene.input.Dragboard;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.input.TransferMode;
-import us.ihmc.messager.javafx.JavaFXMessager;
-import us.ihmc.scs2.session.SessionState;
+import us.ihmc.scs2.sessionVisualizer.jfx.messager.SCS2Messager;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerTopics;
 import us.ihmc.scs2.sessionVisualizer.jfx.YoNameDisplay;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.BackgroundExecutorManager;
@@ -83,7 +82,7 @@ public class YoCompositeSearchPaneController extends ObservedAnimationTimer
 
    public void initialize(SessionVisualizerToolkit toolkit, YoRegistry ownerRegistry)
    {
-      JavaFXMessager messager = toolkit.getMessager();
+      SCS2Messager messager = toolkit.getMessager();
       SessionVisualizerTopics topics = toolkit.getTopics();
       YoManager yoManager = toolkit.getYoManager();
       backgroundExecutorManager = toolkit.getBackgroundExecutorManager();
@@ -194,11 +193,11 @@ public class YoCompositeSearchPaneController extends ObservedAnimationTimer
                                           search(searchTextField.getText());
                                        });
 
-      messager.addFXTopicListener(topics.getSessionCurrentState(), state ->
+      toolkit.addAndTriggerSessionChangedListener((previousSession, newSession) ->
       {
-         if (state == SessionState.ACTIVE)
+         if (newSession != null)
             start();
-         else if (state == SessionState.INACTIVE)
+         else
             stop();
       });
 

@@ -35,7 +35,7 @@ mainDependencies {
    api("us.ihmc:euclid-frame:0.22.5")
    api("us.ihmc:ihmc-video-codecs:2.1.6")
    api("us.ihmc:ihmc-javafx-extensions:17-0.2.2")
-   api("us.ihmc:ihmc-messager-javafx:0.2.1")
+   api("org.apache.commons:commons-lang3:3.12.0")
 
    api("org.reflections:reflections:0.9.11")
 

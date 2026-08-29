@@ -1,5 +1,6 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.controllers.menu;
 
+import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.scene.control.CheckMenuItem;
 import javafx.scene.control.CustomMenuItem;
@@ -7,9 +8,11 @@ import javafx.scene.control.Menu;
 import javafx.scene.control.TextField;
 import javafx.scene.control.TextFormatter;
 import javafx.util.converter.DoubleStringConverter;
-import us.ihmc.messager.javafx.JavaFXMessager;
-import us.ihmc.messager.javafx.MessageBidirectionalBinding.PropertyToMessageTypeConverter;
+import us.ihmc.scs2.sessionVisualizer.jfx.messager.SCS2Messager;
+import us.ihmc.scs2.session.Session;
 import us.ihmc.scs2.session.SessionMode;
+import us.ihmc.scs2.session.SessionProperties;
+import us.ihmc.scs2.sessionVisualizer.jfx.SessionChangeListener;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerTopics;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.VisualizerController;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerWindowToolkit;
@@ -17,6 +20,7 @@ import us.ihmc.scs2.sessionVisualizer.jfx.tools.MenuTools;
 import us.ihmc.scs2.sharedMemory.interfaces.YoBufferPropertiesReadOnly;
 
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 
 public class RunMenuController implements VisualizerController
 {
@@ -33,51 +37,88 @@ public class RunMenuController implements VisualizerController
    @FXML
    private TextField runMaxDurationTextField;
 
-   private JavaFXMessager messager;
+   private SCS2Messager messager;
    private SessionVisualizerTopics topics;
+   private SessionVisualizerWindowToolkit toolkit;
 
-   private AtomicReference<YoBufferPropertiesReadOnly> bufferProperties;
+   private final AtomicReference<YoBufferPropertiesReadOnly> bufferProperties = new AtomicReference<>(null);
+   private Session session;
+   private Consumer<YoBufferPropertiesReadOnly> bufferPropertiesListener;
+   private Consumer<SessionProperties> sessionPropertiesListener;
+   /** Guards against feedback loops when a session-driven update sets a UI control's value. */
+   private boolean updatingFromSession = false;
 
    @Override
    public void initialize(SessionVisualizerWindowToolkit toolkit)
    {
+      this.toolkit = toolkit;
       messager = toolkit.getMessager();
       topics = toolkit.getTopics();
-      bufferProperties = messager.createInput(topics.getYoBufferCurrentProperties(), null);
 
-      messager.bindBidirectional(topics.getRunAtRealTimeRate(), simulateAtRealTimeCheckMenuItem.selectedProperty(), false);
       messager.addFXTopicListener(topics.getDisableUserControls(), disable -> menu.setDisable(disable));
 
-      {
-         TextFormatter<Double> formatter = new TextFormatter<>(new DoubleStringConverter());
-         formatter.setValue(1.0);
-         playbackRealTimeRateTextField.setTextFormatter(formatter);
-         messager.bindBidirectional(topics.getPlaybackRealTimeRate(), formatter.valueProperty(), false);
-      }
+      TextFormatter<Double> playbackRealTimeRateFormatter = new TextFormatter<>(new DoubleStringConverter());
+      playbackRealTimeRateFormatter.setValue(1.0);
+      playbackRealTimeRateTextField.setTextFormatter(playbackRealTimeRateFormatter);
 
+      TextFormatter<Double> runMaxDurationFormatter = new TextFormatter<>(new DoubleStringConverter());
+      runMaxDurationFormatter.setValue(-1.0);
+      runMaxDurationTextField.setTextFormatter(runMaxDurationFormatter);
+
+      simulateAtRealTimeCheckMenuItem.selectedProperty().addListener((o, oldValue, newValue) ->
       {
-         TextFormatter<Double> formatter = new TextFormatter<>(new DoubleStringConverter());
-         formatter.setValue(-1.0);
-         runMaxDurationTextField.setTextFormatter(formatter);
-         messager.bindBidirectional(topics.getRunMaxDuration(), formatter.valueProperty(), new PropertyToMessageTypeConverter<Long, Double>()
+         if (!updatingFromSession && session != null)
+            session.submitRunAtRealTimeRate(newValue);
+      });
+      playbackRealTimeRateFormatter.valueProperty().addListener((o, oldValue, newValue) ->
+      {
+         if (!updatingFromSession && session != null)
+            session.submitPlaybackRealTimeRate(newValue);
+      });
+      runMaxDurationFormatter.valueProperty().addListener((o, oldValue, newValue) ->
+      {
+         if (!updatingFromSession && session != null)
+            session.submitRunMaxDuration(newValue != null ? (long) (newValue * 1.0E9) : -1L);
+      });
+
+      SessionChangeListener sessionChangeListener = (previousSession, newSession) ->
+      {
+         if (previousSession != null)
          {
-            @Override
-            public Long convert(Double propertyValue)
-            {
-               if (propertyValue != null)
-                  return (long) (propertyValue * 1.0E9);
-               return -1L;
-            }
+            previousSession.removeCurrentBufferPropertiesListener(bufferPropertiesListener);
+            previousSession.removeSessionPropertiesListener(sessionPropertiesListener);
+         }
 
-            @Override
-            public Double interpret(Long messageContent)
+         session = newSession;
+
+         if (newSession == null)
+         {
+            bufferPropertiesListener = null;
+            sessionPropertiesListener = null;
+            return;
+         }
+
+         bufferPropertiesListener = bufferProperties::set;
+         newSession.addCurrentBufferPropertiesListener(bufferPropertiesListener);
+
+         sessionPropertiesListener = properties -> Platform.runLater(() ->
+         {
+            updatingFromSession = true;
+            try
             {
-               if (messageContent != null)
-                  return messageContent.doubleValue() / 1.0E9;
-               return -1.0;
+               simulateAtRealTimeCheckMenuItem.setSelected(properties.isRunAtRealTimeRate());
+               playbackRealTimeRateFormatter.setValue(properties.getPlaybackRealTimeRate());
+               runMaxDurationFormatter.setValue(properties.getRunMaxDuration() < 0 ? -1.0 : properties.getRunMaxDuration() / 1.0E9);
             }
-         }, false);
-      }
+            finally
+            {
+               updatingFromSession = false;
+            }
+         });
+         newSession.addSessionPropertiesListener(sessionPropertiesListener);
+         sessionPropertiesListener.accept(newSession.getSessionProperties());
+      };
+      toolkit.addAndTriggerSessionChangedListener(sessionChangeListener);
 
       MenuTools.configureTextFieldForCustomMenuItem(playbackRealTimeRateMenuItem, playbackRealTimeRateTextField);
       MenuTools.configureTextFieldForCustomMenuItem(runMaxDurationMenuItem, runMaxDurationTextField);
@@ -86,58 +127,63 @@ public class RunMenuController implements VisualizerController
    @FXML
    private void startSimulating()
    {
-      messager.submitMessage(topics.getSessionCurrentMode(), SessionMode.RUNNING);
+      if (session != null)
+         session.setSessionMode(SessionMode.RUNNING);
    }
 
    @FXML
    private void startPlayback()
    {
-      messager.submitMessage(topics.getSessionCurrentMode(), SessionMode.PLAYBACK);
+      if (session != null)
+         session.setSessionMode(SessionMode.PLAYBACK);
    }
 
    @FXML
    private void pause()
    {
-      messager.submitMessage(topics.getSessionCurrentMode(), SessionMode.PAUSE);
+      if (session != null)
+         session.setSessionMode(SessionMode.PAUSE);
    }
 
    @FXML
    private void setInPoint()
    {
-      if (bufferProperties.get() != null)
-         messager.submitMessage(topics.getYoBufferInPointIndexRequest(), bufferProperties.get().getCurrentIndex());
+      if (session != null && bufferProperties.get() != null)
+         session.submitBufferInPointIndexRequest(bufferProperties.get().getCurrentIndex());
    }
 
    @FXML
    private void gotoInPoint()
    {
-      if (bufferProperties.get() != null)
-         messager.submitMessage(topics.getYoBufferCurrentIndexRequest(), bufferProperties.get().getInPoint());
+      if (session != null && bufferProperties.get() != null)
+         session.submitBufferIndexRequest(bufferProperties.get().getInPoint());
    }
 
    @FXML
    private void stepBack()
    {
-      messager.submitMessage(topics.getYoBufferDecrementCurrentIndexRequest(), 1);
+      if (session != null)
+         session.submitDecrementBufferIndexRequest(1);
    }
 
    @FXML
    private void stepForward()
    {
-      messager.submitMessage(topics.getYoBufferIncrementCurrentIndexRequest(), 1);
+      if (session != null)
+         session.submitIncrementBufferIndexRequest(1);
    }
 
    @FXML
    private void gotoOutPoint()
    {
-      if (bufferProperties.get() != null)
-         messager.submitMessage(topics.getYoBufferCurrentIndexRequest(), bufferProperties.get().getOutPoint());
+      if (session != null && bufferProperties.get() != null)
+         session.submitBufferIndexRequest(bufferProperties.get().getOutPoint());
    }
 
    @FXML
    private void setOutPoint()
    {
-      if (bufferProperties.get() != null)
-         messager.submitMessage(topics.getYoBufferOutPointIndexRequest(), bufferProperties.get().getCurrentIndex());
+      if (session != null && bufferProperties.get() != null)
+         session.submitBufferOutPointIndexRequest(bufferProperties.get().getCurrentIndex());
    }
 }

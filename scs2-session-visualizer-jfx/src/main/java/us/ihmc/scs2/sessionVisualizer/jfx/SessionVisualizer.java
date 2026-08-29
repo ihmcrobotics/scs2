@@ -20,8 +20,6 @@ import javafx.stage.Window;
 import javafx.stage.WindowEvent;
 import javafx.util.Pair;
 import org.apache.commons.lang3.tuple.ImmutableTriple;
-import us.ihmc.messager.Messager;
-import us.ihmc.messager.MessagerAPIFactory.Topic;
 import us.ihmc.scs2.definition.DefinitionIOTools;
 import us.ihmc.scs2.definition.camera.YoLevelOrbitalCoordinateDefinition;
 import us.ihmc.scs2.definition.camera.YoOrbitalCoordinateDefinition;
@@ -48,6 +46,8 @@ import us.ihmc.scs2.sessionVisualizer.jfx.managers.MultiSessionManager;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.ReferenceFrameManager;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerToolkit;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerWindowToolkit;
+import us.ihmc.scs2.sessionVisualizer.jfx.messager.SCS2Messager;
+import us.ihmc.scs2.sessionVisualizer.jfx.messager.Topic;
 import us.ihmc.scs2.sessionVisualizer.jfx.properties.YoBooleanProperty;
 import us.ihmc.scs2.sessionVisualizer.jfx.properties.YoDoubleProperty;
 import us.ihmc.scs2.sessionVisualizer.jfx.properties.YoEnumAsStringProperty;
@@ -55,7 +55,6 @@ import us.ihmc.scs2.sessionVisualizer.jfx.properties.YoIntegerProperty;
 import us.ihmc.scs2.sessionVisualizer.jfx.properties.YoLongProperty;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXApplicationCreator;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
-import us.ihmc.scs2.sessionVisualizer.jfx.tools.SCS2JavaFXMessager;
 import us.ihmc.yoVariables.exceptions.IllegalOperationException;
 
 import java.awt.MouseInfo;
@@ -90,7 +89,7 @@ public class SessionVisualizer
    private final MultiSessionManager multiSessionManager;
 
    protected final MainWindowController mainWindowController;
-   private final SCS2JavaFXMessager messager;
+   private final SCS2Messager messager;
    private final SessionVisualizerTopics topics;
    private final SessionVisualizerControlsImpl sessionVisualizerControls = createControls();
 
@@ -520,7 +519,8 @@ public class SessionVisualizer
       @Override
       public void requestChartsForceUpdate()
       {
-         submitMessage(getTopics().getYoBufferForceListenerUpdate(), true);
+         if (toolkit.getSession() != null)
+            toolkit.getSession().requestBufferListenerForceUpdate();
       }
 
       @Override
@@ -636,7 +636,7 @@ public class SessionVisualizer
       /**
        * Gets the messager's topics.
        * <p>
-       * The visualizer relies on the {@link Messager} framework to communicate requests.
+       * The visualizer relies on the {@link SCS2Messager} framework to communicate requests.
        * </p>
        *
        * @return the topics this visualizer uses.

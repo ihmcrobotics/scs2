@@ -1,10 +1,9 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.charts;
 
 import us.ihmc.euclid.tuple2D.Point2D;
-import us.ihmc.messager.Messager;
-import us.ihmc.messager.TopicListener;
+import us.ihmc.scs2.session.Session;
 import us.ihmc.scs2.session.SessionMode;
-import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerTopics;
+import us.ihmc.scs2.session.SessionProperties;
 import us.ihmc.scs2.sharedMemory.BufferSample;
 import us.ihmc.scs2.sharedMemory.CropBufferRequest;
 import us.ihmc.scs2.sharedMemory.FillBufferRequest;
@@ -24,6 +23,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 public class YoVariableChartData
@@ -64,21 +64,23 @@ public class YoVariableChartData
    @SuppressWarnings("rawtypes")
    private final Function<BufferSample<double[]>, BufferSample> bufferConverterFunction;
 
-   private final TopicListener<CropBufferRequest> cropRequestListener = m -> requestEntireBuffer.set(true);
-   private final TopicListener<FillBufferRequest> fillRequestListener = m -> requestEntireBuffer.set(true);
-   private final TopicListener<Boolean> forceListenerUpdateListener = m -> requestEntireBuffer.set(true);
-   private final TopicListener<YoBufferPropertiesReadOnly> propertiesListener;
+   private final Consumer<CropBufferRequest> cropRequestListener = m -> requestEntireBuffer.set(true);
+   private final Consumer<FillBufferRequest> fillRequestListener = m -> requestEntireBuffer.set(true);
+   private final Runnable forceListenerUpdateListener = () -> requestEntireBuffer.set(true);
+   private final Consumer<YoBufferPropertiesReadOnly> propertiesListener;
+   private final Consumer<SessionProperties> sessionPropertiesListener;
 
-   private final Messager messager;
-   private final SessionVisualizerTopics topics;
+   private final Session session;
 
-   public YoVariableChartData(Messager messager, SessionVisualizerTopics topics, LinkedYoVariable<?> linkedYoVariable)
+   public YoVariableChartData(Session session, LinkedYoVariable<?> linkedYoVariable)
    {
-      this.messager = messager;
-      this.topics = topics;
+      this.session = session;
       this.linkedYoVariable = linkedYoVariable;
       linkedYoVariable.addUser(this);
-      currentSessionMode = messager.createInput(topics.getSessionCurrentMode(), SessionMode.PAUSE);
+      currentSessionMode = new AtomicReference<>(SessionMode.PAUSE);
+      sessionPropertiesListener = properties -> currentSessionMode.set(properties.getActiveMode());
+      session.addSessionPropertiesListener(sessionPropertiesListener);
+      currentSessionMode.set(session.getSessionProperties().getActiveMode());
 
       if (linkedYoVariable instanceof LinkedYoBoolean)
          bufferConverterFunction = in -> booleanToDoubleBuffer(in);
@@ -121,19 +123,20 @@ public class YoVariableChartData
          lastProperties = m;
       };
 
-      messager.addTopicListener(topics.getYoBufferCropRequest(), cropRequestListener);
-      messager.addTopicListener(topics.getYoBufferFillRequest(), fillRequestListener);
-      messager.addTopicListener(topics.getYoBufferForceListenerUpdate(), forceListenerUpdateListener);
-      messager.addTopicListener(topics.getYoBufferCurrentProperties(), propertiesListener);
+      session.addCropBufferRequestListener(cropRequestListener);
+      session.addFillBufferRequestListener(fillRequestListener);
+      session.addBufferListenerForceUpdateListener(forceListenerUpdateListener);
+      session.addCurrentBufferPropertiesListener(propertiesListener);
    }
 
    public void dispose()
    {
       linkedYoVariable.removeUser(this);
-      messager.removeInput(topics.getSessionCurrentMode(), currentSessionMode);
-      messager.removeTopicListener(topics.getYoBufferCropRequest(), cropRequestListener);
-      messager.removeTopicListener(topics.getYoBufferFillRequest(), fillRequestListener);
-      messager.removeTopicListener(topics.getYoBufferCurrentProperties(), propertiesListener);
+      session.removeSessionPropertiesListener(sessionPropertiesListener);
+      session.removeCropBufferRequestListener(cropRequestListener);
+      session.removeFillBufferRequestListener(fillRequestListener);
+      session.removeBufferListenerForceUpdateListener(forceListenerUpdateListener);
+      session.removeCurrentBufferPropertiesListener(propertiesListener);
    }
 
    public boolean updateVariableData()

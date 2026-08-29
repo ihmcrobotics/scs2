@@ -1,11 +1,12 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.controllers;
 
+import javafx.application.Platform;
 import javafx.beans.InvalidationListener;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.Property;
 import javafx.beans.property.ReadOnlyObjectProperty;
 import javafx.beans.property.SimpleBooleanProperty;
-import javafx.beans.value.ChangeListener;
+import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.value.ObservableBooleanValue;
 import javafx.fxml.FXML;
 import javafx.scene.Node;
@@ -14,12 +15,17 @@ import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.Region;
 import javafx.stage.Window;
 import javafx.util.Pair;
-import us.ihmc.messager.javafx.JavaFXMessager;
+import us.ihmc.scs2.sessionVisualizer.jfx.messager.SCS2Messager;
+import us.ihmc.scs2.session.Session;
 import us.ihmc.scs2.session.SessionMode;
-import us.ihmc.scs2.session.SessionState;
+import us.ihmc.scs2.session.SessionProperties;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerTopics;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerWindowToolkit;
+import us.ihmc.scs2.sessionVisualizer.jfx.tools.FXCoalescedUpdater;
 import us.ihmc.scs2.sharedMemory.interfaces.YoBufferPropertiesReadOnly;
+
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 
 public class SessionAdvancedControlsController implements VisualizerController
 {
@@ -27,8 +33,9 @@ public class SessionAdvancedControlsController implements VisualizerController
    public static final String ACTIVE_MODE = "session-controls-active-mode";
 
    private Window owner;
-   private JavaFXMessager messager;
+   private SCS2Messager messager;
    private SessionVisualizerTopics topics;
+   private SessionVisualizerWindowToolkit toolkit;
 
    @FXML
    private FlowPane buttonsContainer;
@@ -37,7 +44,9 @@ public class SessionAdvancedControlsController implements VisualizerController
    @FXML
    private Node runningIconView, playbackIconView, pauseIconView;
 
-   private Property<YoBufferPropertiesReadOnly> bufferProperties;
+   private final Property<YoBufferPropertiesReadOnly> bufferProperties = new SimpleObjectProperty<>(this, "bufferProperties", null);
+   private Consumer<YoBufferPropertiesReadOnly> bufferPropertiesListener;
+   private final FXCoalescedUpdater<YoBufferPropertiesReadOnly> bufferPropertiesUpdater = new FXCoalescedUpdater<>(bufferProperties::setValue);
 
    private BooleanProperty showProperty = new SimpleBooleanProperty(this, "show", false);
 
@@ -48,11 +57,25 @@ public class SessionAdvancedControlsController implements VisualizerController
    @Override
    public void initialize(SessionVisualizerWindowToolkit toolkit)
    {
+      this.toolkit = toolkit;
       owner = toolkit.getWindow();
       messager = toolkit.getMessager();
       topics = toolkit.getTopics();
 
-      bufferProperties = messager.createPropertyInput(topics.getYoBufferCurrentProperties());
+      toolkit.addAndTriggerSessionChangedListener((previousSession, newSession) ->
+      {
+         if (previousSession != null)
+            previousSession.removeCurrentBufferPropertiesListener(bufferPropertiesListener);
+
+         if (newSession == null)
+         {
+            bufferPropertiesListener = null;
+            return;
+         }
+
+         bufferPropertiesListener = bufferPropertiesUpdater::update;
+         newSession.addCurrentBufferPropertiesListener(bufferPropertiesListener);
+      });
 
       messager.addFXTopicListener(topics.getShowAdvancedControls(), show -> showProperty.set(show));
       messager.addFXTopicListener(topics.getDisableUserControls(), disable -> buttonsContainer.setDisable(disable));
@@ -71,42 +94,44 @@ public class SessionAdvancedControlsController implements VisualizerController
       previousKeyFrameButton.setDisable(disableKeyFrameButtons);
       nextKeyFrameButton.setDisable(disableKeyFrameButtons);
 
-      setupMainControlsActiveMode(this, messager, topics, runningIconView, playbackIconView, pauseIconView);
+      setupMainControlsActiveMode(this, toolkit, runningIconView, playbackIconView, pauseIconView);
    }
 
    public static void setupMainControlsActiveMode(Object bean,
-                                                  JavaFXMessager messager,
-                                                  SessionVisualizerTopics topics,
+                                                  SessionVisualizerWindowToolkit toolkit,
                                                   Node runningIconView,
                                                   Node playbackIconView,
                                                   Node pauseIconView)
    {
-      Property<SessionState> sessionCurrentStateProperty = messager.createPropertyInput(topics.getSessionCurrentState(), null);
-      Property<SessionMode> sessionCurrentModeProperty = messager.createPropertyInput(topics.getSessionCurrentMode(), null);
-
       BooleanProperty isRunningActive = new SimpleBooleanProperty(bean, "isRunningActive", false);
       BooleanProperty isPlaybackActive = new SimpleBooleanProperty(bean, "isPlaybackActive", false);
       BooleanProperty isPauseActive = new SimpleBooleanProperty(bean, "isPauseActive", false);
+      AtomicReference<Consumer<SessionProperties>> sessionPropertiesListener = new AtomicReference<>();
 
-      sessionCurrentStateProperty.addListener((o, oldValue, newValue) ->
-                                              {
-                                                 if (newValue == SessionState.INACTIVE)
-                                                 {
-                                                    isRunningActive.set(false);
-                                                    isPlaybackActive.set(false);
-                                                    isPauseActive.set(false);
-                                                 }
-                                              });
-
-      ChangeListener<SessionMode> listener = (o, oldValue, newValue) ->
+      toolkit.addAndTriggerSessionChangedListener((previousSession, newSession) ->
       {
-         boolean isSessionActive = sessionCurrentStateProperty.getValue() == SessionState.ACTIVE;
-         isRunningActive.set(isSessionActive && newValue == SessionMode.RUNNING);
-         isPlaybackActive.set(isSessionActive && newValue == SessionMode.PLAYBACK);
-         isPauseActive.set(isSessionActive && newValue == SessionMode.PAUSE);
-      };
-      sessionCurrentModeProperty.addListener(listener);
-      listener.changed(null, null, sessionCurrentModeProperty.getValue());
+         if (previousSession != null && sessionPropertiesListener.get() != null)
+            previousSession.removeSessionPropertiesListener(sessionPropertiesListener.get());
+
+         if (newSession == null)
+         {
+            sessionPropertiesListener.set(null);
+            isRunningActive.set(false);
+            isPlaybackActive.set(false);
+            isPauseActive.set(false);
+            return;
+         }
+
+         sessionPropertiesListener.set(properties -> Platform.runLater(() ->
+         {
+            SessionMode mode = properties.getActiveMode();
+            isRunningActive.set(mode == SessionMode.RUNNING);
+            isPlaybackActive.set(mode == SessionMode.PLAYBACK);
+            isPauseActive.set(mode == SessionMode.PAUSE);
+         }));
+         newSession.addSessionPropertiesListener(sessionPropertiesListener.get());
+         sessionPropertiesListener.get().accept(newSession.getSessionProperties());
+      });
 
       setupActiveMode(isRunningActive, runningIconView, ACTIVE_MODE, INACTIVE_MODE);
       setupActiveMode(isPlaybackActive, playbackIconView, ACTIVE_MODE, INACTIVE_MODE);
@@ -155,57 +180,64 @@ public class SessionAdvancedControlsController implements VisualizerController
    @FXML
    private void startRunning()
    {
-      messager.submitMessage(topics.getSessionCurrentMode(), SessionMode.RUNNING);
+      if (toolkit.getSession() != null)
+         toolkit.getSession().setSessionMode(SessionMode.RUNNING);
    }
 
    @FXML
    private void startPlayback()
    {
-      messager.submitMessage(topics.getSessionCurrentMode(), SessionMode.PLAYBACK);
+      if (toolkit.getSession() != null)
+         toolkit.getSession().setSessionMode(SessionMode.PLAYBACK);
    }
 
    @FXML
    private void pause()
    {
-      messager.submitMessage(topics.getSessionCurrentMode(), SessionMode.PAUSE);
+      if (toolkit.getSession() != null)
+         toolkit.getSession().setSessionMode(SessionMode.PAUSE);
    }
 
    @FXML
    private void setInPoint()
    {
-      messager.submitMessage(topics.getYoBufferInPointIndexRequest(), bufferProperties.getValue().getCurrentIndex());
+      if (toolkit.getSession() != null)
+         toolkit.getSession().submitBufferInPointIndexRequest(bufferProperties.getValue().getCurrentIndex());
    }
 
    @FXML
    private void gotoInPoint()
    {
-      if (bufferProperties.getValue() != null)
-         messager.submitMessage(topics.getYoBufferCurrentIndexRequest(), bufferProperties.getValue().getInPoint());
+      if (toolkit.getSession() != null && bufferProperties.getValue() != null)
+         toolkit.getSession().submitBufferIndexRequest(bufferProperties.getValue().getInPoint());
    }
 
    @FXML
    private void stepBack()
    {
-      messager.submitMessage(topics.getYoBufferDecrementCurrentIndexRequest(), 1);
+      if (toolkit.getSession() != null)
+         toolkit.getSession().submitDecrementBufferIndexRequest(1);
    }
 
    @FXML
    private void stepForward()
    {
-      messager.submitMessage(topics.getYoBufferIncrementCurrentIndexRequest(), 1);
+      if (toolkit.getSession() != null)
+         toolkit.getSession().submitIncrementBufferIndexRequest(1);
    }
 
    @FXML
    private void gotoOutPoint()
    {
-      if (bufferProperties.getValue() != null)
-         messager.submitMessage(topics.getYoBufferCurrentIndexRequest(), bufferProperties.getValue().getOutPoint());
+      if (toolkit.getSession() != null && bufferProperties.getValue() != null)
+         toolkit.getSession().submitBufferIndexRequest(bufferProperties.getValue().getOutPoint());
    }
 
    @FXML
    private void setOutPoint()
    {
-      messager.submitMessage(topics.getYoBufferOutPointIndexRequest(), bufferProperties.getValue().getCurrentIndex());
+      if (toolkit.getSession() != null)
+         toolkit.getSession().submitBufferOutPointIndexRequest(bufferProperties.getValue().getCurrentIndex());
    }
 
    @FXML

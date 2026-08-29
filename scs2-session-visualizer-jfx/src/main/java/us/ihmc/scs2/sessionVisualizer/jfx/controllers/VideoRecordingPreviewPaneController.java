@@ -6,12 +6,14 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.mutable.MutableBoolean;
 
 import javafx.animation.AnimationTimer;
+import javafx.application.Platform;
 import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.Property;
 import javafx.beans.property.SimpleIntegerProperty;
@@ -38,12 +40,14 @@ import javafx.stage.Stage;
 import javafx.stage.Window;
 import javafx.stage.WindowEvent;
 import javafx.util.converter.DoubleStringConverter;
-import us.ihmc.messager.TopicListener;
-import us.ihmc.messager.javafx.JavaFXMessager;
+import us.ihmc.scs2.sessionVisualizer.jfx.messager.SCS2Messager;
+import us.ihmc.scs2.session.Session;
 import us.ihmc.scs2.session.SessionMode;
+import us.ihmc.scs2.session.SessionProperties;
 import us.ihmc.scs2.sessionVisualizer.jfx.SceneVideoRecordingRequest;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerIOTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerTopics;
+import us.ihmc.scs2.sessionVisualizer.jfx.tools.FXCoalescedUpdater;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.IntegerConverter;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.PositiveIntegerValueFilter;
@@ -119,8 +123,9 @@ public class VideoRecordingPreviewPaneController
 
    private Stage stage;
    private Group rootNode3D;
-   private JavaFXMessager messager;
+   private SCS2Messager messager;
    private SessionVisualizerTopics topics;
+   private Session session;
 
    private final List<Runnable> cleanupActions = new ArrayList<>();
    private final SnapshotParameters snapshotParameters = new SnapshotParameters();
@@ -134,11 +139,17 @@ public class VideoRecordingPreviewPaneController
       }
    };
 
-   public void initialize(Window owner, Group mainView3DRoot, PerspectiveCamera targetCamera, JavaFXMessager messager, SessionVisualizerTopics topics)
+   public void initialize(Window owner,
+                          Group mainView3DRoot,
+                          PerspectiveCamera targetCamera,
+                          SCS2Messager messager,
+                          SessionVisualizerTopics topics,
+                          Session session)
    {
       this.rootNode3D = mainView3DRoot;
       this.messager = messager;
       this.topics = topics;
+      this.session = session;
 
       snapshotParameters.setDepthBuffer(true);
       snapshotParameters.setCamera(targetCamera);
@@ -153,7 +164,16 @@ public class VideoRecordingPreviewPaneController
       });
       resolutionComboBox.getSelectionModel().select(Resolution.FULL_HD_1920x1080.getDescription());
 
-      messager.bindBidirectional(topics.getSessionCurrentMode(), currentSessionMode, false);
+      Consumer<SessionProperties> sessionModeListener = properties -> Platform.runLater(() -> currentSessionMode.setValue(properties.getActiveMode()));
+      session.addSessionPropertiesListener(sessionModeListener);
+      sessionModeListener.accept(session.getSessionProperties());
+      ChangeListener<SessionMode> currentSessionModeSubmitListener = (o, oldValue, newValue) -> session.setSessionMode(newValue);
+      currentSessionMode.addListener(currentSessionModeSubmitListener);
+      cleanupActions.add(() ->
+      {
+         session.removeSessionPropertiesListener(sessionModeListener);
+         currentSessionMode.removeListener(currentSessionModeSubmitListener);
+      });
 
       TextFormatter<Integer> frameRateFormatter = new TextFormatter<>(new IntegerConverter(), 60, new PositiveIntegerValueFilter());
       TextFormatter<Double> realTimeRateFormatter = new TextFormatter<>(new DoubleStringConverter(), 1.0);
@@ -163,16 +183,18 @@ public class VideoRecordingPreviewPaneController
       frameRate = frameRateFormatter.valueProperty();
       realTimeRate = realTimeRateFormatter.valueProperty();
 
-      messager.submitMessage(topics.getSessionCurrentMode(), SessionMode.PAUSE);
+      session.setSessionMode(SessionMode.PAUSE);
       MutableBoolean updatingBufferIndex = new MutableBoolean(false);
-      bufferProperties = messager.createInput(topics.getYoBufferCurrentProperties());
-      cleanupActions.add(() -> messager.removeInput(topics.getYoBufferCurrentProperties(), bufferProperties));
+      bufferProperties = new AtomicReference<>(null);
+      Consumer<YoBufferPropertiesReadOnly> bufferPropertiesInputListener = properties -> bufferProperties.set(properties);
+      session.addCurrentBufferPropertiesListener(bufferPropertiesInputListener);
+      cleanupActions.add(() -> session.removeCurrentBufferPropertiesListener(bufferPropertiesInputListener));
 
       ChangeListener<? super SessionMode> currentSessionModeListener = (o, oldValue, newValue) ->
       {
          if (newValue != SessionMode.PAUSE)
          {
-            messager.submitMessage(topics.getSessionCurrentMode(), SessionMode.PAUSE);
+            session.setSessionMode(SessionMode.PAUSE);
          }
          else if (bufferProperties.get() != null)
          {
@@ -185,7 +207,7 @@ public class VideoRecordingPreviewPaneController
       currentSessionMode.addListener(currentSessionModeListener);
       cleanupActions.add(() -> currentSessionMode.removeListener(currentSessionModeListener));
 
-      TopicListener<YoBufferPropertiesReadOnly> currentBufferPropertiesListener = m ->
+      FXCoalescedUpdater<YoBufferPropertiesReadOnly> currentBufferPropertiesUpdater = new FXCoalescedUpdater<>(m ->
       {
          if (currentSessionMode.getValue() != SessionMode.PAUSE)
             return;
@@ -198,9 +220,10 @@ public class VideoRecordingPreviewPaneController
             currentBufferIndexSlider.setValue(m.getCurrentIndex());
             updatingBufferIndex.setFalse();
          }
-      };
-      messager.addFXTopicListener(topics.getYoBufferCurrentProperties(), currentBufferPropertiesListener);
-      cleanupActions.add(() -> messager.removeFXTopicListener(topics.getYoBufferCurrentProperties(), currentBufferPropertiesListener));
+      });
+      Consumer<YoBufferPropertiesReadOnly> currentBufferPropertiesListener = currentBufferPropertiesUpdater::update;
+      session.addCurrentBufferPropertiesListener(currentBufferPropertiesListener);
+      cleanupActions.add(() -> session.removeCurrentBufferPropertiesListener(currentBufferPropertiesListener));
 
       ChangeListener<? super Number> currentBufferIndexSliderListener = (o, oldValue, newValue) ->
       {
@@ -210,7 +233,7 @@ public class VideoRecordingPreviewPaneController
          if (updatingBufferIndex.isFalse())
          {
             updatingBufferIndex.setTrue();
-            messager.submitMessage(topics.getYoBufferCurrentIndexRequest(), newValue.intValue());
+            session.submitBufferIndexRequest(newValue.intValue());
             updatingBufferIndex.setFalse();
          }
       };

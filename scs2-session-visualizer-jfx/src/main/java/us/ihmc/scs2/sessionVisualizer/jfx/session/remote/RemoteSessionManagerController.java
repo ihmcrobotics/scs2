@@ -36,7 +36,7 @@ import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
 import us.ihmc.commons.thread.ThreadTools;
 import us.ihmc.log.LogTools;
-import us.ihmc.messager.javafx.JavaFXMessager;
+import us.ihmc.scs2.sessionVisualizer.jfx.messager.SCS2Messager;
 import us.ihmc.robotDataLogger.StaticHostListLoader;
 import us.ihmc.robotDataLogger.YoVariableClient;
 import us.ihmc.robotDataLogger.websocket.client.discovery.DataServerDiscoveryClient;
@@ -246,7 +246,7 @@ public class RemoteSessionManagerController implements SessionControlsController
          informationPaneController.start();
          informationPaneController.activeSessionProperty().bind(sessionFactory.activeSessionProperty());
          SessionVisualizerTopics topics = toolkit.getTopics();
-         JavaFXMessager messager = toolkit.getMessager();
+         SCS2Messager messager = toolkit.getMessager();
          sessionFactory.activeSessionProperty().addListener((o, oldValue, newValue) -> messager.submitMessage(topics.getStartNewSessionRequest(), newValue));
       }
       catch (IOException e)
