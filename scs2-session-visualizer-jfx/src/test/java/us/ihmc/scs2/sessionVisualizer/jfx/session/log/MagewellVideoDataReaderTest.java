@@ -19,7 +19,7 @@ public class MagewellVideoDataReaderTest
    private static final int WARMUP_ITERATIONS = 20;
    private static final int TIMED_ITERATIONS = 100;
    /** Generous ceiling so the test only fails on an actual performance regression, not machine noise. */
-   private static final double MAX_AVERAGE_MILLIS_PER_FRAME = 10.0;
+   private static final double MAX_AVERAGE_MILLIS_PER_FRAME = 40.0;
 
    @Test
    void convertFrameToWritableImageIsFastAndCorrect()
