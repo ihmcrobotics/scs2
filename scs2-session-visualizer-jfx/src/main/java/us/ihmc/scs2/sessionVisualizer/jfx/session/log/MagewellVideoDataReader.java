@@ -1,6 +1,7 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.session.log;
 
 import javafx.scene.image.Image;
+import javafx.scene.image.PixelFormat;
 import javafx.scene.image.PixelReader;
 import javafx.scene.image.PixelWriter;
 import javafx.scene.image.WritableImage;
@@ -72,7 +73,7 @@ public class MagewellVideoDataReader implements VideoDataReader
     * @param frameToConvert is the next frame we want to visualize so we convert it to be compatible with JavaFX
     * @return {@link WritableImage}
     */
-   public WritableImage convertFrameToWritableImage(Frame frameToConvert)
+   public static WritableImage convertFrameToWritableImage(Frame frameToConvert)
    {
       Image currentImage;
 
