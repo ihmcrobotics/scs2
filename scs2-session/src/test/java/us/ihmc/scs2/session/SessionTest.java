@@ -19,51 +19,9 @@ import us.ihmc.scs2.sharedMemory.YoDoubleBuffer;
 import us.ihmc.yoVariables.variable.YoDouble;
 
 /**
- * Verifies the final shape of the fix for a high-CPU-usage bug found while investigating log playback looping.
- * <p>
- * The expensive part is {@code sharedBuffer.readBuffer()} in {@link Session#finalizePlaybackTick()}: it reads
- * every {@link YoVariable} in the whole registry (tens of thousands for a real robot log) into its live value,
- * but that only matters right before the data is actually handed to a consumer (chart, live 3D pose, watch
- * panel, ...) via the throttled {@code sharedBuffer.prepareLinkedBuffersForPull()} (period set by
- * {@link Session#setDesiredBufferPublishPeriod(long)}, default 30Hz). So {@code readBuffer()} is called only
- * inside that same throttle, not on every tick.
- * <p>
- * An earlier version of this fix instead slowed the whole playback tick (via
- * {@link Session#computePlaybackTaskPeriod()}) down to the publish rate. That did cut CPU usage, but it also
- * slowed {@code incrementBufferIndex()}/{@code publishBufferProperties()} down to 30Hz, which feed UI elements
- * like the log scrub bar position ({@code LogSessionManagerController.logPositionUpdateListener}) that used to
- * update at ~500Hz-1kHz - visibly laggy scrubbing/playback. The current fix keeps the tick itself fast
- * (untouched {@link Session#computePlaybackTaskPeriod()}, same as before any of this work) and throttles only
- * the expensive read, so the buffer index and UI-facing buffer properties stay smooth while {@code readBuffer()}
- * still only runs ~30 times/sec.
- * <p>
- * This test calls {@link Session#playbackTick()} directly, in a tight loop from the test thread itself, instead
- * of going through {@link Session#startSessionThread()}'s real background {@code PeriodicTaskWrapper}. That's
- * deliberate: {@code Session} explicitly supports driving ticks manually without its internal thread (see
- * {@code scheduleSessionTask}'s "allow running simulation without using the internal session thread" branch), and
- * doing so here removes OS thread-scheduling jitter as a source of flakiness - an earlier version of this test
- * drove ticks through the real background thread and polled with {@code Thread.sleep(1)}, which occasionally
- * (e.g. under JIT warm-up or system load) let real ticks fall far behind their nominal ~2ms period; when that
- * happens every tick's elapsed wall-clock time since the last publish already exceeds the ~33ms publish period on
- * its own, so the throttle in {@link Session#finalizePlaybackTick()} looks satisfied on every tick even though the
- * fix's logic is correct - a false failure unrelated to the code being tested. Driving ticks synchronously as fast
- * as possible from a single thread avoids that: the throttle is checked against real {@code System.nanoTime()}
- * either way, but there's no separate thread whose scheduling can fall behind.
- * <p>
- * Two things are checked, using only public API (no reflection, no production instrumentation):
- * <ol>
- * <li>Ticks (loop iterations) comfortably outnumber publishes ({@link LinkedYoDouble#pull()} reporting fresh
- * data) - proving the buffer index/UI-facing properties are NOT throttled down to the publish rate.
- * <li><b>The actual regression guard</b>: {@code sharedBuffer.readBuffer()} is the only thing that copies buffer
- * data into the backing {@link YoVariable}'s live value, so polling {@code variable.getValue()} directly
- * (bypassing the pull/publish path entirely) and counting how often it changes is a direct proxy for how often
- * {@code readBuffer()} actually runs. The buffer is filled with distinct random values at every index specifically
- * so each {@code readBuffer()} call is visible as a value change. This must stay close to the publish rate, not
- * the tick rate - if {@code readBuffer()} regresses to running on every tick (as it did before the fix), this
- * count jumps from ~30/s to being on the same order as the tick count and the test fails. (An earlier version of
- * this test only checked point 1 above, which is unaffected by where {@code readBuffer()} is called - it would
- * have passed identically whether the fix was applied or not.)
- * </ol>
+ * Verifies that {@link Session#playbackTick()} ticks (and publishes, via {@link LinkedYoDouble#pull()}) far more
+ * often than {@code sharedBuffer.readBuffer()} actually runs, by polling a {@link YoVariable}'s value directly and
+ * counting how often it changes.
  */
 public class SessionTest
 {
