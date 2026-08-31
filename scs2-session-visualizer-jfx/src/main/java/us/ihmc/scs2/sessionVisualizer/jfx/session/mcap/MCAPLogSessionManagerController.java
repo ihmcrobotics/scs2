@@ -46,6 +46,7 @@ import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerToolkit;
 import us.ihmc.scs2.sessionVisualizer.jfx.session.SessionControlsController;
 import us.ihmc.scs2.sessionVisualizer.jfx.session.log.LogSessionManagerController;
 import us.ihmc.scs2.sessionVisualizer.jfx.session.log.LogSessionManagerController.TimeStringBinding;
+import us.ihmc.scs2.sessionVisualizer.jfx.tools.CoalescingFXTaskScheduler;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.PositiveIntegerValueFilter;
 import us.ihmc.scs2.sharedMemory.interfaces.YoBufferPropertiesReadOnly;
@@ -189,27 +190,29 @@ public class MCAPLogSessionManagerController implements SessionControlsControlle
       logPositionSlider.addEventFilter(MouseEvent.MOUSE_DRAGGED, e -> sliderFeedbackEnabled.set(false));
       logPositionSlider.addEventFilter(MouseEvent.MOUSE_RELEASED, e -> sliderFeedbackEnabled.set(true));
 
-      Consumer<YoBufferPropertiesReadOnly> logPositionUpdateListener = properties ->
+      // The session publishes buffer properties up to 100x/sec even when idle. Coalesce those into at most one
+      // pending Platform.runLater task at a time, instead of flooding the FX thread with one task per publish -
+      // otherwise this window's slider update alone can tank the render frame rate while it's open.
+      CoalescingFXTaskScheduler logPositionUpdateScheduler = new CoalescingFXTaskScheduler(() ->
       {
          MCAPLogSession logSession = activeSessionProperty.get();
+         if (logSession == null || logSession.getMCAPLogFileReader() == null)
+            return;
 
-         if (sliderFeedbackEnabled.get())
+         int currentLogPosition = logSession.getMCAPLogFileReader().getCurrentIndex();
+
+         if (currentLogPosition != logPositionSlider.valueProperty().intValue())
          {
-            int currentLogPosition = logSession.getMCAPLogFileReader().getCurrentIndex();
-
-            JavaFXMissingTools.runLater(getClass(), () ->
-            {
-               if (logSession == null || logSession.getMCAPLogFileReader() == null)
-                  return;
-
-               if (currentLogPosition != logPositionSlider.valueProperty().intValue())
-               {
-                  logPositionUpdate.set(true);
-                  logPositionSlider.setValue(currentLogPosition);
-                  logPositionUpdate.set(false);
-               }
-            });
+            logPositionUpdate.set(true);
+            logPositionSlider.setValue(currentLogPosition);
+            logPositionUpdate.set(false);
          }
+      }, runnable -> JavaFXMissingTools.runLater(getClass(), runnable));
+
+      Consumer<YoBufferPropertiesReadOnly> logPositionUpdateListener = properties ->
+      {
+         if (sliderFeedbackEnabled.get())
+            logPositionUpdateScheduler.request();
       };
 
       activeSessionProperty.addListener((o, oldValue, newValue) ->
