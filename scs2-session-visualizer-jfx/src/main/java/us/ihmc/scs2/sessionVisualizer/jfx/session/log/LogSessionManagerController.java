@@ -70,6 +70,14 @@ public class LogSessionManagerController implements SessionControlsController
 {
    private static final double THUMBNAIL_WIDTH = 200.0;
 
+   /**
+    * While a log is playing back, buffer properties publish nearly every pulse, so the coalescing scheduler alone
+    * still updates the slider on nearly every pulse. That's more visual-refresh work than a human can perceive on a
+    * position readout, and on this window it's enough on its own to occasionally push the pulse over budget and
+    * cause a visible frame rate drop in the main viewport. Cap it to 30Hz.
+    */
+   private static final long MIN_LOG_POSITION_SLIDER_UPDATE_INTERVAL_NANOS = TimeUnit.MILLISECONDS.toNanos(33);
+
    private static final String LOG_FILE_KEY = "logFilePath";
 
    @FXML
@@ -199,7 +207,7 @@ public class LogSessionManagerController implements SessionControlsController
             logPositionSlider.setValue(currentLogPosition);
             logPositionUpdate.set(false);
          }
-      }, runnable -> JavaFXMissingTools.runLater(getClass(), runnable));
+      }, runnable -> JavaFXMissingTools.runLater(getClass(), runnable), MIN_LOG_POSITION_SLIDER_UPDATE_INTERVAL_NANOS);
 
       Consumer<YoBufferPropertiesReadOnly> logPositionUpdateListener = properties ->
       {
@@ -427,7 +435,14 @@ public class LogSessionManagerController implements SessionControlsController
       thumbnailsTitledPane.setText(logHasVideos ? "Logged videos" : "No video");
       thumbnailsTitledPane.setExpanded(logHasVideos);
       thumbnailsTitledPane.setDisable(!logHasVideos);
-      JavaFXMissingTools.runNFramesLater(5, () -> stage.sizeToScene());
+      JavaFXMissingTools.runNFramesLater(5, () ->
+      {
+         // Force layout to settle before sizing the window - sizeToScene() otherwise picks up the root's cached
+         // preferred size, which can predate the video thumbnail/other async content actually loading.
+         mainPane.applyCss();
+         mainPane.layout();
+         stage.sizeToScene();
+      });
       JavaFXMissingTools.runNFramesLater(6, () -> stage.toFront());
 
       for (ChildLogData addedLog : newValue.getLogDataReader().getChildLogData())
