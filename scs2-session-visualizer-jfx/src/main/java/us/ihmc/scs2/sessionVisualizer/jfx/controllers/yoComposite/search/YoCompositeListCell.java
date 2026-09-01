@@ -108,7 +108,7 @@ public class YoCompositeListCell extends ListCell<YoComposite>
          YoVariable yoVariable = yoComposite.getYoComponents().get(0);
 
          Region yoVariableControl = createYoVariableControl(yoVariable, numberPrecision, yoManager.getLinkedRootRegistry());
-         markGraphicAsLayoutRoot(yoVariableControl);
+         setGraphicAsNotManaged(yoVariableControl);
          setGraphic(yoVariableControl);
          setContentDisplay(ContentDisplay.LEFT);
          setAlignment(Pos.CENTER_LEFT);
@@ -138,7 +138,7 @@ public class YoCompositeListCell extends ListCell<YoComposite>
          yoCompositeNameDisplay = label;
          label.setFont(Font.font("System", FontWeight.BOLD, 12.0));
          VBox compositeGraphic = new VBox(3, label, cellGraphic);
-         markGraphicAsLayoutRoot(compositeGraphic);
+         setGraphicAsNotManaged(compositeGraphic);
          setGraphic(compositeGraphic);
          setContentDisplay(ContentDisplay.GRAPHIC_ONLY);
          setAlignment(Pos.TOP_LEFT);
@@ -155,10 +155,9 @@ public class YoCompositeListCell extends ListCell<YoComposite>
    /**
     * Prevents this cell's live value-bound graphic (which updates almost every pulse during playback) from
     * propagating {@code requestLayout()} up into the ListView's VirtualFlow and forcing a full, expensive
-    * re-estimate of the list's content size every pulse - the graphic still sizes/positions itself correctly since
-    * {@link javafx.scene.control.skin.LabeledSkinBase} lays it out directly regardless of its managed state.
+    * re-estimate of the list's content size every pulse.
     */
-   private static void markGraphicAsLayoutRoot(Region graphic)
+   private static void setGraphicAsNotManaged(Region graphic)
    {
       graphic.setManaged(false);
    }
