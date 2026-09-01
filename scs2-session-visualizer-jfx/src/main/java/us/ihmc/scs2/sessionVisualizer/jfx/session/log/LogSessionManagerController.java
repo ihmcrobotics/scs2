@@ -69,14 +69,7 @@ import java.util.stream.Collectors;
 public class LogSessionManagerController implements SessionControlsController
 {
    private static final double THUMBNAIL_WIDTH = 200.0;
-
-   /**
-    * While a log is playing back, buffer properties publish nearly every pulse, so the coalescing scheduler alone
-    * still updates the slider on nearly every pulse. That's more visual-refresh work than a human can perceive on a
-    * position readout, and on this window it's enough on its own to occasionally push the pulse over budget and
-    * cause a visible frame rate drop in the main viewport. Cap it to 30Hz.
-    */
-   private static final long MIN_LOG_POSITION_SLIDER_UPDATE_INTERVAL_NANOS = TimeUnit.MILLISECONDS.toNanos(33);
+   private static final long UPDATE_INTERVAL_NANOS = TimeUnit.MILLISECONDS.toNanos(33);
 
    private static final String LOG_FILE_KEY = "logFilePath";
 
@@ -194,20 +187,24 @@ public class LogSessionManagerController implements SessionControlsController
       // pending Platform.runLater task at a time, instead of flooding the FX thread with one task per publish -
       // otherwise this window's slider update alone can tank the render frame rate while it's open.
       CoalescingFXTaskScheduler logPositionUpdateScheduler = new CoalescingFXTaskScheduler(() ->
-      {
-         LogSession logSession = activeSessionProperty.get();
-         if (logSession == null || logSession.getLogDataReader() == null)
-            return;
+                                                                                           {
+                                                                                              LogSession logSession = activeSessionProperty.get();
+                                                                                              if (logSession == null || logSession.getLogDataReader() == null)
+                                                                                                 return;
 
-         int currentLogPosition = logSession.getLogDataReader().getCurrentLogPosition();
+                                                                                              int currentLogPosition = logSession.getLogDataReader()
+                                                                                                                                 .getCurrentLogPosition();
 
-         if (currentLogPosition != logPositionSlider.valueProperty().intValue())
-         {
-            logPositionUpdate.set(true);
-            logPositionSlider.setValue(currentLogPosition);
-            logPositionUpdate.set(false);
-         }
-      }, runnable -> JavaFXMissingTools.runLater(getClass(), runnable), MIN_LOG_POSITION_SLIDER_UPDATE_INTERVAL_NANOS);
+                                                                                              if (currentLogPosition != logPositionSlider.valueProperty()
+                                                                                                                                         .intValue())
+                                                                                              {
+                                                                                                 logPositionUpdate.set(true);
+                                                                                                 logPositionSlider.setValue(currentLogPosition);
+                                                                                                 logPositionUpdate.set(false);
+                                                                                              }
+                                                                                           },
+                                                                                           runnable -> JavaFXMissingTools.runLater(getClass(), runnable),
+                                                                                           UPDATE_INTERVAL_NANOS);
 
       Consumer<YoBufferPropertiesReadOnly> logPositionUpdateListener = properties ->
       {
