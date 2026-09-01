@@ -2,12 +2,12 @@
 
 <?import com.jfoenix.controls.JFXButton?>
 <?import com.jfoenix.controls.JFXComboBox?>
-<?import com.jfoenix.controls.JFXSpinner?>
 <?import com.jfoenix.controls.JFXTextField?>
 <?import com.jfoenix.controls.JFXToggleButton?>
 <?import com.jfoenix.controls.JFXTrimSlider?>
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ProgressIndicator?>
 <?import javafx.scene.control.TitledPane?>
 <?import javafx.scene.control.Tooltip?>
 <?import javafx.scene.layout.*?>
@@ -19,7 +19,7 @@
             <children>
                 <HBox alignment="CENTER" minHeight="-Infinity" minWidth="-Infinity" spacing="10.0" VBox.vgrow="NEVER">
                     <children>
-                        <JFXSpinner fx:id="loadingSpinner" prefHeight="30.0" prefWidth="30.0" visible="false" HBox.hgrow="NEVER"/>
+                        <ProgressIndicator fx:id="loadingSpinner" prefHeight="30.0" prefWidth="30.0" visible="false" HBox.hgrow="NEVER"/>
                         <JFXButton fx:id="openSessionButton" minHeight="-Infinity" minWidth="-Infinity" styleClass="start-session-button" text="Open log..."/>
                         <JFXButton fx:id="endSessionButton" minHeight="-Infinity" minWidth="-Infinity" styleClass="end-session-button" text="End session"/>
                     </children>
