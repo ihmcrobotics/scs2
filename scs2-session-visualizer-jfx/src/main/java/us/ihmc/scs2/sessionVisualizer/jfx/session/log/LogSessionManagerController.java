@@ -41,6 +41,7 @@ import us.ihmc.scs2.session.log.ChildLogData;
 import us.ihmc.scs2.session.log.ChildLogSynchronization;
 import us.ihmc.scs2.session.log.LogDataReader;
 import us.ihmc.scs2.session.log.LogSession;
+import us.ihmc.scs2.session.log.heightScan.HeightScanMcapScrubber;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerIOTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerTopics;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.SessionVariableFilterPaneController;
@@ -49,6 +50,7 @@ import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerToolkit;
 import us.ihmc.scs2.sessionVisualizer.jfx.session.OpenAddLogRequest;
 import us.ihmc.scs2.sessionVisualizer.jfx.session.SessionControlsController;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
+import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.YoHeightGridFX3D;
 import us.ihmc.scs2.sharedMemory.interfaces.YoBufferPropertiesReadOnly;
 import us.ihmc.yoVariables.registry.YoRegistry;
 import us.ihmc.yoVariables.variable.YoVariable;
@@ -419,6 +421,33 @@ public class LogSessionManagerController implements SessionControlsController
       multiReader.readVideoFrameNow(logDataReader.getTimestamp().getLongValue());
       logDataReader.getTimestamp().addListener(v -> multiReader.readVideoFrameInBackground(v.getValueAsLongBits()));
       multiVideoViewerProperty.set(new MultiVideoViewer(stage, videoThumbnailPane, multiReader, THUMBNAIL_WIDTH));
+
+      File heightScanMcapFile = HeightScanMcapScrubber.findHeightScanMcapFile(logDirectory);
+      if (heightScanMcapFile == null)
+      {
+         LogTools.info("No heightScan.mcap found next to " + logDirectory);
+      }
+      else
+      {
+         try
+         {
+            HeightScanMcapScrubber heightScanScrubber = new HeightScanMcapScrubber(heightScanMcapFile);
+            LogTools.info("Loaded " + heightScanMcapFile + ", found " + heightScanScrubber.getMessageCount() + " height scan messages.");
+            YoHeightGridFX3D heightScanGraphic = new YoHeightGridFX3D();
+            heightScanGraphic.setName("HeightScan");
+            // Not toolkit.getYoGraphicFXSessionRootGroup(): that group only gets attached to the actual JavaFX
+            // scene graph when the session declares at least one YoGraphicDefinition (see
+            // YoGraphicFXManager.startSession()), which LogSession never does for this manager-driven graphic.
+            // The persistent root group is always attached, and still gets cleared on session end regardless.
+            toolkit.getYoGraphicFXRootGroup().addYoGraphicFX3D(heightScanGraphic);
+            heightScanGraphic.setData(heightScanScrubber.scrub(logDataReader.getTimestamp().getLongValue()));
+            logDataReader.getTimestamp().addListener(v -> heightScanGraphic.setData(heightScanScrubber.scrub(v.getValueAsLongBits())));
+         }
+         catch (IOException e)
+         {
+            LogTools.error("Failed to open " + heightScanMcapFile + ": " + e.getMessage());
+         }
+      }
       logCropperProperty.set(new YoVariableLogCropper(multiReader, logDirectory, logProperties));
       boolean logHasVideos = multiReader.getNumberOfVideos() > 0;
       thumbnailsTitledPane.setText(logHasVideos ? "Logged videos" : "No video");
