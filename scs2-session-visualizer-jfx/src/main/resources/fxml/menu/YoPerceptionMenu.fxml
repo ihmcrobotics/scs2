@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.CheckMenuItem?>
+<?import javafx.scene.control.Menu?>
+<?import org.kordamp.ikonli.javafx.FontIcon?>
+<Menu text="YoPerception" xmlns="http://javafx.com/javafx/15.0.1" xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="us.ihmc.scs2.sessionVisualizer.jfx.controllers.menu.YoPerceptionMenuController">
+    <items>
+        <CheckMenuItem fx:id="showHeightScanMenuItem" text="Show Height Scan"/>
+    </items>
+    <graphic>
+        <FontIcon iconLiteral="fa-eye"/>
+    </graphic>
+</Menu>

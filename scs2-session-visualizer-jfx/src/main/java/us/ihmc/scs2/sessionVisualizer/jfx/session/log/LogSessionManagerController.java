@@ -4,6 +4,7 @@ import com.jfoenix.controls.JFXTrimSlider;
 import javafx.beans.binding.StringBinding;
 import javafx.beans.property.LongProperty;
 import javafx.beans.property.ObjectProperty;
+import javafx.beans.property.Property;
 import javafx.beans.property.SimpleLongProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.value.ChangeListener;
@@ -440,6 +441,11 @@ public class LogSessionManagerController implements SessionControlsController
             // YoGraphicFXManager.startSession()), which LogSession never does for this manager-driven graphic.
             // The persistent root group is always attached, and still gets cleared on session end regardless.
             toolkit.getYoGraphicFXRootGroup().addYoGraphicFX3D(heightScanGraphic);
+            // null (not false): SCS2JavaFXMessager.createPropertyInput only reflects the topic's actual current
+            // value when the passed-in value is null - a concrete default bypasses it and always wins.
+            Property<Boolean> showHeightScanProperty = messager.createPropertyInput(topics.getShowHeightScan(), null);
+            heightScanGraphic.visibleProperty().set(Boolean.TRUE.equals(showHeightScanProperty.getValue()));
+            showHeightScanProperty.addListener((o, oldShow, newShow) -> heightScanGraphic.setVisible(Boolean.TRUE.equals(newShow)));
             heightScanGraphic.setData(heightScanScrubber.scrub(logDataReader.getTimestamp().getLongValue()));
             logDataReader.getTimestamp().addListener(v -> heightScanGraphic.setData(heightScanScrubber.scrub(v.getValueAsLongBits())));
          }
