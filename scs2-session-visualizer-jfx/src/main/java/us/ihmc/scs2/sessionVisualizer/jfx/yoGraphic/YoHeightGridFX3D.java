@@ -1,8 +1,10 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic;
 
 import javafx.scene.Node;
+import javafx.scene.image.Image;
+import javafx.scene.image.PixelWriter;
+import javafx.scene.image.WritableImage;
 import javafx.scene.paint.Color;
-import javafx.scene.paint.Material;
 import javafx.scene.paint.PhongMaterial;
 import javafx.scene.shape.CullFace;
 import javafx.scene.shape.Mesh;
@@ -16,12 +18,8 @@ import us.ihmc.euclid.tuple3D.Vector3D;
 import us.ihmc.euclid.tuple3D.Vector3D32;
 import us.ihmc.euclid.tuple4D.Quaternion;
 import us.ihmc.scs2.definition.geometry.TriangleMesh3DDefinition;
-import us.ihmc.scs2.definition.visual.ColorDefinition;
-import us.ihmc.scs2.definition.visual.MaterialDefinition;
-import us.ihmc.scs2.definition.visual.TextureDefinitionColorAdaptivePalette;
 import us.ihmc.scs2.session.log.heightScan.HeightScanData;
 import us.ihmc.scs2.sessionVisualizer.jfx.definition.JavaFXTriangleMesh3DDefinitionInterpreter;
-import us.ihmc.scs2.sessionVisualizer.jfx.definition.JavaFXVisualTools;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -34,9 +32,15 @@ import java.nio.ByteOrder;
  * <li>Elevation is mapped to a color via {@link #getRedGreenBlue(double)}, a magenta-blue-green-yellow-orange
  * cyclic gradient keyed off absolute world height (not the current grid's min/max) so coloring reads as stable
  * topographic contour bands and doesn't shift between frames the way a per-frame-normalized range would.
- * <li>Per-vertex coloring is done by hand-building a {@link TriangleMesh3DDefinition} with a distinct texture UV
- * per vertex (via {@link TextureDefinitionColorAdaptivePalette#getTextureLocation(ColorDefinition)}), instead of
- * {@code MultiColorTriangleMesh3DBuilder}'s convenience API, which only colors a whole (sub-)mesh uniformly.
+ * <li>Per-vertex coloring uses a hand-built {@link TriangleMesh3DDefinition} with a distinct texture UV per vertex,
+ * sampling into a dedicated single-row gradient strip ({@link #buildColormapImage(int)}) rather than
+ * {@code TextureDefinitionColorAdaptivePalette} (built for many unrelated discrete colors, not one smooth 1D ramp -
+ * it packs colors into a square image top-down, which for a ramp this size leaves most of the image blank and
+ * makes sequential gradient samples wrap across unrelated texture rows; JavaFX auto-generates mipmaps for any
+ * material diffuse map with no public way to disable it, so at minified mip levels that blank space and row-wrap
+ * bled into the gradient as visible artifacts - streaks of one color bleeding into an unrelated one). A strip where
+ * every texel is real, sequential gradient data has nothing but gradient-adjacent colors to blend with at any mip
+ * level, so minification just smooths the ramp instead of corrupting it.
  * </ul>
  * Normals are approximated as a single uniform "up" vector (the grid's local +Z, rotated by its pose) rather than
  * computed per-vertex from neighboring cell heights - simple and sufficient given color is what communicates
@@ -45,7 +49,7 @@ import java.nio.ByteOrder;
  * Follows {@code YoPolygonExtrudedFX3D}'s double-buffered pattern: {@link #setData(HeightScanData)} is called from
  * outside (see the log-viewer wiring that owns a {@code HeightScanMcapScrubber}), {@link #computeBackground()}
  * (background thread, ~100ms cadence) rebuilds the mesh only when the data actually changed, and {@link #render()}
- * (FX thread, every frame) just swaps the prebuilt mesh in.
+ * (FX thread, every frame) just swaps the prebuilt mesh in. The material/colormap never changes, so it's built once.
  */
 public class YoHeightGridFX3D extends YoGraphicFX3D
 {
@@ -54,17 +58,15 @@ public class YoHeightGridFX3D extends YoGraphicFX3D
    /** Width, in meters, of one color segment of {@link #getRedGreenBlue(double)}'s cycle (5 segments per cycle). */
    private static final double GRADIENT_SIZE = 0.2;
    private static final double GRADIENT_LENGTH = 5.0 * GRADIENT_SIZE;
-   /** Number of discrete samples of one full color cycle kept in the palette - fine enough to look continuous. */
+   /** Number of texels in the gradient strip - GPU bilinear sampling smooths between them, so this just needs to
+    *  be fine enough that adjacent texels are visually indistinguishable. */
    private static final int COLORMAP_SAMPLES = 256;
 
    private final MeshView meshView = new MeshView();
-   private final TextureDefinitionColorAdaptivePalette colorPalette = new TextureDefinitionColorAdaptivePalette(COLORMAP_SAMPLES, 1, false);
-   private final ColorDefinition[] colormapLUT = buildElevationColormap(COLORMAP_SAMPLES);
 
    private volatile HeightScanData newData;
    private HeightScanData oldData;
    private Mesh newMesh;
-   private Material newMaterial;
    private boolean clearMesh = false;
 
    public YoHeightGridFX3D()
@@ -72,23 +74,14 @@ public class YoHeightGridFX3D extends YoGraphicFX3D
       meshView.setCullFace(CullFace.NONE);
       meshView.idProperty().bind(nameProperty());
       meshView.getProperties().put(YO_GRAPHICFX_ITEM_KEY, this);
-      meshView.setMaterial(buildMaterial());
-   }
 
-   /**
-    * {@link JavaFXVisualTools#toMaterial} leaves specular reflectivity at {@link PhongMaterial}'s shiny default,
-    * which shows up as bright highlight streaks on the steep "wall" triangles between big height jumps - not
-    * wanted for a flat, matte, color-coded data surface like this one.
-    */
-   private Material buildMaterial()
-   {
-      Material material = JavaFXVisualTools.toMaterial(new MaterialDefinition(colorPalette.getTextureDefinition()), null);
-      if (material instanceof PhongMaterial phongMaterial)
-      {
-         phongMaterial.setSpecularColor(Color.TRANSPARENT);
-         phongMaterial.setSpecularPower(0.0);
-      }
-      return material;
+      PhongMaterial material = new PhongMaterial();
+      material.setDiffuseMap(buildColormapImage(COLORMAP_SAMPLES));
+      // Default PhongMaterial specular reflectivity shows up as bright highlight streaks on the steep "wall"
+      // triangles between big height jumps - not wanted for a flat, matte, color-coded data surface like this one.
+      material.setSpecularColor(Color.TRANSPARENT);
+      material.setSpecularPower(0.0);
+      meshView.setMaterial(material);
    }
 
    /** Called from outside (log-viewer wiring) whenever the scrubbed height scan data changes. Cheap, FX-thread-safe. */
@@ -128,7 +121,6 @@ public class YoHeightGridFX3D extends YoGraphicFX3D
 
       TriangleMesh3DDefinition definition = buildGridMeshDefinition(data, elevationOffset, rowCount, columnCount);
       newMesh = JavaFXTriangleMesh3DDefinitionInterpreter.interpretDefinition(definition, false);
-      newMaterial = buildMaterial();
    }
 
    private TriangleMesh3DDefinition buildGridMeshDefinition(HeightScanData data, int elevationOffset, int rowCount, int columnCount)
@@ -137,7 +129,6 @@ public class YoHeightGridFX3D extends YoGraphicFX3D
       Point3D32[] vertices = new Point3D32[vertexCount];
       Point2D32[] textures = new Point2D32[vertexCount];
       Vector3D32[] normals = new Vector3D32[vertexCount];
-      float[] elevations = new float[vertexCount];
 
       Quaternion orientation = new Quaternion(data.getOrientationX(), data.getOrientationY(), data.getOrientationZ(), data.getOrientationW());
       Point3D position = new Point3D(data.getPositionX(), data.getPositionY(), data.getPositionZ());
@@ -156,7 +147,6 @@ public class YoHeightGridFX3D extends YoGraphicFX3D
             int vertexIndex = row * columnCount + col;
             int cellOffset = row * data.getRowStride() + col * data.getCellStride() + elevationOffset;
             float elevation = cellOffset + Float.BYTES <= cellData.capacity() ? cellData.getFloat(cellOffset) : 0.0f;
-            elevations[vertexIndex] = elevation;
 
             // elevation is the cell's absolute world Z height (see HeightScanTerm.populateObservations()), not an
             // offset relative to the grid's pose - only X/Y go through the pose transform (the grid corner's
@@ -166,17 +156,12 @@ public class YoHeightGridFX3D extends YoGraphicFX3D
             localPoint.setZ(elevation);
             vertices[vertexIndex] = new Point3D32(localPoint);
             normals[vertexIndex] = upNormal32;
-         }
-      }
 
-      for (int vertexIndex = 0; vertexIndex < vertexCount; vertexIndex++)
-      {
-         double alpha = elevations[vertexIndex] % GRADIENT_LENGTH;
-         if (alpha < 0.0)
-            alpha += GRADIENT_LENGTH;
-         int sample = (int) Math.round(alpha / GRADIENT_LENGTH * (COLORMAP_SAMPLES - 1));
-         sample = Math.min(Math.max(sample, 0), COLORMAP_SAMPLES - 1);
-         textures[vertexIndex] = colorPalette.getTextureLocation(colormapLUT[sample]);
+            double alpha = elevation % GRADIENT_LENGTH;
+            if (alpha < 0.0)
+               alpha += GRADIENT_LENGTH;
+            textures[vertexIndex] = new Point2D32((float) (alpha / GRADIENT_LENGTH), 0.5f);
+         }
       }
 
       int[] triangleIndices = new int[(rowCount - 1) * (columnCount - 1) * 6];
@@ -203,16 +188,19 @@ public class YoHeightGridFX3D extends YoGraphicFX3D
       return new TriangleMesh3DDefinition(vertices, textures, normals, triangleIndices);
    }
 
-   private static ColorDefinition[] buildElevationColormap(int samples)
+   /** A {@code samples x 1} image holding one full cycle of {@link #getRedGreenBlue(double)} - every texel is real,
+    *  sequential gradient data, so there is no blank space or row-wrapping for mip-level blending to corrupt. */
+   private static Image buildColormapImage(int samples)
    {
-      ColorDefinition[] colormap = new ColorDefinition[samples];
+      WritableImage image = new WritableImage(samples, 1);
+      PixelWriter pixelWriter = image.getPixelWriter();
       for (int i = 0; i < samples; i++)
       {
-         double height = GRADIENT_LENGTH * i / (samples - 1);
+         double height = GRADIENT_LENGTH * i / samples;
          double[] rgb = getRedGreenBlue(height);
-         colormap[i] = new ColorDefinition(rgb[0], rgb[1], rgb[2]);
+         pixelWriter.setColor(i, 0, new Color(rgb[0], rgb[1], rgb[2], 1.0));
       }
-      return colormap;
+      return image;
    }
 
    /**
@@ -278,9 +266,7 @@ public class YoHeightGridFX3D extends YoGraphicFX3D
       if (newMesh != null)
       {
          meshView.setMesh(newMesh);
-         meshView.setMaterial(newMaterial);
          newMesh = null;
-         newMaterial = null;
       }
    }
 
