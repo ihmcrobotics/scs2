@@ -45,7 +45,6 @@ import us.ihmc.robotDataLogger.websocket.client.discovery.HTTPDataServerConnecti
 import us.ihmc.robotDataLogger.websocket.client.discovery.HTTPDataServerDescription;
 import us.ihmc.scs2.session.Session;
 import us.ihmc.scs2.session.remote.FunctionalDataServerDiscoveryListener;
-import us.ihmc.scs2.session.remote.perception.HeightMapRos2LiveFeed;
 import us.ihmc.scs2.session.remote.perception.PerceptionRos2LiveFeed;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerIOTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerTopics;
@@ -377,9 +376,8 @@ public class RemoteSessionManagerController implements SessionControlsController
       if (session == null)
          return;
 
-      perceptionLiveFeed = new PerceptionRos2LiveFeed();
-      HeightMapRos2LiveFeed heightMapLiveFeed = new HeightMapRos2LiveFeed(perceptionLiveFeed, session);
-      if (!heightMapLiveFeed.isAvailable())
+      perceptionLiveFeed = new PerceptionRos2LiveFeed(session);
+      if (!perceptionLiveFeed.isHeightMapAvailable())
          return;
 
       JavaFXMissingTools.runLaterIfNeeded(getClass(), () ->
@@ -393,7 +391,7 @@ public class RemoteSessionManagerController implements SessionControlsController
          heightMapGraphic.visibleProperty().set(Boolean.TRUE.equals(showHeightMapProperty.getValue()));
          showHeightMapProperty.addListener((o, oldShow, newShow) -> heightMapGraphic.setVisible(Boolean.TRUE.equals(newShow)));
 
-         heightMapLiveFeed.start(heightMapGraphic::setData);
+         perceptionLiveFeed.startHeightMap(heightMapGraphic::setData);
       });
    }
 
