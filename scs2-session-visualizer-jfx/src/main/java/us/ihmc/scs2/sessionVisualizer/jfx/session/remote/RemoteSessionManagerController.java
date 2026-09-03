@@ -11,6 +11,7 @@ import com.jfoenix.controls.datamodels.treetable.RecursiveTreeObject;
 
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ObjectProperty;
+import javafx.beans.property.Property;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
@@ -42,7 +43,10 @@ import us.ihmc.robotDataLogger.YoVariableClient;
 import us.ihmc.robotDataLogger.websocket.client.discovery.DataServerDiscoveryClient;
 import us.ihmc.robotDataLogger.websocket.client.discovery.HTTPDataServerConnection;
 import us.ihmc.robotDataLogger.websocket.client.discovery.HTTPDataServerDescription;
+import us.ihmc.scs2.session.Session;
 import us.ihmc.scs2.session.remote.FunctionalDataServerDiscoveryListener;
+import us.ihmc.scs2.session.remote.perception.HeightMapRos2LiveFeed;
+import us.ihmc.scs2.session.remote.perception.PerceptionRos2LiveFeed;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerIOTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerTopics;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.BackgroundExecutorManager;
@@ -54,6 +58,7 @@ import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.MenuTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.PositiveIntegerValueFilter;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.TreeTableViewTools;
+import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.YoHeightGridFX3D;
 
 public class RemoteSessionManagerController implements SessionControlsController
 {
@@ -95,10 +100,14 @@ public class RemoteSessionManagerController implements SessionControlsController
    private YoClientInformationPaneController informationPaneController;
 
    private Stage stage;
+   private SessionVisualizerToolkit toolkit;
+   /** Non-null only while a live session with a height-scan channel is connected; closed in {@link #stopSession()}. */
+   private PerceptionRos2LiveFeed perceptionLiveFeed;
 
    @SuppressWarnings("unchecked")
    public void initialize(SessionVisualizerToolkit toolkit)
    {
+      this.toolkit = toolkit;
       this.backgroundExecutorManager = toolkit.getBackgroundExecutorManager();
       client = new YoVariableClient(sessionFactory);
 
@@ -345,6 +354,47 @@ public class RemoteSessionManagerController implements SessionControlsController
    public void notifySessionLoaded()
    {
       setIsLoading(false);
+      startHeightMapLiveFeedIfAvailable();
+   }
+
+   /**
+    * Height-map data doesn't ride the network-streamed YoVariable set (a grid's worth of cells would be far too
+    * many) - instead this subscribes directly to the height-scan ROS2 topic, mirroring {@code PerceptionMcapLogger}
+    * on the write side. It only participates in this session's buffer/scrub-back if the controller published
+    * {@code HeightScanTerm.lastHeightScanTimestamp} (see {@link HeightMapRos2LiveFeed}); if not, this is a no-op -
+    * same "absent means unavailable" behavior as {@code HeightMapMcapScrubber} on the log-file side.
+    * <p>
+    * {@code notifySessionLoaded()} (this method's only caller) runs on a {@code BackgroundExecutorManager} pool
+    * thread, not the FX Application Thread - touching the scene graph (constructing the graphic, adding it to
+    * {@code toolkit.getYoGraphicFXRootGroup()}, binding its visibility property) has to happen via
+    * {@link JavaFXMissingTools#runLaterIfNeeded}, same as every other JavaFX-touching callback in this controller
+    * (see {@link #updateConnection}, {@link #setIsLoading}). The session/registry lookup and ROS2 subscription
+    * setup have no such requirement, so they run immediately on the calling thread.
+    */
+   private void startHeightMapLiveFeedIfAvailable()
+   {
+      Session session = toolkit.getSession();
+      if (session == null)
+         return;
+
+      perceptionLiveFeed = new PerceptionRos2LiveFeed();
+      HeightMapRos2LiveFeed heightMapLiveFeed = new HeightMapRos2LiveFeed(perceptionLiveFeed, session);
+      if (!heightMapLiveFeed.isAvailable())
+         return;
+
+      JavaFXMissingTools.runLaterIfNeeded(getClass(), () ->
+      {
+         YoHeightGridFX3D heightMapGraphic = new YoHeightGridFX3D();
+         heightMapGraphic.setName("HeightMap");
+         toolkit.getYoGraphicFXRootGroup().addYoGraphicFX3D(heightMapGraphic);
+         // null (not false): SCS2JavaFXMessager.createPropertyInput only reflects the topic's actual current value
+         // when the passed-in value is null - a concrete default bypasses it and always wins.
+         Property<Boolean> showHeightMapProperty = toolkit.getMessager().createPropertyInput(toolkit.getTopics().getShowHeightMap(), null);
+         heightMapGraphic.visibleProperty().set(Boolean.TRUE.equals(showHeightMapProperty.getValue()));
+         showHeightMapProperty.addListener((o, oldShow, newShow) -> heightMapGraphic.setVisible(Boolean.TRUE.equals(newShow)));
+
+         heightMapLiveFeed.start(heightMapGraphic::setData);
+      });
    }
 
    private void stopSession()
@@ -359,6 +409,11 @@ public class RemoteSessionManagerController implements SessionControlsController
       catch (RuntimeException e)
       {
          // Just be silent about it, it's possible that there's no session ongoing in the case of a crash in startSession()
+      }
+      if (perceptionLiveFeed != null)
+      {
+         perceptionLiveFeed.close();
+         perceptionLiveFeed = null;
       }
       setIsLoading(false);
       sessionInProgressProperty.set(false);

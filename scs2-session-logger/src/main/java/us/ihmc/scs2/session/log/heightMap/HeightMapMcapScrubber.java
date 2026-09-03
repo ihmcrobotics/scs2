@@ -1,5 +1,6 @@
 package us.ihmc.scs2.session.log.heightMap;
 
+import us.ihmc.robotDataLogger.handshake.LoggingROS2API;
 import us.ihmc.scs2.session.log.perception.PerceptionMcapScrubber;
 import us.ihmc.scs2.session.mcap.specs.records.Message;
 
@@ -12,13 +13,12 @@ import us.ihmc.scs2.session.mcap.specs.records.Message;
  * log session and hand it to this (and, in the future, e.g. a {@code VoxelMapMcapScrubber}) so multiple grid/map
  * sources in the same file don't each parse it independently.
  * <p>
- * {@link #HEIGHT_SCAN_TOPIC_NAME} is a literal copy of {@code PerceptionMcapLogger.HEIGHT_SCAN_TOPIC}'s name (in
- * ihmc-robot-data-logger, which this module cannot depend on) - if that topic is ever renamed, this literal must be
- * updated to match.
+ * {@link #HEIGHT_SCAN_TOPIC_NAME} references {@code LoggingROS2API.STEPPING_HEIGHT_SCAN} (in
+ * ihmc-robot-data-logger, which this module already depends on) rather than keeping its own copy of the name.
  */
 public class HeightMapMcapScrubber
 {
-   public static final String HEIGHT_SCAN_TOPIC_NAME = "/stepping_camera/realsense/height_scan/height_scan_message";
+   public static final String HEIGHT_SCAN_TOPIC_NAME = LoggingROS2API.STEPPING_HEIGHT_SCAN.getName();
 
    private final PerceptionMcapScrubber perceptionMcapScrubber;
    private final String topicName;
