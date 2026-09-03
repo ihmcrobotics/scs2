@@ -18,16 +18,21 @@ import us.ihmc.euclid.tuple3D.Vector3D;
 import us.ihmc.euclid.tuple3D.Vector3D32;
 import us.ihmc.euclid.tuple4D.Quaternion;
 import us.ihmc.scs2.definition.geometry.TriangleMesh3DDefinition;
-import us.ihmc.scs2.session.log.heightScan.HeightScanData;
+import us.ihmc.scs2.session.log.heightMap.HeightMapData;
 import us.ihmc.scs2.sessionVisualizer.jfx.definition.JavaFXTriangleMesh3DDefinitionInterpreter;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
 /**
- * Renders a {@code heightScan.mcap}-sourced grid ({@link HeightScanData}) as a per-vertex-colored terrain mesh,
- * mirroring how Foxglove renders a {@code foxglove.Grid} panel. There is no existing SCS2 graphic for a
- * grid/heightmap surface, so this builds the mesh from lower-level primitives:
+ * Renders a packed elevation grid ({@link HeightMapData}) as a per-vertex-colored terrain mesh, mirroring how
+ * Foxglove renders a {@code foxglove.Grid} panel. Deliberately not named or wired after any one grid source: it
+ * only depends on {@link HeightMapData}'s row/column packed-field shape, so it works unchanged whether that data
+ * came from a local height-scan window or (in the future) a full/global height map - the caller just needs to
+ * supply a {@code HeightMapMcapScrubber}-backed {@link HeightMapData} stream via {@link #setData}. A voxel map
+ * would need its own graphic: this class' mesh strategy (one quad per grid cell) doesn't generalize to a 3D/sparse
+ * structure. There is no existing SCS2 graphic for a grid/heightmap surface, so this builds the mesh from
+ * lower-level primitives:
  * <ul>
  * <li>Elevation is mapped to a color via {@link #getRedGreenBlue(double)}, a magenta-blue-green-yellow-orange
  * cyclic gradient keyed off absolute world height (not the current grid's min/max) so coloring reads as stable
@@ -46,8 +51,8 @@ import java.nio.ByteOrder;
  * computed per-vertex from neighboring cell heights - simple and sufficient given color is what communicates
  * elevation here; {@link CullFace#NONE} is used so an unexpected winding order doesn't hide the mesh.
  * <p>
- * Follows {@code YoPolygonExtrudedFX3D}'s double-buffered pattern: {@link #setData(HeightScanData)} is called from
- * outside (see the log-viewer wiring that owns a {@code HeightScanMcapScrubber}), {@link #computeBackground()}
+ * Follows {@code YoPolygonExtrudedFX3D}'s double-buffered pattern: {@link #setData(HeightMapData)} is called from
+ * outside (see the log-viewer wiring that owns a {@code HeightMapMcapScrubber}), {@link #computeBackground()}
  * (background thread, ~100ms cadence) rebuilds the mesh only when the data actually changed, and {@link #render()}
  * (FX thread, every frame) just swaps the prebuilt mesh in. The material/colormap never changes, so it's built once.
  */
@@ -64,8 +69,8 @@ public class YoHeightGridFX3D extends YoGraphicFX3D
 
    private final MeshView meshView = new MeshView();
 
-   private volatile HeightScanData newData;
-   private HeightScanData oldData;
+   private volatile HeightMapData newData;
+   private HeightMapData oldData;
    private Mesh newMesh;
    private boolean clearMesh = false;
 
@@ -85,7 +90,7 @@ public class YoHeightGridFX3D extends YoGraphicFX3D
    }
 
    /** Called from outside (log-viewer wiring) whenever the scrubbed height scan data changes. Cheap, FX-thread-safe. */
-   public void setData(HeightScanData data)
+   public void setData(HeightMapData data)
    {
       newData = data;
    }
@@ -93,7 +98,7 @@ public class YoHeightGridFX3D extends YoGraphicFX3D
    @Override
    public void computeBackground()
    {
-      HeightScanData data = newData;
+      HeightMapData data = newData;
 
       if (data == null)
       {
@@ -123,7 +128,7 @@ public class YoHeightGridFX3D extends YoGraphicFX3D
       newMesh = JavaFXTriangleMesh3DDefinitionInterpreter.interpretDefinition(definition, false);
    }
 
-   private TriangleMesh3DDefinition buildGridMeshDefinition(HeightScanData data, int elevationOffset, int rowCount, int columnCount)
+   private TriangleMesh3DDefinition buildGridMeshDefinition(HeightMapData data, int elevationOffset, int rowCount, int columnCount)
    {
       int vertexCount = rowCount * columnCount;
       Point3D32[] vertices = new Point3D32[vertexCount];

@@ -6,7 +6,7 @@
 <Menu text="YoPerception" xmlns="http://javafx.com/javafx/15.0.1" xmlns:fx="http://javafx.com/fxml/1"
       fx:controller="us.ihmc.scs2.sessionVisualizer.jfx.controllers.menu.YoPerceptionMenuController">
     <items>
-        <CheckMenuItem fx:id="showHeightScanMenuItem" text="Show Height Scan"/>
+        <CheckMenuItem fx:id="showHeightMapMenuItem" text="Show Height Map"/>
     </items>
     <graphic>
         <FontIcon iconLiteral="fa-eye"/>

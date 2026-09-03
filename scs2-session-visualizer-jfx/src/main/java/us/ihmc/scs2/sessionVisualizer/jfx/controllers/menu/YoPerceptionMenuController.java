@@ -10,7 +10,7 @@ import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerWindowToolki
 public class YoPerceptionMenuController implements VisualizerController
 {
    @FXML
-   private CheckMenuItem showHeightScanMenuItem;
+   private CheckMenuItem showHeightMapMenuItem;
 
    @Override
    public void initialize(SessionVisualizerWindowToolkit toolkit)
@@ -18,6 +18,6 @@ public class YoPerceptionMenuController implements VisualizerController
       JavaFXMessager messager = toolkit.getMessager();
       SessionVisualizerTopics topics = toolkit.getTopics();
 
-      messager.bindBidirectional(topics.getShowHeightScan(), showHeightScanMenuItem.selectedProperty(), false);
+      messager.bindBidirectional(topics.getShowHeightMap(), showHeightMapMenuItem.selectedProperty(), false);
    }
 }

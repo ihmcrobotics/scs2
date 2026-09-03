@@ -42,7 +42,8 @@ import us.ihmc.scs2.session.log.ChildLogData;
 import us.ihmc.scs2.session.log.ChildLogSynchronization;
 import us.ihmc.scs2.session.log.LogDataReader;
 import us.ihmc.scs2.session.log.LogSession;
-import us.ihmc.scs2.session.log.heightScan.HeightScanMcapScrubber;
+import us.ihmc.scs2.session.log.heightMap.HeightMapMcapScrubber;
+import us.ihmc.scs2.session.log.perception.PerceptionMcapScrubber;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerIOTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerTopics;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.SessionVariableFilterPaneController;
@@ -423,35 +424,49 @@ public class LogSessionManagerController implements SessionControlsController
       logDataReader.getTimestamp().addListener(v -> multiReader.readVideoFrameInBackground(v.getValueAsLongBits()));
       multiVideoViewerProperty.set(new MultiVideoViewer(stage, videoThumbnailPane, multiReader, THUMBNAIL_WIDTH));
 
-      File heightScanMcapFile = HeightScanMcapScrubber.findHeightScanMcapFile(logDirectory);
-      if (heightScanMcapFile == null)
+      // perception.mcap can hold several grid/map channels multiplexed together (multiple height maps, a future
+      // voxel map, ...) - one shared PerceptionMcapScrubber indexes the whole file, and each source gets its own
+      // thin typed scrubber (e.g. HeightMapMcapScrubber) on top of it rather than re-parsing the file per source.
+      File perceptionMcapFile = PerceptionMcapScrubber.findMcapFile(logDirectory);
+      if (perceptionMcapFile == null)
       {
-         LogTools.info("No heightScan.mcap found next to " + logDirectory);
+         LogTools.info("No perception.mcap found next to " + logDirectory);
       }
       else
       {
          try
          {
-            HeightScanMcapScrubber heightScanScrubber = new HeightScanMcapScrubber(heightScanMcapFile);
-            LogTools.info("Loaded " + heightScanMcapFile + ", found " + heightScanScrubber.getMessageCount() + " height scan messages.");
-            YoHeightGridFX3D heightScanGraphic = new YoHeightGridFX3D();
-            heightScanGraphic.setName("HeightScan");
-            // Not toolkit.getYoGraphicFXSessionRootGroup(): that group only gets attached to the actual JavaFX
-            // scene graph when the session declares at least one YoGraphicDefinition (see
-            // YoGraphicFXManager.startSession()), which LogSession never does for this manager-driven graphic.
-            // The persistent root group is always attached, and still gets cleared on session end regardless.
-            toolkit.getYoGraphicFXRootGroup().addYoGraphicFX3D(heightScanGraphic);
-            // null (not false): SCS2JavaFXMessager.createPropertyInput only reflects the topic's actual current
-            // value when the passed-in value is null - a concrete default bypasses it and always wins.
-            Property<Boolean> showHeightScanProperty = messager.createPropertyInput(topics.getShowHeightScan(), null);
-            heightScanGraphic.visibleProperty().set(Boolean.TRUE.equals(showHeightScanProperty.getValue()));
-            showHeightScanProperty.addListener((o, oldShow, newShow) -> heightScanGraphic.setVisible(Boolean.TRUE.equals(newShow)));
-            heightScanGraphic.setData(heightScanScrubber.scrub(logDataReader.getTimestamp().getLongValue()));
-            logDataReader.getTimestamp().addListener(v -> heightScanGraphic.setData(heightScanScrubber.scrub(v.getValueAsLongBits())));
+            PerceptionMcapScrubber perceptionScrubber = new PerceptionMcapScrubber(perceptionMcapFile);
+            HeightMapMcapScrubber heightMapScrubber = new HeightMapMcapScrubber(perceptionScrubber);
+            // Future sources are wired the same way, e.g.:
+            // VoxelMapMcapScrubber voxelMapScrubber = new VoxelMapMcapScrubber(perceptionScrubber);
+
+            if (heightMapScrubber.isAvailable())
+            {
+               LogTools.info("Loaded " + perceptionMcapFile + ", found " + heightMapScrubber.getMessageCount() + " height map messages.");
+               YoHeightGridFX3D heightMapGraphic = new YoHeightGridFX3D();
+               heightMapGraphic.setName("HeightMap");
+               // Not toolkit.getYoGraphicFXSessionRootGroup(): that group only gets attached to the actual JavaFX
+               // scene graph when the session declares at least one YoGraphicDefinition (see
+               // YoGraphicFXManager.startSession()), which LogSession never does for this manager-driven graphic.
+               // The persistent root group is always attached, and still gets cleared on session end regardless.
+               toolkit.getYoGraphicFXRootGroup().addYoGraphicFX3D(heightMapGraphic);
+               // null (not false): SCS2JavaFXMessager.createPropertyInput only reflects the topic's actual current
+               // value when the passed-in value is null - a concrete default bypasses it and always wins.
+               Property<Boolean> showHeightMapProperty = messager.createPropertyInput(topics.getShowHeightMap(), null);
+               heightMapGraphic.visibleProperty().set(Boolean.TRUE.equals(showHeightMapProperty.getValue()));
+               showHeightMapProperty.addListener((o, oldShow, newShow) -> heightMapGraphic.setVisible(Boolean.TRUE.equals(newShow)));
+               heightMapGraphic.setData(heightMapScrubber.scrub(logDataReader.getTimestamp().getLongValue()));
+               logDataReader.getTimestamp().addListener(v -> heightMapGraphic.setData(heightMapScrubber.scrub(v.getValueAsLongBits())));
+            }
+            else
+            {
+               LogTools.info("No height map channel found in " + perceptionMcapFile);
+            }
          }
          catch (IOException e)
          {
-            LogTools.error("Failed to open " + heightScanMcapFile + ": " + e.getMessage());
+            LogTools.error("Failed to open " + perceptionMcapFile + ": " + e.getMessage());
          }
       }
       logCropperProperty.set(new YoVariableLogCropper(multiReader, logDirectory, logProperties));
