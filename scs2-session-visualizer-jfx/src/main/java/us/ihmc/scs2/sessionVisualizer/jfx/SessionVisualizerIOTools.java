@@ -653,6 +653,31 @@ public class SessionVisualizerIOTools
       }
    }
 
+   private static final String SKIP_SAVE_CONFIGURATION_PROMPT_ANSWER_KEY = "skipSaveConfigurationPromptAnswer";
+
+   public static boolean isSaveConfigurationPromptSkipped()
+   {
+      return Preferences.userNodeForPackage(SessionVisualizerIOTools.class).get(SKIP_SAVE_CONFIGURATION_PROMPT_ANSWER_KEY, null) != null;
+   }
+
+   public static boolean getSkippedSaveConfigurationAnswer()
+   {
+      return Preferences.userNodeForPackage(SessionVisualizerIOTools.class).getBoolean(SKIP_SAVE_CONFIGURATION_PROMPT_ANSWER_KEY, false);
+   }
+
+   /**
+    * Persists the user's "Don't ask again" choice for the save-configuration prompt.
+    */
+   public static void setSkipSaveConfigurationPrompt(boolean rememberedAnswer)
+   {
+      Preferences.userNodeForPackage(SessionVisualizerIOTools.class).putBoolean(SKIP_SAVE_CONFIGURATION_PROMPT_ANSWER_KEY, rememberedAnswer);
+   }
+
+   public static void resetSaveConfigurationPrompt()
+   {
+      Preferences.userNodeForPackage(SessionVisualizerIOTools.class).remove(SKIP_SAVE_CONFIGURATION_PROMPT_ANSWER_KEY);
+   }
+
    /**
     * Opens the given URI in the user's default browser.
     *
