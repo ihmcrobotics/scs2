@@ -2,6 +2,9 @@ package us.ihmc.scs2.sessionVisualizer.jfx.controllers.menu;
 
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
+import javafx.scene.control.Alert;
+import javafx.scene.control.Alert.AlertType;
+import javafx.scene.control.ButtonType;
 import us.ihmc.scs2.sessionVisualizer.jfx.AboutWindowController;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerIOTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.VisualizerController;
@@ -33,5 +36,14 @@ public class HelpMenuController implements VisualizerController
       {
          e.printStackTrace();
       }
+   }
+
+   @FXML
+   public void resetSaveConfigurationPrompt()
+   {
+      SessionVisualizerIOTools.resetSaveConfigurationPrompt();
+      Alert alert = new Alert(AlertType.INFORMATION, "The save-configuration prompt will be shown again on next close.", ButtonType.OK);
+      SessionVisualizerIOTools.addSCSIconToDialog(alert);
+      alert.showAndWait();
    }
 }

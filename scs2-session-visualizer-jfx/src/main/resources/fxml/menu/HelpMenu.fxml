@@ -8,6 +8,8 @@
     <items>
         <MenuItem onAction="#openAboutDialog" text="About...">
         </MenuItem>
+        <MenuItem onAction="#resetSaveConfigurationPrompt" text="Reset Save-Configuration Prompt">
+        </MenuItem>
     </items>
     <graphic>
         <FontIcon iconLiteral="fa-question-circle"/>
