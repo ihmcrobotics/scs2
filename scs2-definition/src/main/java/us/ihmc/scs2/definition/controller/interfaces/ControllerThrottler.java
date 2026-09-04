@@ -155,6 +155,18 @@ public class ControllerThrottler implements Controller
    }
 
    @Override
+   public void reset()
+   {
+      controller.reset();
+   }
+
+   @Override
+   public boolean isResetSupported()
+   {
+      return controller.isResetSupported();
+   }
+
+   @Override
    public YoRegistry getYoRegistry()
    {
       return registry;

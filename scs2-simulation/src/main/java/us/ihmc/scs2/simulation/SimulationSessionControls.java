@@ -158,6 +158,14 @@ public interface SimulationSessionControls
    void setPlaybackRealTimeRate(double realTimeRate);
 
    /**
+    * Requests to reset the simulation back to its initial state: every {@code YoVariable} captured,
+    * when the simulation was first initialized is restored to its initial value, then the physics engine
+    * re-applies the robots' initial state and every controller gets its {@code Controller.initialize()} invoked.
+    * Variables created after the first initialization keep their current value.
+    */
+   void resetToInitialState();
+
+   /**
     * Requests to simulate indefinitely. (asynchronous)
     * <p>
     * This is a non-blocking request, the session will handle the request as soon as possible.

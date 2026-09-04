@@ -111,6 +111,7 @@ public class SessionVisualizerTopics
    private Topic<Integer> initializeBufferRecordTickPeriod;
    private Topic<Long> runMaxDuration;
    private Topic<SessionDataExportRequest> sessionDataExportRequest;
+   private Topic<Boolean> sessionResetRequest;
    private Topic<Session> startNewSessionRequest;
    private Topic<OpenSessionControlsRequest> openSessionControlsRequest;
    private Topic<OpenAddLogRequest> openAddLogRequest;
@@ -216,6 +217,7 @@ public class SessionVisualizerTopics
       initializeBufferRecordTickPeriod = SessionMessagerAPI.InitializeBufferRecordTickPeriod;
       runMaxDuration = SessionMessagerAPI.RunMaxDuration;
       sessionDataExportRequest = SessionMessagerAPI.SessionDataExportRequest;
+      sessionResetRequest = SessionMessagerAPI.SessionResetRequest;
       startNewSessionRequest = SessionVisualizerMessagerAPI.SessionAPI.StartNewSessionRequest;
       openSessionControlsRequest = SessionVisualizerMessagerAPI.SessionAPI.OpenSessionControlsRequest;
       openAddLogRequest = SessionVisualizerMessagerAPI.SessionAPI.OpenAddLogRequest;
@@ -583,6 +585,11 @@ public class SessionVisualizerTopics
    public Topic<SessionDataExportRequest> getSessionDataExportRequest()
    {
       return sessionDataExportRequest;
+   }
+
+   public Topic<Boolean> getSessionResetRequest()
+   {
+      return sessionResetRequest;
    }
 
    public Topic<Session> getStartNewSessionRequest()
