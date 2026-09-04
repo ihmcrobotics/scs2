@@ -364,22 +364,9 @@ public abstract class Session
    private final SessionUserField<Integer> pendingBufferSizeRequest = new SessionUserField<>();
    private final SessionUserField<SessionDataExportRequest> pendingDataExportRequest = new SessionUserField<>();
 
-   // Fields for resetting the session to its initial state, see submitSessionResetRequest().
-   /**
-    * When {@code true}, the next session initialization first restores the {@link YoVariable} values
-    * captured by {@link #captureInitialStateSnapshot()}.
-    */
+   // Fields for resetting the session to its initial state
    private final AtomicBoolean pendingSnapshotRestore = new AtomicBoolean(false);
-   /**
-    * The variables captured at the first session initialization, parallel to
-    * {@link #initialStateSnapshotValues}. Variables created after the capture are not part of the
-    * snapshot.
-    */
    private final List<YoVariable> initialStateSnapshotVariables = new ArrayList<>();
-   /**
-    * The initial value of each variable in {@link #initialStateSnapshotVariables}, stored as long
-    * bits, see {@link YoVariable#getValueAsLongBits()}.
-    */
    private long[] initialStateSnapshotValues = null;
    private boolean initialStateSnapshotCaptured = false;
 
@@ -1617,12 +1604,7 @@ public abstract class Session
    }
 
    /**
-    * Whether this session supports being reset to its initial state via
-    * {@link #submitSessionResetRequest()}.
-    * <p>
-    * Default is {@code false}; sessions for which re-initializing is meaningful, such as a simulation
-    * session, should override this method to return {@code true}.
-    * </p>
+    * Whether this session supports being reset to its initial state
     */
    public boolean isSessionResetSupported()
    {
@@ -1634,23 +1616,6 @@ public abstract class Session
     * the session was first initialized is restored to its initial value, then the session is
     * re-initialized, e.g. for a simulation session the physics engine re-applies the robots' initial
     * state and every controller gets its {@code Controller.initialize()} invoked.
-    * <p>
-    * Only the variables that existed when the session was first initialized are restored; variables
-    * created afterwards keep their current value.
-    * </p>
-    * <p>
-    * If this session is running, it is first paused; the reset is then performed on the next session
-    * tick and the session remains in {@link SessionMode#PAUSE}. The reset state is written in the
-    * buffer at the current index and the buffer in-point and out-point are moved there, giving the
-    * recording a fresh start point; the buffer is not cleared, but the frames outside the new
-    * in-point/out-point are no longer part of the active region and will be overwritten as the
-    * recording continues.
-    * </p>
-    * <p>
-    * This is a non-blocking operation and schedules the reset to be performed as soon as possible.
-    * </p>
-    *
-    * @see #isSessionResetSupported()
     */
    public void submitSessionResetRequest()
    {
@@ -1690,14 +1655,6 @@ public abstract class Session
    /**
     * Called right after this session has been reset to its initial state, see
     * {@link #submitSessionResetRequest()}.
-    * <p>
-    * The reset restores {@link YoVariable} values and re-initializes the session, but knows nothing
-    * about state living outside {@code YoVariable}s, e.g. plain Java fields of controllers or
-    * scripts. Sessions should override this method to propagate the notification to such components
-    * so they can re-initialize themselves. This method is invoked on the session thread, after the
-    * {@code YoVariable}s have been restored and the session re-initialized, and before the reset
-    * state is recorded in the buffer.
-    * </p>
     */
    protected void sessionResetPerformed()
    {

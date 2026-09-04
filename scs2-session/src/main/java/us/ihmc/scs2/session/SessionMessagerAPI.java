@@ -54,10 +54,7 @@ public class SessionMessagerAPI
    public static final Topic<Long> RunMaxDuration = root.child(Session).child(Run).topic(MaxDuration);
 
    public static final Topic<SessionDataExportRequest> SessionDataExportRequest = root.child(Session).child(Export).topic(Data);
-   /**
-    * Request to reset the session back to its initial state, see
-    * {@link Session#submitSessionResetRequest()}. The payload is ignored.
-    */
+
    public static final Topic<Boolean> SessionResetRequest = root.child(Session).child(Reset).topic(Request);
    public static final Topic<SessionRobotDefinitionListChange> SessionRobotDefinitionListChangeRequest = root.child(Session)
                                                                                                              .child(Change)

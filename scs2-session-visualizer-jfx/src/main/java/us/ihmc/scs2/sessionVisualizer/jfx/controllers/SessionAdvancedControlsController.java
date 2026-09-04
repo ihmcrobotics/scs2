@@ -88,9 +88,7 @@ public class SessionAdvancedControlsController implements VisualizerController
    }
 
    /**
-    * Shows a session reset control only when the active session supports being reset, see
-    * {@link Session#isSessionResetSupported()}, e.g. it is hidden when visualizing a log or a remote
-    * session.
+    * Shows a session reset control only when the active session supports being reset
     */
    public static void bindSessionResetControlVisibility(SessionVisualizerToolkit globalToolkit, Consumer<Boolean> visibleSetter)
    {
