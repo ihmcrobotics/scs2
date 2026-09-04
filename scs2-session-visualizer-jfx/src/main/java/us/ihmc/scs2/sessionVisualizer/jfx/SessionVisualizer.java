@@ -1,6 +1,7 @@
 package us.ihmc.scs2.sessionVisualizer.jfx;
 
 import javafx.application.Platform;
+import javafx.collections.ObservableList;
 import javafx.fxml.FXMLLoader;
 import javafx.geometry.Rectangle2D;
 import javafx.scene.Group;
@@ -57,6 +58,9 @@ import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.SCS2JavaFXMessager;
 import us.ihmc.yoVariables.exceptions.IllegalOperationException;
 
+import java.awt.MouseInfo;
+import java.awt.Point;
+import java.awt.PointerInfo;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -134,11 +138,12 @@ public class SessionVisualizer
 
       mainWindowController.start();
       toolkit.start();
-      initializeStageWithPrimaryScreen();
+      initializeStageWithScreenUnderMouse();
       primaryStage.show();
+
       // TODO Seems that on Ubuntu the changes done to the window position/size are not processed properly until the window is showing.
       // This may be related to the bug reported when using GTK3: https://github.com/javafxports/openjdk-jfx/pull/446, might be fixed in later version.
-      initializeStageWithPrimaryScreen();
+      initializeStageWithScreenUnderMouse();
 
       if (initialSession != null)
       {
@@ -161,9 +166,24 @@ public class SessionVisualizer
       return new SessionVisualizerToolkit(primaryStage, scene3DBuilder.getRoot());
    }
 
-   public void initializeStageWithPrimaryScreen()
+   public void initializeStageWithScreenUnderMouse()
    {
-      initializeStageWithScreen(0.75, Screen.getPrimary(), primaryStage);
+      initializeStageWithScreen(0.75, getScreenUnderMouseCursor(), primaryStage);
+   }
+
+   /**
+    * Finds the screen the mouse cursor is currently on, so the visualizer opens on the monitor the
+    * user is actively working on instead of always defaulting to the OS-designated primary monitor.
+    */
+   private static Screen getScreenUnderMouseCursor()
+   {
+      PointerInfo pointerInfo = MouseInfo.getPointerInfo();
+      if (pointerInfo == null)
+         return Screen.getPrimary();
+
+      Point mouseLocation = pointerInfo.getLocation();
+      ObservableList<Screen> screens = Screen.getScreensForRectangle(mouseLocation.getX(), mouseLocation.getY(), 1, 1);
+      return screens.isEmpty() ? Screen.getPrimary() : screens.get(0);
    }
 
    public static void initializeStageWithScreen(double sizeRatio, Screen screen, Stage stage)

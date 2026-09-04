@@ -212,6 +212,7 @@ public class LogSession extends Session
          // Without that, scrubbing through a chart and then resuming log reading will start from an arbitrary position in the log file (corresponding to where we last stop reading the log file).
          logDataReader.seek(logDataReader.getCurrentLogPosition());
          nextRunBufferRecordTickCounter = 0;
+         runTickCounter = 0L;
          firstRunTick = false;
       }
       else if (nextRunBufferRecordTickCounter <= 0)

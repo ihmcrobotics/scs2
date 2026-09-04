@@ -4,9 +4,12 @@ MuJoCo physics backend for SCS2, alongside Bullet / ContactPointBased / ImpulseB
 
 ## Status
 
-Java sources compile against a JavaCPP-generated `Mujoco.java`. CI (`test-fast`) builds the
-native bindings via `./build.sh install && ./build.sh wrap` before running tests, so the module is verified
-on every push/PR — see `.github/workflows/gradleCI-base.yml`.
+Java sources compile against a JavaCPP-generated `Mujoco.java`. The generated bindings and
+compiled native libraries (`libjniMujoco.so` / `mujoco.dll` and dependencies) are committed
+directly under `src/main/generated-java` and `src/main/resources`, so CI (`test-fast`) runs the
+module's tests against them as-is — no native build step required — see
+`.github/workflows/gradleCI-base.yml`. The `./build.sh install && ./build.sh wrap` pipeline below
+is only needed when regenerating the bindings (e.g. bumping the MuJoCo version).
 
 Scope:
 
@@ -18,8 +21,9 @@ Scope:
 
 ## Build pipeline
 
-The native binding is built inside a Docker container, mirroring `ihmc-crocoddyl-wrapper`. From
-this directory:
+Only needed to regenerate the committed bindings (e.g. bumping the MuJoCo version) — not part of
+the normal build or CI run. The native binding is built inside a Docker container, mirroring
+`ihmc-crocoddyl-wrapper`. From this directory:
 
 ```bash
 ./build.sh docker     # one-time: builds the ubuntu:22.04 image with clang + Java 17
@@ -44,9 +48,10 @@ src/main/resources/mujoco/linux-x86_64/libmujoco.so.3.x.y
 
 ## Verification
 
-1. **Native smoke test.** Once `./build.sh wrap` has produced the binding, run
-   `./gradlew :scs2-mujoco-simulation:test --tests MujocoNativeSmokeTest`. This drops a sphere
-   under gravity and asserts z decreases over 1000 steps.
+1. **Native smoke test.** Run
+   `./gradlew :scs2-mujoco-simulation:test --tests MujocoNativeSmokeTest` against the committed
+   bindings (or a freshly regenerated one via `./build.sh wrap`). This drops a sphere under
+   gravity and asserts z decreases over 1000 steps.
 
 2. **End-to-end with a real SCS2 example.** Port one of the SCS2 example simulations (e.g.
    `SphereAtRestExperimentalSimulation`) to construct a `PhysicsEngineFactory` lambda wrapping

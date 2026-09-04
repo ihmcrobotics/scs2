@@ -77,37 +77,41 @@ public class EnvironmentManager implements Manager
 
       skybox = new Skybox();
 
-      switch (SKYBOX_THEME)
-      {
-         case CLOUDY_CROWN_MIDDAY:
-            skybox.setupCloudyCrown();
-            break;
-         case SCS1:
-            skybox.setupSCS1Skybox();
-            break;
-         case OFF:
-            break;
-         case CUSTOM:
-            if (SKYBOX_CUSTOM_PATH == null)
-            {
-               LogTools.warn("Could not load custom skybox, needs to set the path.");
-               skybox.setupCloudyCrown();
-            }
-            else
-            {
-               if (!skybox.loadSkyboxFlexible(new File(SKYBOX_CUSTOM_PATH)))
-                  skybox.setupCloudyCrown();
-            }
-            break;
-         default:
-            throw new IllegalArgumentException("Unexpected value: " + SKYBOX_THEME);
-      }
-
-      skybox.setupCamera(mainCamera);
-
+      // Decoding the skybox images is expensive (multiple large PNGs), so it is done in the
+      // background to avoid blocking the JavaFX thread during startup.
       backgroundExecutorManager.executeInBackground(() ->
                                                     {
-                                                       JavaFXMissingTools.runLater(getClass(), () -> rootNode.getChildren().add(skybox));
+                                                       switch (SKYBOX_THEME)
+                                                       {
+                                                          case CLOUDY_CROWN_MIDDAY:
+                                                             skybox.setupCloudyCrown();
+                                                             break;
+                                                          case SCS1:
+                                                             skybox.setupSCS1Skybox();
+                                                             break;
+                                                          case OFF:
+                                                             break;
+                                                          case CUSTOM:
+                                                             if (SKYBOX_CUSTOM_PATH == null)
+                                                             {
+                                                                LogTools.warn("Could not load custom skybox, needs to set the path.");
+                                                                skybox.setupCloudyCrown();
+                                                             }
+                                                             else
+                                                             {
+                                                                if (!skybox.loadSkyboxFlexible(new File(SKYBOX_CUSTOM_PATH)))
+                                                                   skybox.setupCloudyCrown();
+                                                             }
+                                                             break;
+                                                          default:
+                                                             throw new IllegalArgumentException("Unexpected value: " + SKYBOX_THEME);
+                                                       }
+
+                                                       JavaFXMissingTools.runLater(getClass(), () ->
+                                                       {
+                                                          skybox.setupCamera(mainCamera);
+                                                          rootNode.getChildren().add(skybox);
+                                                       });
                                                     });
    }
 

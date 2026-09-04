@@ -317,7 +317,7 @@ public abstract class Session
    /**
     * Used to keep track of how long the session has been running.
     */
-   private long runTickCounter = 0L;
+   protected long runTickCounter = 0L;
 
    // State listener to publish internal to outside world
    /**
@@ -1977,8 +1977,8 @@ public abstract class Session
     * In order, this method calls:
     * <ol>
     * <li>{@link #doGeneric(SessionMode)}: generic set of actions regardless of the current mode,
-    * <li>{@link #initializePlaybackTick()}: prepares the buffer and reads the buffer at the current
-    * index to update the {@link YoVariable} values,
+    * <li>{@link #initializePlaybackTick()}: prepares the buffer by discarding stale user-submitted
+    * value changes,
     * <li>{@link #doSpecificPlaybackTick()}: performs the actual computation of the playback tick,
     * typically nothing happens here as we're only playing through the buffered data,
     * <li>{@link #finalizePlaybackTick()}: performs buffer operations to finalize the tick and
@@ -2021,13 +2021,15 @@ public abstract class Session
    }
 
    /**
-    * Ignores all {@link YoVariable} value changes submitted by the user via {@link LinkedYoVariable}s
-    * and reads the buffer data to update the {@link YoVariable} values.
+    * Ignores all {@link YoVariable} value changes submitted by the user via {@link LinkedYoVariable}s.
+    * <p>
+    * Reading the buffer data to update the {@link YoVariable} values happens in
+    * {@link #finalizePlaybackTick()}, only when about to publish - see the note there.
+    * </p>
     */
    protected void initializePlaybackTick()
    {
       sharedBuffer.flushLinkedPushRequests();
-      sharedBuffer.readBuffer();
    }
 
    /**
@@ -2049,6 +2051,14 @@ public abstract class Session
 
       if (currentTimestamp - lastPublishedBufferTimestamp > desiredBufferPublishPeriod.get())
       {
+         // sharedBuffer.readBuffer() reads every YoVariable in the whole registry into its live value and is
+         // expensive at scale (tens of thousands of variables). It only needs to happen right before we actually
+         // hand data to a consumer (chart, 3D pose, watch panel, ...) via prepareLinkedBuffersForPull() below - so
+         // it's throttled here to desiredBufferPublishPeriod instead of running on every playback tick. The buffer
+         // index itself (and the cheap incrementBufferIndex()/publishBufferProperties() below, which for instance
+         // drive the log scrub bar position) still advance every tick, independent of this throttle, so playback
+         // and the UI stay smooth even though the expensive read/publish only happens ~30 times per second.
+         sharedBuffer.readBuffer();
          sharedBuffer.prepareLinkedBuffersForPull();
          lastPublishedBufferTimestamp = currentTimestamp;
       }
