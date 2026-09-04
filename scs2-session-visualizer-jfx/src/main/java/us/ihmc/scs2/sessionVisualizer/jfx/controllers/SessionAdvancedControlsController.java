@@ -83,6 +83,7 @@ public class SessionAdvancedControlsController implements VisualizerController
          resetButton.setVisible(visible);
          resetButton.setManaged(visible);
       });
+      bindSessionResetControlAvailability(toolkit.getGlobalToolkit(), available -> resetButton.setDisable(!available));
 
       setupMainControlsActiveMode(this, messager, topics, runningIconView, playbackIconView, pauseIconView);
    }
@@ -96,6 +97,17 @@ public class SessionAdvancedControlsController implements VisualizerController
                                                                                                                             && newSession.isSessionResetSupported())));
       Session activeSession = globalToolkit.getSession();
       visibleSetter.accept(activeSession != null && activeSession.isSessionResetSupported());
+   }
+
+   /**
+    * Disables a session reset control when the active session cannot currently be reset safely
+    */
+   public static void bindSessionResetControlAvailability(SessionVisualizerToolkit globalToolkit, Consumer<Boolean> availableSetter)
+   {
+      globalToolkit.addSessionChangedListener((previousSession, newSession) -> Platform.runLater(() -> availableSetter.accept(newSession != null
+                                                                                                                              && newSession.isSessionResetAvailable())));
+      Session activeSession = globalToolkit.getSession();
+      availableSetter.accept(activeSession != null && activeSession.isSessionResetAvailable());
    }
 
    public static void setupMainControlsActiveMode(Object bean,

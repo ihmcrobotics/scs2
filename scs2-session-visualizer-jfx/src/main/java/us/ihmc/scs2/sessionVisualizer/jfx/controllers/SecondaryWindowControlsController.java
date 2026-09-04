@@ -15,6 +15,7 @@ import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerTopics;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerWindowToolkit;
 import us.ihmc.scs2.sharedMemory.interfaces.YoBufferPropertiesReadOnly;
 
+import static us.ihmc.scs2.sessionVisualizer.jfx.controllers.SessionAdvancedControlsController.bindSessionResetControlAvailability;
 import static us.ihmc.scs2.sessionVisualizer.jfx.controllers.SessionAdvancedControlsController.bindSessionResetControlVisibility;
 import static us.ihmc.scs2.sessionVisualizer.jfx.controllers.SessionAdvancedControlsController.setupMainControlsActiveMode;
 
@@ -71,6 +72,7 @@ public class SecondaryWindowControlsController implements VisualizerController
          resetButton.setVisible(visible);
          resetButton.setManaged(visible);
       });
+      bindSessionResetControlAvailability(toolkit.getGlobalToolkit(), available -> resetButton.setDisable(!available));
 
       setupMainControlsActiveMode(this, messager, topics, runningIconView, playbackIconView, pauseIconView);
    }

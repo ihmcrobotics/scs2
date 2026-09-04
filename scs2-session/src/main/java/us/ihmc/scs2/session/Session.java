@@ -1612,6 +1612,15 @@ public abstract class Session
    }
 
    /**
+    * Whether this session can be reset to its initial state right now without risking leaving it in a
+    * broken state.
+    */
+   public boolean isSessionResetAvailable()
+   {
+      return isSessionResetSupported();
+   }
+
+   /**
     * Requests to reset this session back to its initial state: every {@link YoVariable} captured when
     * the session was first initialized is restored to its initial value, then the session is
     * re-initialized, e.g. for a simulation session the physics engine re-applies the robots' initial

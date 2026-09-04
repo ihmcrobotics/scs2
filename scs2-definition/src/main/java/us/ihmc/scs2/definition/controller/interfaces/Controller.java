@@ -37,6 +37,15 @@ public interface Controller
    }
 
    /**
+    * Whether this controller correctly implements {@link #reset()} and can be trusted to leave no
+    * stale state behind when the session it belongs to is reset.
+    */
+   default boolean isResetSupported()
+   {
+      return false;
+   }
+
+   /**
     * The registry used to store all the {@code YoVariable}s for the controller.
     * <p>
     * In simulation, the registry is typically attached to the robot's registry when adding it

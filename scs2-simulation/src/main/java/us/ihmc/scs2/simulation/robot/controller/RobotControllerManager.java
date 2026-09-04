@@ -180,6 +180,19 @@ public class RobotControllerManager
       }
    }
 
+   /**
+    * Whether every controller registered with this manager supports being reset
+    */
+   public boolean isResetSupported()
+   {
+      for (Controller controller : controllers)
+      {
+         if (!controller.isResetSupported())
+            return false;
+      }
+      return true;
+   }
+
    public void writeControllerOutput(JointStateType... statesToWrite)
    {
       for (JointStateType stateToWrite : statesToWrite)

@@ -140,6 +140,12 @@ public class SimulationSession extends Session
    }
 
    @Override
+   public boolean isSessionResetAvailable()
+   {
+      return physicsEngine.getRobots().stream().allMatch(robot -> robot.getControllerManager().isResetSupported());
+   }
+
+   @Override
    public void shutdownSession()
    {
       super.shutdownSession();

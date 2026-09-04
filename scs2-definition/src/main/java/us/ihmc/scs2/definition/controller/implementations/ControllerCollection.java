@@ -79,6 +79,17 @@ public class ControllerCollection implements Controller
    }
 
    @Override
+   public boolean isResetSupported()
+   {
+      for (int i = 0; i < controllers.size(); i++)
+      {
+         if (!controllers.get(i).isResetSupported())
+            return false;
+      }
+      return true;
+   }
+
+   @Override
    public String getName()
    {
       return registry.getName();
