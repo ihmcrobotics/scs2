@@ -18,7 +18,7 @@ import us.ihmc.scs2.session.mcap.specs.records.Message;
  */
 public class HeightMapMcapScrubber
 {
-   public static final String HEIGHT_SCAN_TOPIC_NAME = LoggingROS2API.STEPPING_HEIGHT_SCAN.getName();
+   public static final String HEIGHT_SCAN_TOPIC_NAME = LoggingROS2API.HEIGHT_SCAN.getName();
 
    private final PerceptionMcapScrubber perceptionMcapScrubber;
    private final String topicName;

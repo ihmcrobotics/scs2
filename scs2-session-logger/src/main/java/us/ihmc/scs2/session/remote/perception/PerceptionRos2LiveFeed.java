@@ -114,7 +114,7 @@ public class PerceptionRos2LiveFeed implements Closeable
    /** Subscribes and starts feeding {@code dataConsumer} on every buffer-position change. Only call if {@link #isHeightMapAvailable()}. */
    public void startHeightMap(Consumer<HeightMapData> dataConsumer)
    {
-      subscribe(LoggingROS2API.STEPPING_HEIGHT_SCAN, this::onHeightScanMessage);
+      subscribe(LoggingROS2API.HEIGHT_SCAN, this::onHeightScanMessage);
 
       session.addCurrentBufferPropertiesListener(bufferProperties ->
       {
