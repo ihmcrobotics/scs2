@@ -44,10 +44,14 @@ import java.util.function.Consumer;
  * check {@link #isHeightMapAvailable()} before deciding whether to build a graphic at all, then call
  * {@link #startHeightMap(Consumer)}.
  * <p>
- * The one thing kept locally is a small bounded history of decoded {@link HeightMapData}, keyed by the exact
+ * The one thing kept locally is a bounded history of decoded {@link HeightMapData}, keyed by the exact
  * {@code controllerTimestamp} of each received message - looked up by the (possibly time-traveled) value of
  * {@code lastHeightScanTimestamp} on every buffer-position change. This is an exact lookup, not a nearest-match
- * search, since that YoLong always holds the precise timestamp that was authoritative at that tick.
+ * search, since that YoLong always holds the precise timestamp that was authoritative at that tick. The history's
+ * capacity tracks the session's own buffer size (see {@code historyCapacity} in {@link #startHeightMap}) rather than
+ * a fixed number of messages - anything the {@code YoSharedBuffer} can still scrub {@code lastHeightScanTimestamp}
+ * back to needs a matching cached entry here too, or the mesh would silently stop following the scrub once it ran
+ * past a smaller cap.
  * <p>
  * RL control mode loads every available policy up front (see {@code RLController}), so the live registry tree
  * typically has several sibling {@code HeightScanTerm} registries - one per model - all sharing the same leaf name.
@@ -62,20 +66,28 @@ public class PerceptionRos2LiveFeed implements Closeable
 {
    private static final String HEIGHT_SCAN_TERM_REGISTRY_NAME = "HeightScanTerm";
    private static final String LAST_HEIGHT_SCAN_TIMESTAMP_VARIABLE_NAME = "lastHeightScanTimestamp";
-   /** Bounded history of recently decoded height-map messages, keyed by controllerTimestamp - oldest entries are evicted. */
-   private static final int HEIGHT_MAP_HISTORY_CAPACITY = 100;
+   /** Floor for {@link #historyCapacity} before the first buffer-properties update reports the session's real size. */
+   private static final int INITIAL_HISTORY_CAPACITY = 128;
 
    private final ROS2Node ros2Node;
    private final Session session;
 
    /** One entry per RL model that has a {@code HeightScanTerm} - see class javadoc for why this isn't a single match. */
    private final List<YoLong> lastHeightScanTimestampCandidates;
-   private final Map<Long, HeightMapData> heightMapHistory = new LinkedHashMap<>(HEIGHT_MAP_HISTORY_CAPACITY, 0.75f, false)
+   /**
+    * How many entries {@link #heightMapHistory} keeps before evicting the oldest - kept in sync with the session's
+    * own {@code YoSharedBuffer} size (see {@link #startHeightMap}) rather than a fixed cap. The controller publishes
+    * a height-scan message every control tick, so a cap smaller than the buffer meant scrubbing back further than a
+    * couple of seconds silently missed the local cache - {@code dataConsumer} never fired, and the mesh just stayed
+    * on whatever had last matched instead of following the scrub.
+    */
+   private volatile int historyCapacity = INITIAL_HISTORY_CAPACITY;
+   private final Map<Long, HeightMapData> heightMapHistory = new LinkedHashMap<>(INITIAL_HISTORY_CAPACITY, 0.75f, false)
    {
       @Override
       protected boolean removeEldestEntry(Map.Entry<Long, HeightMapData> eldest)
       {
-         return size() > HEIGHT_MAP_HISTORY_CAPACITY;
+         return size() > historyCapacity;
       }
    };
 
@@ -106,6 +118,8 @@ public class PerceptionRos2LiveFeed implements Closeable
 
       session.addCurrentBufferPropertiesListener(bufferProperties ->
       {
+         historyCapacity = Math.max(INITIAL_HISTORY_CAPACITY, bufferProperties.getSize());
+
          long timestamp = Long.MIN_VALUE;
          for (int i = 0; i < lastHeightScanTimestampCandidates.size(); i++)
             timestamp = Math.max(timestamp, lastHeightScanTimestampCandidates.get(i).getValue());
