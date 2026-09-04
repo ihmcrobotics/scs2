@@ -653,12 +653,11 @@ public class SessionVisualizerIOTools
       }
    }
 
-   private static final String SKIP_SAVE_CONFIGURATION_PROMPT_KEY = "skipSaveConfigurationPrompt";
    private static final String SKIP_SAVE_CONFIGURATION_PROMPT_ANSWER_KEY = "skipSaveConfigurationPromptAnswer";
 
    public static boolean isSaveConfigurationPromptSkipped()
    {
-      return Preferences.userNodeForPackage(SessionVisualizerIOTools.class).getBoolean(SKIP_SAVE_CONFIGURATION_PROMPT_KEY, false);
+      return Preferences.userNodeForPackage(SessionVisualizerIOTools.class).get(SKIP_SAVE_CONFIGURATION_PROMPT_ANSWER_KEY, null) != null;
    }
 
    public static boolean getSkippedSaveConfigurationAnswer()
@@ -669,18 +668,14 @@ public class SessionVisualizerIOTools
    /**
     * Persists the user's "Don't ask again" choice for the save-configuration prompt.
     */
-   public static void setSkipSaveConfigurationPrompt(boolean skip, boolean rememberedAnswer)
+   public static void setSkipSaveConfigurationPrompt(boolean rememberedAnswer)
    {
-      Preferences prefs = Preferences.userNodeForPackage(SessionVisualizerIOTools.class);
-      prefs.putBoolean(SKIP_SAVE_CONFIGURATION_PROMPT_KEY, skip);
-      prefs.putBoolean(SKIP_SAVE_CONFIGURATION_PROMPT_ANSWER_KEY, rememberedAnswer);
+      Preferences.userNodeForPackage(SessionVisualizerIOTools.class).putBoolean(SKIP_SAVE_CONFIGURATION_PROMPT_ANSWER_KEY, rememberedAnswer);
    }
 
    public static void resetSaveConfigurationPrompt()
    {
-      Preferences prefs = Preferences.userNodeForPackage(SessionVisualizerIOTools.class);
-      prefs.remove(SKIP_SAVE_CONFIGURATION_PROMPT_KEY);
-      prefs.remove(SKIP_SAVE_CONFIGURATION_PROMPT_ANSWER_KEY);
+      Preferences.userNodeForPackage(SessionVisualizerIOTools.class).remove(SKIP_SAVE_CONFIGURATION_PROMPT_ANSWER_KEY);
    }
 
    /**

@@ -237,7 +237,7 @@ public class SessionVisualizer
 
             saveConfiguration = result.get() == ButtonType.YES;
             if (doNotAskAgainCheckBox.isSelected())
-               SessionVisualizerIOTools.setSkipSaveConfigurationPrompt(true, saveConfiguration);
+               SessionVisualizerIOTools.setSkipSaveConfigurationPrompt(saveConfiguration);
          }
       }
 
