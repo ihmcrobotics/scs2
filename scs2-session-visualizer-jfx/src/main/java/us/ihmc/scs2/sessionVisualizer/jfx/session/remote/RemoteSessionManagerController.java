@@ -358,7 +358,7 @@ public class RemoteSessionManagerController implements SessionControlsController
 
    /**
     * Height-map data doesn't ride the network-streamed YoVariable set (a grid's worth of cells would be far too
-    * many) - instead this subscribes directly to the height-scan ROS2 topic, mirroring {@code PerceptionMcapLogger}
+    * many) - instead this subscribes directly to the height-scan ROS2 topic, mirroring {@code PerceptionMCAPLogger}
     * on the write side. It only participates in this session's buffer/scrub-back if the controller published
     * {@code HeightScanTerm.lastHeightScanTimestamp} (see {@link HeightMapRos2LiveFeed}); if not, this is a no-op -
     * same "absent means unavailable" behavior as {@code HeightMapMcapScrubber} on the log-file side.

@@ -5,7 +5,7 @@ import java.util.List;
 /**
  * Plain decoded snapshot of one 2D packed elevation grid message (e.g. {@code perception_msgs/HeightScanMessage}),
  * one of potentially several grid/map channels multiplexed into the shared {@code perception.mcap} written by
- * {@code PerceptionMcapLogger}. Deliberately not named after any one source: a local height-scan window and a
+ * {@code PerceptionMCAPLogger}. Deliberately not named after any one source: a local height-scan window and a
  * future full/global height map both fit this same row/column packed-field shape and can share this class,
  * {@link HeightMapMcapScrubber}, {@link HeightMapMessageDecoder}, and {@code YoHeightGridFX3D} - only the topic and
  * message schema differ per source. See {@link HeightMapMessageDecoder} for the CDR field-order this is decoded

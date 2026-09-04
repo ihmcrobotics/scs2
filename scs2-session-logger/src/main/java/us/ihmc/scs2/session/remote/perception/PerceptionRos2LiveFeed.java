@@ -24,7 +24,7 @@ import java.util.function.Consumer;
  * shared by every perception source built on top of it via {@link #subscribe}. Each source's state and behavior
  * lives directly on this class as prefixed fields/methods (e.g. the height-map members below), rather than a
  * separate class per source - adding a new source means adding its prefixed members here, not a new class to
- * construct and thread through every call site that wants perception data. Mirrors {@code PerceptionMcapLogger}'s
+ * construct and thread through every call site that wants perception data. Mirrors {@code PerceptionMCAPLogger}'s
  * multi-channel design (one node, N independent subscriptions) on the write side.
  * <p>
  * Constructed once a session is fully connected/started, closed when that session ends.

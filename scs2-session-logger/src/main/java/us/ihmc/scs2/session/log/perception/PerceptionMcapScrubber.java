@@ -19,13 +19,13 @@ import java.util.Map;
 
 /**
  * Reads {@code perception.mcap} - a sibling file next to a classic (non-MCAP) log session directory, written
- * independently by {@code PerceptionMcapLogger} - and exposes a nearest-timestamp-match lookup per ROS2 topic,
+ * independently by {@code PerceptionMCAPLogger} - and exposes a nearest-timestamp-match lookup per ROS2 topic,
  * mirroring {@code ZEDSVOScrubber}'s role for the ZED SVO2 sibling files.
  * <p>
  * Unlike its predecessor {@code HeightScanMcapScrubber} (which assumed exactly one channel in the file), this
  * class indexes every channel the file declares, keyed by topic name - {@code perception.mcap} can hold any number
  * of grid/map sources (multiple height maps, a future voxel map, etc.) multiplexed into one file, each on its own
- * channel, independently starting late/stopping early/resuming with gaps (see {@code PerceptionMcapLogger}). One
+ * channel, independently starting late/stopping early/resuming with gaps (see {@code PerceptionMCAPLogger}). One
  * instance should be shared by every per-source scrubber reading this file (e.g. {@code HeightMapMcapScrubber})
  * rather than each opening/indexing the file separately.
  * <p>

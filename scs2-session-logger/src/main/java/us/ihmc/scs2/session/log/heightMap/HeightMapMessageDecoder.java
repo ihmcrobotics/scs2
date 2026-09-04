@@ -15,7 +15,7 @@ import java.util.List;
  * Decodes {@code perception_msgs/HeightScanMessage} into {@link HeightMapData}, from either of two sources:
  * <ul>
  * <li>{@link #decode(Message)} - raw CDR bytes read back from a logged {@code perception.mcap} chunk, matching the
- * field order of {@code PerceptionMcapLogger.HEIGHT_SCAN_SCHEMA} exactly: sequence_id, controllerTimestamp,
+ * field order of {@code PerceptionMCAPLogger.HEIGHT_SCAN_SCHEMA} exactly: sequence_id, controllerTimestamp,
  * frame_id, pose (position, orientation), column_count, cell_size, row_stride, cell_stride, fields[], data[].
  * <li>{@link #decode(HeightScanMessage)} - an already-deserialized message received live over a ROS2 subscription
  * (see {@code HeightMapRos2LiveFeed}). No CDR parsing needed here: jros2 hands back a real object, so this is a
