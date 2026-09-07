@@ -34,6 +34,7 @@ import javafx.util.converter.LongStringConverter;
 import org.apache.commons.lang3.mutable.MutableBoolean;
 import us.ihmc.log.LogTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.messager.SCS2Messager;
+import us.ihmc.scs2.session.Session;
 import us.ihmc.scs2.session.SessionProperties;
 import us.ihmc.scs2.session.SessionRobotDefinitionListChange;
 import us.ihmc.scs2.session.mcap.MCAPLogCropper;
@@ -106,6 +107,7 @@ public class MCAPLogSessionManagerController implements SessionControlsControlle
    @FXML
    private MCAPConsoleLogOutputPaneController consoleOutputPaneController;
    private Stage stage;
+   private SessionVisualizerToolkit toolkit;
    private SessionVisualizerTopics topics;
    private SCS2Messager messager;
    private BackgroundExecutorManager backgroundExecutorManager;
@@ -115,6 +117,7 @@ public class MCAPLogSessionManagerController implements SessionControlsControlle
    @Override
    public void initialize(SessionVisualizerToolkit toolkit)
    {
+      this.toolkit = toolkit;
       stage = new Stage();
 
       topics = toolkit.getTopics();
@@ -188,7 +191,8 @@ public class MCAPLogSessionManagerController implements SessionControlsControlle
          }
          else
          {
-            messager.submitMessage(topics.getStartNewSessionRequest(), newValue);
+            if (toolkit.getSession() != newValue)
+               messager.submitMessage(topics.getStartNewSessionRequest(), newValue);
             initializeControls(newValue);
          }
       };
@@ -345,6 +349,7 @@ public class MCAPLogSessionManagerController implements SessionControlsControlle
       sessionNameLabel.setText(session.getSessionName());
       dateLabel.setText(LogSessionManagerController.parseTimestamp(logFile.getName()));
       logPathLabel.setText(logFile.getAbsolutePath());
+      desiredLogDTProperty.set(session.getDesiredLogDT());
       endSessionButton.setDisable(false);
       logPositionSlider.setDisable(false);
       logPositionSlider.setValue(0.0);
@@ -490,6 +495,16 @@ public class MCAPLogSessionManagerController implements SessionControlsControlle
                                                           setIsLoading(false);
                                                        }
                                                     });
+   }
+
+   @Override
+   public void bindRunningSession(Session session)
+   {
+      if (!(session instanceof MCAPLogSession mcapLogSession))
+         return;
+      if (activeSessionProperty.get() == mcapLogSession)
+         return;
+      activeSessionProperty.set(mcapLogSession);
    }
 
    @Override
