@@ -35,6 +35,8 @@ public class SessionVisualizerMessagerAPI
    private static final CategoryTheme Controls = apiFactory.createCategoryTheme("Controls");
    private static final CategoryTheme Advanced = apiFactory.createCategoryTheme("Advanced");
    private static final CategoryTheme OverheadPlotter = apiFactory.createCategoryTheme("OverheadPlotter");
+   private static final CategoryTheme Perception = apiFactory.createCategoryTheme("Perception");
+   private static final CategoryTheme HeightMap = apiFactory.createCategoryTheme("HeightMap");
    private static final CategoryTheme Group = apiFactory.createCategoryTheme("Group");
    private static final CategoryTheme Configuration = apiFactory.createCategoryTheme("Configuration");
    private static final CategoryTheme Default = apiFactory.createCategoryTheme("Default");
@@ -78,6 +80,7 @@ public class SessionVisualizerMessagerAPI
    public static final Topic<Object> ForgetRecordable = APIRoot.child(Forget).topic(Recordable);
    public static final Topic<Boolean> ShowAdvancedControls = APIRoot.child(Controls).child(Advanced).topic(Show);
    public static final Topic<Boolean> ShowOverheadPlotter = APIRoot.child(OverheadPlotter).topic(Show);
+   public static final Topic<Boolean> ShowHeightMap = APIRoot.child(Perception).child(HeightMap).topic(Show);
    public static final Topic<NewRobotVisualRequest> RobotVisualRequest = APIRoot.child(Robot).child(Visual).topic(Request);
    public static final Topic<NewTerrainVisualRequest> TerrainVisualRequest = APIRoot.child(Terrain).child(Visual).topic(Request);
    public static final Topic<NewWindowRequest> OpenWindowRequest = APIRoot.topic(Open);
