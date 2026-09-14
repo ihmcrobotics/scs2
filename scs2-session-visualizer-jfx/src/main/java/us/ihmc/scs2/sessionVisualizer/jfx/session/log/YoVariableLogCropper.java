@@ -193,7 +193,7 @@ public class YoVariableLogCropper extends YoVariableLogReader
             mcapLogCropper.crop(perceptionOutputStream);
          }
       }
-      catch (IOException e)
+      catch (IOException | RuntimeException e)
       {
          LogTools.error("Failed to crop " + perceptionMcapFile + ": " + e.getMessage());
       }

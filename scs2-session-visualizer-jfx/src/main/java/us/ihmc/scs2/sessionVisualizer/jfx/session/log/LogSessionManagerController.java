@@ -464,7 +464,7 @@ public class LogSessionManagerController implements SessionControlsController
                LogTools.info("No height map channel found in " + perceptionMcapFile);
             }
          }
-         catch (IOException e)
+         catch (IOException | RuntimeException e)
          {
             LogTools.error("Failed to open " + perceptionMcapFile + ": " + e.getMessage());
          }
