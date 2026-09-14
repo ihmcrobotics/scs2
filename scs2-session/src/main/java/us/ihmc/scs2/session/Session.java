@@ -364,6 +364,12 @@ public abstract class Session
    private final SessionUserField<Integer> pendingBufferSizeRequest = new SessionUserField<>();
    private final SessionUserField<SessionDataExportRequest> pendingDataExportRequest = new SessionUserField<>();
 
+   // Fields for resetting the session to its initial state
+   private final AtomicBoolean pendingSnapshotRestore = new AtomicBoolean(false);
+   private final List<YoVariable> initialStateSnapshotVariables = new ArrayList<>();
+   private long[] initialStateSnapshotValues = null;
+   private boolean initialStateSnapshotCaptured = false;
+
    // Strictly internal fields
    private final List<SessionTopicListenerManager> sessionTopicListenerManagers = new ArrayList<>();
    private boolean sessionThreadStarted = false;
@@ -1598,6 +1604,88 @@ public abstract class Session
    }
 
    /**
+    * Whether this session supports being reset to its initial state
+    */
+   public boolean isSessionResetSupported()
+   {
+      return false;
+   }
+
+   /**
+    * Whether this session can be reset to its initial state right now without risking leaving it in a
+    * broken state.
+    */
+   public boolean isSessionResetAvailable()
+   {
+      return isSessionResetSupported();
+   }
+
+   /**
+    * Requests to reset this session back to its initial state: every {@link YoVariable} captured when
+    * the session was first initialized is restored to its initial value, then the session is
+    * re-initialized, e.g. for a simulation session the physics engine re-applies the robots' initial
+    * state and every controller gets its {@code Controller.initialize()} invoked.
+    */
+   public void submitSessionResetRequest()
+   {
+      if (!isSessionResetSupported())
+      {
+         LogTools.warn("Session reset is not supported by this session: {}", getSessionName());
+         return;
+      }
+
+      if (getActiveMode() != SessionMode.PAUSE)
+         setSessionMode(SessionMode.PAUSE);
+      pendingSnapshotRestore.set(true);
+      reinitializeSession();
+   }
+
+   /**
+    * Captures the value of every {@link YoVariable} under {@link #rootRegistry} so it can later be
+    * restored by a session reset, see {@link #submitSessionResetRequest()}.
+    * <p>
+    * Only the first invocation captures; subsequent invocations, e.g. triggered by
+    * {@link #reinitializeSession()}, are no-ops so the snapshot always reflects the state of the very
+    * first initialization.
+    * </p>
+    */
+   protected void captureInitialStateSnapshot()
+   {
+      if (initialStateSnapshotCaptured)
+         return;
+
+      initialStateSnapshotVariables.addAll(rootRegistry.collectSubtreeVariables());
+      initialStateSnapshotValues = new long[initialStateSnapshotVariables.size()];
+      for (int i = 0; i < initialStateSnapshotVariables.size(); i++)
+         initialStateSnapshotValues[i] = initialStateSnapshotVariables.get(i).getValueAsLongBits();
+      initialStateSnapshotCaptured = true;
+   }
+
+   /**
+    * Called right after this session has been reset to its initial state, see
+    * {@link #submitSessionResetRequest()}.
+    */
+   protected void sessionResetPerformed()
+   {
+   }
+
+   /**
+    * Restores every {@link YoVariable} captured by {@link #captureInitialStateSnapshot()} to its
+    * initial value. Variables created after the capture are left untouched.
+    */
+   protected void restoreInitialStateSnapshot()
+   {
+      if (!initialStateSnapshotCaptured)
+      {
+         LogTools.warn("No initial state snapshot was captured for this session: {}", getSessionName());
+         return;
+      }
+
+      for (int i = 0; i < initialStateSnapshotVariables.size(); i++)
+         initialStateSnapshotVariables.get(i).setValueFromLongBits(initialStateSnapshotValues[i]);
+   }
+
+   /**
     * Called when starting this session regardless of the initial mode.
     */
    protected void initializeSession()
@@ -1620,9 +1708,23 @@ public abstract class Session
    {
       if (!sessionInitialized)
       {
+         boolean isSessionReset = pendingSnapshotRestore.getAndSet(false);
+         if (isSessionReset)
+            restoreInitialStateSnapshot();
          initializeSession();
+         captureInitialStateSnapshot();
+         if (isSessionReset)
+         { // Let the session re-initialize state that lives outside YoVariables before recording the reset frame.
+            sessionResetPerformed();
+         }
          // When running simulation, the session starts in PAUSE, writing in the buffer allows to write the robot initial state.
          sharedBuffer.writeBuffer();
+         if (isSessionReset)
+         { // Make the reset frame the new start point of the buffer. The frames outside the active
+           // region are not cleared but will be overwritten as the recording continues.
+            sharedBuffer.setInPoint(sharedBuffer.getProperties().getCurrentIndex());
+            sharedBuffer.setOutPoint(sharedBuffer.getProperties().getCurrentIndex());
+         }
          sessionInitialized = true;
       }
 
@@ -2453,6 +2555,7 @@ public abstract class Session
       private final TopicListener<Integer> initializeBufferRecordTickPeriodListener = Session.this::initializeBufferRecordTickPeriod;
       private final TopicListener<Long> runMaxDurationListener = Session.this::submitRunMaxDuration;
       private final TopicListener<SessionDataExportRequest> sessionDataExportRequestListener = Session.this::submitSessionDataExportRequest;
+      private final TopicListener<Boolean> sessionResetRequestListener = request -> submitSessionResetRequest();
 
       private final TopicListener<SessionRobotDefinitionListChange> robotDefinitionListChangeRequestListener = Session.this::submitRobotDefinitionListChange;
       private final TopicListener<YoEquationListChange> equationListChangeRequestListener = Session.this::submitEquationListChange;
@@ -2486,6 +2589,7 @@ public abstract class Session
          messager.addTopicListener(SessionMessagerAPI.InitializeBufferRecordTickPeriod, initializeBufferRecordTickPeriodListener);
          messager.addTopicListener(SessionMessagerAPI.RunMaxDuration, runMaxDurationListener);
          messager.addTopicListener(SessionMessagerAPI.SessionDataExportRequest, sessionDataExportRequestListener);
+         messager.addTopicListener(SessionMessagerAPI.SessionResetRequest, sessionResetRequestListener);
 
          bufferListenerForceUpdateListeners.add(() ->
                                                 {
@@ -2529,6 +2633,7 @@ public abstract class Session
          messager.removeTopicListener(SessionMessagerAPI.InitializeBufferRecordTickPeriod, initializeBufferRecordTickPeriodListener);
          messager.removeTopicListener(SessionMessagerAPI.RunMaxDuration, runMaxDurationListener);
          messager.removeTopicListener(SessionMessagerAPI.SessionDataExportRequest, sessionDataExportRequestListener);
+         messager.removeTopicListener(SessionMessagerAPI.SessionResetRequest, sessionResetRequestListener);
 
          messager.removeTopicListener(SessionMessagerAPI.SessionRobotDefinitionListChangeRequest, robotDefinitionListChangeRequestListener);
          messager.removeTopicListener(SessionMessagerAPI.SessionYoEquationListChangeRequest, equationListChangeRequestListener);

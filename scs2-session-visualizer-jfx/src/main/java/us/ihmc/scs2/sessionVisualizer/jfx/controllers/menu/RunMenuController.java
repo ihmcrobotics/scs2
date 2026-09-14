@@ -4,6 +4,7 @@ import javafx.fxml.FXML;
 import javafx.scene.control.CheckMenuItem;
 import javafx.scene.control.CustomMenuItem;
 import javafx.scene.control.Menu;
+import javafx.scene.control.MenuItem;
 import javafx.scene.control.TextField;
 import javafx.scene.control.TextFormatter;
 import javafx.util.converter.DoubleStringConverter;
@@ -11,6 +12,7 @@ import us.ihmc.messager.javafx.JavaFXMessager;
 import us.ihmc.messager.javafx.MessageBidirectionalBinding.PropertyToMessageTypeConverter;
 import us.ihmc.scs2.session.SessionMode;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerTopics;
+import us.ihmc.scs2.sessionVisualizer.jfx.controllers.SessionAdvancedControlsController;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.VisualizerController;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerWindowToolkit;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.MenuTools;
@@ -28,6 +30,8 @@ public class RunMenuController implements VisualizerController
    private CustomMenuItem runMaxDurationMenuItem;
    @FXML
    private CheckMenuItem simulateAtRealTimeCheckMenuItem;
+   @FXML
+   private MenuItem resetMenuItem;
    @FXML
    private TextField playbackRealTimeRateTextField;
    @FXML
@@ -81,6 +85,15 @@ public class RunMenuController implements VisualizerController
 
       MenuTools.configureTextFieldForCustomMenuItem(playbackRealTimeRateMenuItem, playbackRealTimeRateTextField);
       MenuTools.configureTextFieldForCustomMenuItem(runMaxDurationMenuItem, runMaxDurationTextField);
+
+      SessionAdvancedControlsController.bindSessionResetControlVisibility(toolkit.getGlobalToolkit(), resetMenuItem::setVisible);
+      SessionAdvancedControlsController.bindSessionResetControlAvailability(toolkit.getGlobalToolkit(), available -> resetMenuItem.setDisable(!available));
+   }
+
+   @FXML
+   private void resetToInitialState()
+   {
+      messager.submitMessage(topics.getSessionResetRequest(), true);
    }
 
    @FXML

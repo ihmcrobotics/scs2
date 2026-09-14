@@ -168,6 +168,31 @@ public class RobotControllerManager
       }
    }
 
+   /**
+    * Notifies the controllers that the session has been reset to its initial state, see
+    * {@link Controller#reset()}.
+    */
+   public void resetControllers()
+   {
+      for (Controller controller : controllers)
+      {
+         controller.reset();
+      }
+   }
+
+   /**
+    * Whether every controller registered with this manager supports being reset
+    */
+   public boolean isResetSupported()
+   {
+      for (Controller controller : controllers)
+      {
+         if (!controller.isResetSupported())
+            return false;
+      }
+      return true;
+   }
+
    public void writeControllerOutput(JointStateType... statesToWrite)
    {
       for (JointStateType stateToWrite : statesToWrite)
