@@ -5,7 +5,7 @@ import javafx.scene.control.MenuItem;
 import javafx.stage.Window;
 import javafx.util.Pair;
 import org.kordamp.ikonli.javafx.FontIcon;
-import us.ihmc.messager.javafx.JavaFXMessager;
+import us.ihmc.scs2.sessionVisualizer.jfx.messager.SCS2Messager;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerIOTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerTopics;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.VisualizerController;
@@ -17,7 +17,7 @@ import java.io.File;
 public class YoChartMenuController implements VisualizerController
 {
    private SessionVisualizerTopics topics;
-   private JavaFXMessager messager;
+   private SCS2Messager messager;
    private Window owner;
 
    private boolean isYAxisVisible = false;

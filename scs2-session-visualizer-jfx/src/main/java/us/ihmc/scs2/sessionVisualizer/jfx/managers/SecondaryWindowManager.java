@@ -8,8 +8,8 @@ import javafx.stage.Window;
 import javafx.stage.WindowEvent;
 import javafx.util.Pair;
 import us.ihmc.log.LogTools;
-import us.ihmc.messager.SynchronizeHint;
-import us.ihmc.messager.javafx.JavaFXMessager;
+import us.ihmc.scs2.sessionVisualizer.jfx.messager.SynchronizeHint;
+import us.ihmc.scs2.sessionVisualizer.jfx.messager.SCS2Messager;
 import us.ihmc.scs2.definition.configuration.WindowConfigurationDefinition;
 import us.ihmc.scs2.definition.yoSlider.YoSliderboardType;
 import us.ihmc.scs2.session.Session;
@@ -51,7 +51,7 @@ public class SecondaryWindowManager implements Manager
    private final List<Stage> secondaryWindows = new ArrayList<>();
    private final List<SecondaryWindowController> secondaryWindowControllers = new ArrayList<>();
    private final YoSliderboardManager sliderboardManager;
-   private final JavaFXMessager messager;
+   private final SCS2Messager messager;
    private final SessionVisualizerTopics topics;
 
    public SecondaryWindowManager(SessionVisualizerToolkit toolkit)

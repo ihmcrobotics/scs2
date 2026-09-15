@@ -10,8 +10,8 @@ import javafx.stage.Window;
 import javafx.util.Pair;
 import us.ihmc.euclid.tools.EuclidCoreIOTools;
 import us.ihmc.log.LogTools;
-import us.ihmc.messager.SynchronizeHint;
-import us.ihmc.messager.javafx.JavaFXMessager;
+import us.ihmc.scs2.sessionVisualizer.jfx.messager.SynchronizeHint;
+import us.ihmc.scs2.sessionVisualizer.jfx.messager.SCS2Messager;
 import us.ihmc.scs2.definition.DefinitionIOTools;
 import us.ihmc.scs2.definition.robot.RobotDefinition;
 import us.ihmc.scs2.definition.yoVariable.YoEquationListDefinition;
@@ -35,7 +35,7 @@ import us.ihmc.scs2.sessionVisualizer.jfx.session.log.LogSessionManagerControlle
 import us.ihmc.scs2.sessionVisualizer.jfx.session.mcap.MCAPLogSessionManagerController;
 import us.ihmc.scs2.sessionVisualizer.jfx.session.remote.RemoteSessionManagerController;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
-import us.ihmc.scs2.sessionVisualizer.jfx.tools.SCS2JavaFXMessager;
+import us.ihmc.scs2.sessionVisualizer.jfx.messager.SCS2Messager;
 import us.ihmc.scs2.symbolic.YoEquationManager.YoEquationListChange;
 
 import java.io.File;
@@ -125,7 +125,7 @@ public class MultiSessionManager
                                 });
 
       SessionVisualizerTopics topics = toolkit.getTopics();
-      JavaFXMessager messager = toolkit.getMessager();
+      SCS2Messager messager = toolkit.getMessager();
       messager.addTopicListener(topics.getStartNewSessionRequest(), m ->
       {
          // Belt-and-suspenders alongside MainWindowController's drag-and-drop guard: covers other ways a new
@@ -357,7 +357,7 @@ public class MultiSessionManager
       LogTools.info(synchronizeHint);
       long start = System.nanoTime();
 
-      JavaFXMessager messager = toolkit.getMessager();
+      SCS2Messager messager = toolkit.getMessager();
       SessionVisualizerTopics topics = toolkit.getTopics();
 
       if (configuration.hasYoEquationConfiguration())
@@ -365,8 +365,8 @@ public class MultiSessionManager
          try (InputStream inputStream = new FileInputStream(configuration.getYoEquationConfigurationFile()))
          {
             YoEquationListDefinition yoEquationListDefinition = DefinitionIOTools.loadYoEquationListDefinition(inputStream);
-            if (yoEquationListDefinition != null && yoEquationListDefinition.getYoEquations() != null)
-               messager.submitMessage(topics.getSessionYoEquationListChangeRequest(), YoEquationListChange.add(yoEquationListDefinition.getYoEquations()));
+            if (yoEquationListDefinition != null && yoEquationListDefinition.getYoEquations() != null && toolkit.getSession() != null)
+               toolkit.getSession().submitEquationListChange(YoEquationListChange.add(yoEquationListDefinition.getYoEquations()));
          }
          catch (Exception e)
          {
@@ -419,11 +419,11 @@ public class MultiSessionManager
 
       if (LOAD_BUFFER_SIZE_CONFIGURATION)
       {
-         if (configuration.hasBufferSize())
-            messager.submitMessage(topics.getYoBufferInitializeSize(), configuration.getBufferSize());
+         if (configuration.hasBufferSize() && toolkit.getSession() != null)
+            toolkit.getSession().initializeBufferSize(configuration.getBufferSize());
       }
-      if (configuration.hasRecordTickPeriod())
-         messager.submitMessage(topics.getInitializeBufferRecordTickPeriod(), configuration.getRecordTickPeriod());
+      if (configuration.hasRecordTickPeriod() && toolkit.getSession() != null)
+         toolkit.getSession().initializeBufferRecordTickPeriod(configuration.getRecordTickPeriod());
       if (configuration.hasNumberPrecision())
          messager.submitMessage(topics.getControlsNumberPrecision(), configuration.getNumberPrecision());
       mainWindowController.leftSidePaneOpenProperty().set(configuration.getShowYoSearchPanel());
@@ -484,13 +484,11 @@ public class MultiSessionManager
       configuration.setMainStage(toolkit.getMainWindow());
 
       SessionVisualizerTopics topics = toolkit.getTopics();
-      SCS2JavaFXMessager messager = toolkit.getMessager();
+      SCS2Messager messager = toolkit.getMessager();
 
       int currentBufferSize = toolkit.getYoManager().getBufferSize();
       configuration.setBufferSize(currentBufferSize);
-      Integer bufferRecordTickPeriod = messager.getLastValue(topics.getBufferRecordTickPeriod());
-      if (bufferRecordTickPeriod != null)
-         configuration.setRecordTickPeriod(bufferRecordTickPeriod);
+      configuration.setRecordTickPeriod(session.getBufferRecordTickPeriod());
       Integer numberPrecision = messager.getLastValue(topics.getControlsNumberPrecision());
       if (numberPrecision != null)
          configuration.setNumberPrecision(numberPrecision);

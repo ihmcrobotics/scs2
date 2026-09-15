@@ -6,7 +6,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
-import us.ihmc.messager.javafx.JavaFXMessager;
 import us.ihmc.scs2.session.Session;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerTopics;
 import us.ihmc.scs2.sessionVisualizer.jfx.charts.YoVariableChartData;
@@ -22,16 +21,15 @@ public class ChartDataManager implements Manager
    private final Map<YoVariable, LinkedYoVariable<?>> linkedVariableMap = new HashMap<>();
    private final Map<YoVariable, YoVariableChartData> chartDataMap = new ConcurrentHashMap<>();
    private final SessionVisualizerTopics topics;
-   private final JavaFXMessager messager;
    private final YoManager yoManager;
    private final BackgroundExecutorManager backgroundExecutorManager;
 
    private Future<?> activeTask;
+   private Session session;
 
-   public ChartDataManager(JavaFXMessager messager, SessionVisualizerTopics topics, YoManager yoManager, BackgroundExecutorManager backgroundExecutorManager)
+   public ChartDataManager(SessionVisualizerTopics topics, YoManager yoManager, BackgroundExecutorManager backgroundExecutorManager)
    {
       this.topics = topics;
-      this.messager = messager;
       this.yoManager = yoManager;
       this.backgroundExecutorManager = backgroundExecutorManager;
    }
@@ -39,6 +37,7 @@ public class ChartDataManager implements Manager
    @Override
    public void startSession(Session session)
    {
+      this.session = session;
       activeTask = backgroundExecutorManager.scheduleTaskInBackground(this::updateData, 0, 100, TimeUnit.MILLISECONDS);
    }
 
@@ -48,6 +47,7 @@ public class ChartDataManager implements Manager
       if (activeTask != null)
          activeTask.cancel(true);
       activeTask = null;
+      session = null;
    }
 
    @Override
@@ -89,12 +89,12 @@ public class ChartDataManager implements Manager
          {
             linkedYoVariable = yoManager.newLinkedYoVariable(yoVariable, this); // Make `this` a temporary user to indicate the linked variable is used while setting it up.
             linkedVariableMap.put(yoVariable, linkedYoVariable);
-            yoVariableChartData = new YoVariableChartData(messager, topics, linkedYoVariable);
+            yoVariableChartData = new YoVariableChartData(session, linkedYoVariable);
             linkedYoVariable.removeUser(this); // YoVariableChartData adds itself as user, we don't want `this` to be a user.
          }
          else
          {
-            yoVariableChartData = new YoVariableChartData(messager, topics, linkedYoVariable);
+            yoVariableChartData = new YoVariableChartData(session, linkedYoVariable);
          }
 
          yoVariableChartData.registerCaller(callerID);
