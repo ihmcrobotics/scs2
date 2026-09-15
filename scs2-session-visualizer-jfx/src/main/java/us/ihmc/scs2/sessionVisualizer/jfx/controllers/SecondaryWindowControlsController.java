@@ -95,13 +95,14 @@ public class SecondaryWindowControlsController implements VisualizerController
       });
       bindSessionResetControlAvailability(toolkit.getGlobalToolkit(), available -> resetButton.setDisable(!available));
 
-      setupMainControlsActiveMode(this, messager, topics, runningIconView, playbackIconView, pauseIconView);
+      setupMainControlsActiveMode(this, toolkit, runningIconView, playbackIconView, pauseIconView);
    }
 
    @FXML
    private void resetSession()
    {
-      messager.submitMessage(topics.getSessionResetRequest(), true);
+      if (toolkit.getSession() != null)
+         toolkit.getSession().submitSessionResetRequest();
    }
 
    @FXML

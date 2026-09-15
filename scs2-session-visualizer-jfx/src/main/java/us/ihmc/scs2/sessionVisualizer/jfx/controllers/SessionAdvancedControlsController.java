@@ -15,10 +15,8 @@ import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.Region;
 import javafx.stage.Window;
 import javafx.util.Pair;
-import us.ihmc.messager.javafx.JavaFXMessager;
 import us.ihmc.scs2.session.Session;
 import us.ihmc.scs2.sessionVisualizer.jfx.messager.SCS2Messager;
-import us.ihmc.scs2.session.Session;
 import us.ihmc.scs2.session.SessionMode;
 import us.ihmc.scs2.session.SessionProperties;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerTopics;
@@ -30,7 +28,6 @@ import us.ihmc.scs2.sharedMemory.interfaces.YoBufferPropertiesReadOnly;
 import java.util.function.Consumer;
 
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Consumer;
 
 public class SessionAdvancedControlsController implements VisualizerController
 {
@@ -108,7 +105,7 @@ public class SessionAdvancedControlsController implements VisualizerController
       });
       bindSessionResetControlAvailability(toolkit.getGlobalToolkit(), available -> resetButton.setDisable(!available));
 
-      setupMainControlsActiveMode(this, messager, topics, runningIconView, playbackIconView, pauseIconView);
+      setupMainControlsActiveMode(this, toolkit, runningIconView, playbackIconView, pauseIconView);
    }
 
    /**
@@ -237,7 +234,8 @@ public class SessionAdvancedControlsController implements VisualizerController
    @FXML
    private void resetSession()
    {
-      messager.submitMessage(topics.getSessionResetRequest(), true);
+      if (toolkit.getSession() != null)
+         toolkit.getSession().submitSessionResetRequest();
    }
 
    @FXML

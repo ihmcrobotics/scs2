@@ -134,7 +134,8 @@ public class RunMenuController implements VisualizerController
    @FXML
    private void resetToInitialState()
    {
-      messager.submitMessage(topics.getSessionResetRequest(), true);
+      if (session != null)
+         session.submitSessionResetRequest();
    }
 
    @FXML

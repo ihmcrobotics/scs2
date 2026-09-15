@@ -96,16 +96,6 @@ public class SessionVisualizerTopics
    private Topic<SessionDataFilterParameters> sessionDataFilterParametersAddRequest;
 
    // Session topics
-   private Topic<SessionState> sessionCurrentState;
-   private Topic<SessionMode> sessionCurrentMode;
-   private Topic<Boolean> runAtRealTimeRate;
-   private Topic<Long> sessionDTNanoseconds;
-   private Topic<Double> playbackRealTimeRate;
-   private Topic<Integer> bufferRecordTickPeriod;
-   private Topic<Integer> initializeBufferRecordTickPeriod;
-   private Topic<Long> runMaxDuration;
-   private Topic<SessionDataExportRequest> sessionDataExportRequest;
-   private Topic<Boolean> sessionResetRequest;
    private Topic<Session> startNewSessionRequest;
    private Topic<OpenSessionControlsRequest> openSessionControlsRequest;
    private Topic<OpenAddLogRequest> openAddLogRequest;
@@ -185,16 +175,6 @@ public class SessionVisualizerTopics
 
       sessionDataFilterParametersAddRequest = SessionVisualizerMessagerAPI.SessionDataFilterParametersAddRequest;
 
-      sessionCurrentState = SessionMessagerAPI.SessionCurrentState;
-      sessionCurrentMode = SessionMessagerAPI.SessionCurrentMode;
-      runAtRealTimeRate = SessionMessagerAPI.RunAtRealTimeRate;
-      sessionDTNanoseconds = SessionMessagerAPI.SessionDTNanoseconds;
-      playbackRealTimeRate = SessionMessagerAPI.PlaybackRealTimeRate;
-      bufferRecordTickPeriod = SessionMessagerAPI.BufferRecordTickPeriod;
-      initializeBufferRecordTickPeriod = SessionMessagerAPI.InitializeBufferRecordTickPeriod;
-      runMaxDuration = SessionMessagerAPI.RunMaxDuration;
-      sessionDataExportRequest = SessionMessagerAPI.SessionDataExportRequest;
-      sessionResetRequest = SessionMessagerAPI.SessionResetRequest;
       startNewSessionRequest = SessionVisualizerMessagerAPI.SessionAPI.StartNewSessionRequest;
       openSessionControlsRequest = SessionVisualizerMessagerAPI.SessionAPI.OpenSessionControlsRequest;
       openAddLogRequest = SessionVisualizerMessagerAPI.SessionAPI.OpenAddLogRequest;
@@ -501,56 +481,6 @@ public class SessionVisualizerTopics
    public Topic<SessionDataFilterParameters> getSessionDataFilterParametersAddRequest()
    {
       return sessionDataFilterParametersAddRequest;
-   }
-
-   public Topic<SessionState> getSessionCurrentState()
-   {
-      return sessionCurrentState;
-   }
-
-   public Topic<SessionMode> getSessionCurrentMode()
-   {
-      return sessionCurrentMode;
-   }
-
-   public Topic<Boolean> getRunAtRealTimeRate()
-   {
-      return runAtRealTimeRate;
-   }
-
-   public Topic<Long> getSessionDTNanoseconds()
-   {
-      return sessionDTNanoseconds;
-   }
-
-   public Topic<Double> getPlaybackRealTimeRate()
-   {
-      return playbackRealTimeRate;
-   }
-
-   public Topic<Integer> getBufferRecordTickPeriod()
-   {
-      return bufferRecordTickPeriod;
-   }
-
-   public Topic<Integer> getInitializeBufferRecordTickPeriod()
-   {
-      return initializeBufferRecordTickPeriod;
-   }
-
-   public Topic<Long> getRunMaxDuration()
-   {
-      return runMaxDuration;
-   }
-
-   public Topic<SessionDataExportRequest> getSessionDataExportRequest()
-   {
-      return sessionDataExportRequest;
-   }
-
-   public Topic<Boolean> getSessionResetRequest()
-   {
-      return sessionResetRequest;
    }
 
    public Topic<Session> getStartNewSessionRequest()

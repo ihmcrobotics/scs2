@@ -31,71 +31,25 @@ import java.util.List;
  */
 public class SessionVisualizerMessagerAPI
 {
-   private static final MessagerAPIFactory apiFactory = new MessagerAPIFactory();
-
-   private static final Category APIRoot = apiFactory.createRootCategory("SessionVisualizer");
-   private static final CategoryTheme Register = apiFactory.createCategoryTheme("Register");
-   private static final CategoryTheme Forget = apiFactory.createCategoryTheme("Forget");
-   private static final CategoryTheme Controls = apiFactory.createCategoryTheme("Controls");
-   private static final CategoryTheme Advanced = apiFactory.createCategoryTheme("Advanced");
-   private static final CategoryTheme OverheadPlotter = apiFactory.createCategoryTheme("OverheadPlotter");
-   private static final CategoryTheme Perception = apiFactory.createCategoryTheme("Perception");
-   private static final CategoryTheme HeightMap = apiFactory.createCategoryTheme("HeightMap");
-   private static final CategoryTheme Group = apiFactory.createCategoryTheme("Group");
-   private static final CategoryTheme Configuration = apiFactory.createCategoryTheme("Configuration");
-   private static final CategoryTheme Default = apiFactory.createCategoryTheme("Default");
-   private static final CategoryTheme Camera = apiFactory.createCategoryTheme("Camera");
-   private static final CategoryTheme Track = apiFactory.createCategoryTheme("Track");
-   private static final CategoryTheme Video = apiFactory.createCategoryTheme("Video");
-   private static final CategoryTheme User = apiFactory.createCategoryTheme("User");
-   private static final CategoryTheme Debug = apiFactory.createCategoryTheme("Debug");
-   private static final CategoryTheme Robot = apiFactory.createCategoryTheme("Robot");
-   private static final CategoryTheme Terrain = apiFactory.createCategoryTheme("Terrain");
-   private static final CategoryTheme Visual = apiFactory.createCategoryTheme("Visual");
-   private static final CategoryTheme SessionData = apiFactory.createCategoryTheme("SessionData");
-   private static final CategoryTheme Filter = apiFactory.createCategoryTheme("Filter");
-
-   private static final TopicTheme Toggle = apiFactory.createTopicTheme("Toggle");
-   private static final TopicTheme Next = apiFactory.createTopicTheme("Next");
-   private static final TopicTheme Previous = apiFactory.createTopicTheme("Previous");
-   private static final TopicTheme Snapshot = apiFactory.createTopicTheme("Snapshot");
-   private static final TopicTheme Recordable = apiFactory.createTypedTopicTheme("Recordable");
-   private static final TopicTheme Request = apiFactory.createTopicTheme("Request");
-   private static final TypedTopicTheme<Integer> Size = apiFactory.createTypedTopicTheme("Size");
-   private static final TopicTheme Show = apiFactory.createTypedTopicTheme("Show");
-   private static final TopicTheme Load = apiFactory.createTopicTheme("load");
-   private static final TopicTheme Save = apiFactory.createTopicTheme("save");
-   private static final TopicTheme Close = apiFactory.createTopicTheme("close");
-   private static final TopicTheme Open = apiFactory.createTopicTheme("open");
-   private static final TopicTheme Name = apiFactory.createTopicTheme("name");
-   private static final TopicTheme Precision = apiFactory.createTopicTheme("Precision");
-   private static final TopicTheme Disable = apiFactory.createTopicTheme("Disable");
-   private static final TopicTheme Add = apiFactory.createTopicTheme("add");
-   private static final TopicTheme Set = apiFactory.createTopicTheme("set");
-   private static final TopicTheme Remove = apiFactory.createTopicTheme("remove");
-   private static final TopicTheme Visible = apiFactory.createTopicTheme("visible");
-   private static final TopicTheme Resize = apiFactory.createTopicTheme("resize");
-
-   public static final Topic<Boolean> DisableUserControls = APIRoot.child(User).child(Controls).topic(Disable);
-   public static final Topic<SceneVideoRecordingRequest> SceneVideoRecordingRequest = APIRoot.child(Video).topic(Request);
-   public static final Topic<Camera3DRequest> Camera3DRequest = APIRoot.child(Camera).child(Configuration).topic(Request);
-   public static final Topic<Object> TakeSnapshot = APIRoot.topic(Snapshot);
-   public static final Topic<Object> RegisterRecordable = APIRoot.child(Register).topic(Recordable);
-   public static final Topic<Object> ForgetRecordable = APIRoot.child(Forget).topic(Recordable);
-   public static final Topic<Boolean> ShowAdvancedControls = APIRoot.child(Controls).child(Advanced).topic(Show);
-   public static final Topic<Boolean> ShowOverheadPlotter = APIRoot.child(OverheadPlotter).topic(Show);
-   public static final Topic<Boolean> ShowHeightMap = APIRoot.child(Perception).child(HeightMap).topic(Show);
-   public static final Topic<NewRobotVisualRequest> RobotVisualRequest = APIRoot.child(Robot).child(Visual).topic(Request);
-   public static final Topic<NewTerrainVisualRequest> TerrainVisualRequest = APIRoot.child(Terrain).child(Visual).topic(Request);
-   public static final Topic<NewWindowRequest> OpenWindowRequest = APIRoot.topic(Open);
-   public static final Topic<Boolean> SessionVisualizerCloseRequest = APIRoot.topic(Close);
-   public static final Topic<Integer> ControlsNumberPrecision = APIRoot.child(Controls)
-                                                                       .topic(Precision); // TODO Not the greatest topic name, nor the best place.
-   public static final Topic<File> SessionVisualizerConfigurationLoadRequest = APIRoot.child(Configuration).topic(Load);
-   public static final Topic<Boolean> SessionVisualizerDefaultConfigurationLoadRequest = APIRoot.child(Configuration).child(Default).topic(Load);
-   public static final Topic<File> SessionVisualizerConfigurationSaveRequest = APIRoot.child(Configuration).topic(Save);
-   public static final Topic<Boolean> SessionVisualizerDefaultConfigurationSaveRequest = APIRoot.child(Configuration).child(Default).topic(Save);
-   public static final Topic<SessionDataFilterParameters> SessionDataFilterParametersAddRequest = APIRoot.child(SessionData).child(Filter).topic(Add);
+   public static final Topic<Boolean> DisableUserControls = new Topic<>("DisableUserControls");
+   public static final Topic<SceneVideoRecordingRequest> SceneVideoRecordingRequest = new Topic<>("SceneVideoRecordingRequest");
+   public static final Topic<Camera3DRequest> Camera3DRequest = new Topic<>("Camera3DRequest");
+   public static final Topic<Object> TakeSnapshot = new Topic<>("TakeSnapshot");
+   public static final Topic<Object> RegisterRecordable = new Topic<>("RegisterRecordable");
+   public static final Topic<Object> ForgetRecordable = new Topic<>("ForgetRecordable");
+   public static final Topic<Boolean> ShowAdvancedControls = new Topic<>("ShowAdvancedControls");
+   public static final Topic<Boolean> ShowOverheadPlotter = new Topic<>("ShowOverheadPlotter");
+   public static final Topic<Boolean> ShowHeightMap = new Topic<>("ShowHeightMap");
+   public static final Topic<NewRobotVisualRequest> RobotVisualRequest = new Topic<>("RobotVisualRequest");
+   public static final Topic<NewTerrainVisualRequest> TerrainVisualRequest = new Topic<>("TerrainVisualRequest");
+   public static final Topic<NewWindowRequest> OpenWindowRequest = new Topic<>("OpenWindowRequest");
+   public static final Topic<Boolean> SessionVisualizerCloseRequest = new Topic<>("SessionVisualizerCloseRequest");
+   public static final Topic<Integer> ControlsNumberPrecision = new Topic<>("ControlsNumberPrecision"); // TODO Not the greatest topic name, nor the best place.
+   public static final Topic<File> SessionVisualizerConfigurationLoadRequest = new Topic<>("SessionVisualizerConfigurationLoadRequest");
+   public static final Topic<Boolean> SessionVisualizerDefaultConfigurationLoadRequest = new Topic<>("SessionVisualizerDefaultConfigurationLoadRequest");
+   public static final Topic<File> SessionVisualizerConfigurationSaveRequest = new Topic<>("SessionVisualizerConfigurationSaveRequest");
+   public static final Topic<Boolean> SessionVisualizerDefaultConfigurationSaveRequest = new Topic<>("SessionVisualizerDefaultConfigurationSaveRequest");
+   public static final Topic<SessionDataFilterParameters> SessionDataFilterParametersAddRequest = new Topic<>("SessionDataFilterParametersAddRequest");
 
    static
    { // Ensure that the KeyFrame is loaded before closing the API.
