@@ -764,7 +764,7 @@ public interface SessionVisualizerControls
     */
    default void addYoChart(String groupName, String variableName)
    {
-      addYoEntry(groupName, Collections.singletonList(variableName));
+      addYoChart(groupName, Collections.singletonList(variableName));
    }
 
    /**

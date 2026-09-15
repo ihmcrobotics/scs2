@@ -326,24 +326,14 @@ public class Skybox extends Group
 
    public void setupCloudyCrown()
    {
-      Image topImage = SessionVisualizerIOTools.SKYBOX_TOP_IMAGE;
-      Image bottomImage = SessionVisualizerIOTools.SKYBOX_BOTTOM_IMAGE;
-      Image leftImage = SessionVisualizerIOTools.SKYBOX_LEFT_IMAGE;
-      Image rightImage = SessionVisualizerIOTools.SKYBOX_RIGHT_IMAGE;
-      Image frontImage = SessionVisualizerIOTools.SKYBOX_FRONT_IMAGE;
-      Image backImage = SessionVisualizerIOTools.SKYBOX_BACK_IMAGE;
-      setupSkybox(topImage, bottomImage, leftImage, rightImage, frontImage, backImage);
+      Image[] images = SessionVisualizerIOTools.getCloudySkyboxImages();
+      setupSkybox(images[0], images[1], images[2], images[3], images[4], images[5]);
    }
 
    public void setupSCS1Skybox()
    {
-      Image topImage = SessionVisualizerIOTools.SCS1_SKYBOX_TOP_IMAGE;
-      Image bottomImage = SessionVisualizerIOTools.SCS1_SKYBOX_BOTTOM_IMAGE;
-      Image leftImage = SessionVisualizerIOTools.SCS1_SKYBOX_LEFT_IMAGE;
-      Image rightImage = SessionVisualizerIOTools.SCS1_SKYBOX_RIGHT_IMAGE;
-      Image frontImage = SessionVisualizerIOTools.SCS1_SKYBOX_FRONT_IMAGE;
-      Image backImage = SessionVisualizerIOTools.SCS1_SKYBOX_BACK_IMAGE;
-      setupSkybox(topImage, bottomImage, leftImage, rightImage, frontImage, backImage);
+      Image[] images = SessionVisualizerIOTools.getSCS1SkyboxImages();
+      setupSkybox(images[0], images[1], images[2], images[3], images[4], images[5]);
    }
 
    public void setupCamera(Camera camera)

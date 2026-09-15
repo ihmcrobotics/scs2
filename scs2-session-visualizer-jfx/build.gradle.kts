@@ -83,7 +83,7 @@ categories.configure("javafx-headless")
    jvmArguments += "-Dprism.verbose=true"
 }
 
-val sessionVisualizerExecutableName = "SCS2SessionVisualizer"
+val sessionVisualizerExecutableName = "SessionVisualizer"
 val mcapRepackAppExecutableName = "MCAPRepackApplication"
 ihmc.jarWithLibFolder()
 tasks.getByPath("installDist").dependsOn("compositeJar")
@@ -161,9 +161,9 @@ tasks.register("buildDebianPackage") {
          sudo desktop-file-install /usr/share/applications/scs2-${ihmc.version}-visualizer.desktop
          echo "-----------------------------------------------------------------------------------------------------------------------"
          echo "----------------------------------------------- Installation Notes: ---------------------------------------------------"
-         echo "Add the following to your .bashrc to run SCS2 Session Visualizer form the command line:"
+         echo "Add the following to your .bashrc to run Session Visualizer form the command line:"
          echo "   export PATH=\${'$'}PATH:/opt/scs2-${ihmc.version}/bin/"
-         echo "Then run the command '$sessionVisualizerExecutableName' to start the SCS2 Session Visualizer."
+         echo "Then run the command '$sessionVisualizerExecutableName' to start Session Visualizer."
          echo "You can also run '$mcapRepackAppExecutableName' to start the MCAP Repack Application to help with corrupted MCAP files."
          echo "-----------------------------------------------------------------------------------------------------------------------"
          echo "-----------------------------------------------------------------------------------------------------------------------"
@@ -174,12 +174,12 @@ tasks.register("buildDebianPackage") {
       File("$baseFolder/usr/share/applications/scs2-${ihmc.version}-visualizer.desktop").writeText(
             """
          [Desktop Entry]
-         Name=SCS2 Session Visualizer
+         Name=Session Visualizer
          Comment=Session Visualizer for SCS2
          Exec=/opt/scs2-${ihmc.version}/bin/$sessionVisualizerExecutableName
          Icon=/opt/scs2-${ihmc.version}/icon/scs-icon.png
          Version=1.0
-         Terminal=true
+         Terminal=false
          Type=Application
          Categories=Utility;Application;
          """.trimIndent()
@@ -544,7 +544,7 @@ fun jpackageArgsCommonMac(type: String, dest: String, runtimeImage: String? = nu
          "--main-class", windowsMainClass,
          "--icon", macIcon,
          "--mac-package-identifier", macPackageIdentifier,
-         "--mac-package-name", "SCS2 Session Visualizer",
+         "--mac-package-name", "Session Visualizer",
          "--java-options", "-Dprism.vsync=false",
          "--java-options", "-Xmx8g"
    )

@@ -104,6 +104,12 @@ public class SimulationSession extends Session
       gravity.set(0.0, 0.0, -9.81);
    }
 
+   @Override
+   protected void sessionResetPerformed()
+   {
+      physicsEngine.getRobots().forEach(robot -> robot.getControllerManager().resetControllers());
+   }
+
    public SimulationSessionControls getSimulationSessionControls()
    {
       if (controls == null)
@@ -122,6 +128,18 @@ public class SimulationSession extends Session
       super.initializeSession();
       physicsEngine.initialize(gravity);
       time.set(0.0);
+   }
+
+   @Override
+   public boolean isSessionResetSupported()
+   {
+      return true;
+   }
+
+   @Override
+   public boolean isSessionResetAvailable()
+   {
+      return physicsEngine.getRobots().stream().allMatch(robot -> robot.getControllerManager().isResetSupported());
    }
 
    @Override
@@ -424,6 +442,17 @@ public class SimulationSession extends Session
       public boolean isSessionShutdown()
       {
          return SimulationSession.this.isSessionShutdown();
+      }
+
+      /** {@inheritDoc} */
+      @Override
+      public void resetToInitialState()
+      {
+         submitSessionResetRequest();
+         if (!hasSessionStarted())
+         { // The session thread is not running, process a tick to perform the reset now.
+            pauseTick();
+         }
       }
 
       // ------------------------------------------------------------------------------- //

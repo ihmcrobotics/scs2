@@ -4,9 +4,12 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.ButtonType;
+import javafx.scene.control.CheckBox;
 import javafx.scene.control.Dialog;
+import javafx.scene.control.Label;
 import javafx.scene.image.Image;
 import javafx.scene.layout.Region;
+import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
 import javafx.stage.FileChooser.ExtensionFilter;
 import javafx.stage.Stage;
@@ -194,21 +197,50 @@ public class SessionVisualizerIOTools
 
    // Cloudy Crown Skybox
    public static final String SKYBOX_CLOUDY_FOLDER = "cloudy/";
-   public static final Image SKYBOX_TOP_IMAGE = loadSkyboxImage(SKYBOX_CLOUDY_FOLDER + "Up.png");
-   public static final Image SKYBOX_BOTTOM_IMAGE = loadSkyboxImage(SKYBOX_CLOUDY_FOLDER + "Down.png");
-   public static final Image SKYBOX_LEFT_IMAGE = loadSkyboxImage(SKYBOX_CLOUDY_FOLDER + "Left.png");
-   public static final Image SKYBOX_RIGHT_IMAGE = loadSkyboxImage(SKYBOX_CLOUDY_FOLDER + "Right.png");
-   public static final Image SKYBOX_FRONT_IMAGE = loadSkyboxImage(SKYBOX_CLOUDY_FOLDER + "Front.png");
-   public static final Image SKYBOX_BACK_IMAGE = loadSkyboxImage(SKYBOX_CLOUDY_FOLDER + "Back.png");
 
    // SCS 1 Skybox
    public static final String SKYBOX_SCS1_FOLDER = "brightSky/";
-   public static final Image SCS1_SKYBOX_TOP_IMAGE = loadSkyboxImage(SKYBOX_SCS1_FOLDER + "Up.png");
-   public static final Image SCS1_SKYBOX_BOTTOM_IMAGE = loadSkyboxImage(SKYBOX_SCS1_FOLDER + "Down.png");
-   public static final Image SCS1_SKYBOX_LEFT_IMAGE = loadSkyboxImage(SKYBOX_SCS1_FOLDER + "Left.png");
-   public static final Image SCS1_SKYBOX_RIGHT_IMAGE = loadSkyboxImage(SKYBOX_SCS1_FOLDER + "Right.png");
-   public static final Image SCS1_SKYBOX_FRONT_IMAGE = loadSkyboxImage(SKYBOX_SCS1_FOLDER + "Front.png");
-   public static final Image SCS1_SKYBOX_BACK_IMAGE = loadSkyboxImage(SKYBOX_SCS1_FOLDER + "Back.png");
+
+   /**
+    * Holds the skybox images for a single theme. Declared as a nested class so the images are only
+    * decoded the first time the theme is actually requested, instead of every skybox theme being
+    * decoded eagerly whenever this class is first touched (e.g. for loading the window icon).
+    */
+   private static class CloudySkyboxImages
+   {
+      static final Image TOP = loadSkyboxImage(SKYBOX_CLOUDY_FOLDER + "Up.png");
+      static final Image BOTTOM = loadSkyboxImage(SKYBOX_CLOUDY_FOLDER + "Down.png");
+      static final Image LEFT = loadSkyboxImage(SKYBOX_CLOUDY_FOLDER + "Left.png");
+      static final Image RIGHT = loadSkyboxImage(SKYBOX_CLOUDY_FOLDER + "Right.png");
+      static final Image FRONT = loadSkyboxImage(SKYBOX_CLOUDY_FOLDER + "Front.png");
+      static final Image BACK = loadSkyboxImage(SKYBOX_CLOUDY_FOLDER + "Back.png");
+
+      /** Order must match {top, bottom, left, right, front, back} expected by {@code Skybox#setupSkybox}. */
+      static final Image[] ALL = {TOP, BOTTOM, LEFT, RIGHT, FRONT, BACK};
+   }
+
+   private static class SCS1SkyboxImages
+   {
+      static final Image TOP = loadSkyboxImage(SKYBOX_SCS1_FOLDER + "Up.png");
+      static final Image BOTTOM = loadSkyboxImage(SKYBOX_SCS1_FOLDER + "Down.png");
+      static final Image LEFT = loadSkyboxImage(SKYBOX_SCS1_FOLDER + "Left.png");
+      static final Image RIGHT = loadSkyboxImage(SKYBOX_SCS1_FOLDER + "Right.png");
+      static final Image FRONT = loadSkyboxImage(SKYBOX_SCS1_FOLDER + "Front.png");
+      static final Image BACK = loadSkyboxImage(SKYBOX_SCS1_FOLDER + "Back.png");
+
+      /** Order must match {top, bottom, left, right, front, back} expected by {@code Skybox#setupSkybox}. */
+      static final Image[] ALL = {TOP, BOTTOM, LEFT, RIGHT, FRONT, BACK};
+   }
+
+   public static Image[] getCloudySkyboxImages()
+   {
+      return CloudySkyboxImages.ALL.clone();
+   }
+
+   public static Image[] getSCS1SkyboxImages()
+   {
+      return SCS1SkyboxImages.ALL.clone();
+   }
 
    public static void addSCSIconToDialog(Dialog<?> dialog)
    {
@@ -622,6 +654,63 @@ public class SessionVisualizerIOTools
 
          prefs.put(key, file.getAbsolutePath());
       }
+   }
+
+   private static final String SKIP_SAVE_CONFIGURATION_PROMPT_ANSWER_KEY = "skipSaveConfigurationPromptAnswer";
+
+   public static boolean isSaveConfigurationPromptSkipped()
+   {
+      return Preferences.userNodeForPackage(SessionVisualizerIOTools.class).get(SKIP_SAVE_CONFIGURATION_PROMPT_ANSWER_KEY, null) != null;
+   }
+
+   public static boolean getSkippedSaveConfigurationAnswer()
+   {
+      return Preferences.userNodeForPackage(SessionVisualizerIOTools.class).getBoolean(SKIP_SAVE_CONFIGURATION_PROMPT_ANSWER_KEY, false);
+   }
+
+   /**
+    * Persists the user's "Don't ask again" choice for the save-configuration prompt.
+    */
+   public static void setSkipSaveConfigurationPrompt(boolean rememberedAnswer)
+   {
+      Preferences.userNodeForPackage(SessionVisualizerIOTools.class).putBoolean(SKIP_SAVE_CONFIGURATION_PROMPT_ANSWER_KEY, rememberedAnswer);
+   }
+
+   public static void resetSaveConfigurationPrompt()
+   {
+      Preferences.userNodeForPackage(SessionVisualizerIOTools.class).remove(SKIP_SAVE_CONFIGURATION_PROMPT_ANSWER_KEY);
+   }
+
+   /**
+    * Asks whether to save the default configuration, honoring a persisted "Don't ask again" choice.
+    *
+    * @param owner the dialog owner, or {@code null}
+    * @param includeCancel {@code true} to offer Cancel (close-app). An empty result means cancelled.
+    * @return whether to save, or empty if the user cancelled
+    */
+   public static Optional<Boolean> confirmSaveDefaultConfiguration(Window owner, boolean includeCancel)
+   {
+      if (isSaveConfigurationPromptSkipped())
+         return Optional.of(getSkippedSaveConfigurationAnswer());
+
+      Alert alert = includeCancel ?
+            new Alert(AlertType.CONFIRMATION, null, ButtonType.YES, ButtonType.NO, ButtonType.CANCEL) :
+            new Alert(AlertType.CONFIRMATION, null, ButtonType.YES, ButtonType.NO);
+      CheckBox doNotAskAgainCheckBox = new CheckBox("Don't ask again");
+      alert.getDialogPane().setContent(new VBox(10, new Label("Do you want to save the default configuration?"), doNotAskAgainCheckBox));
+      addSCSIconToDialog(alert);
+      if (owner != null)
+         alert.initOwner(owner);
+      JavaFXMissingTools.centerDialogInOwner(alert);
+
+      Optional<ButtonType> result = alert.showAndWait();
+      if (result.isEmpty() || result.get() == ButtonType.CANCEL)
+         return Optional.empty();
+
+      boolean save = result.get() == ButtonType.YES;
+      if (doNotAskAgainCheckBox.isSelected())
+         setSkipSaveConfigurationPrompt(save);
+      return Optional.of(save);
    }
 
    /**

@@ -1,6 +1,7 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.session.log;
 
 import javafx.scene.image.Image;
+import javafx.scene.image.PixelFormat;
 import javafx.scene.image.PixelReader;
 import javafx.scene.image.PixelWriter;
 import javafx.scene.image.WritableImage;
@@ -72,7 +73,7 @@ public class MagewellVideoDataReader implements VideoDataReader
     * @param frameToConvert is the next frame we want to visualize so we convert it to be compatible with JavaFX
     * @return {@link WritableImage}
     */
-   public WritableImage convertFrameToWritableImage(Frame frameToConvert)
+   public static WritableImage convertFrameToWritableImage(Frame frameToConvert)
    {
       Image currentImage;
 
@@ -85,17 +86,16 @@ public class MagewellVideoDataReader implements VideoDataReader
       {
          currentImage = frameConverter.convert(frameToConvert);
       }
-      WritableImage writableImage = new WritableImage((int) currentImage.getWidth(), (int) currentImage.getHeight());
+      int width = (int) currentImage.getWidth();
+      int height = (int) currentImage.getHeight();
+
+      WritableImage writableImage = new WritableImage(width, height);
       PixelReader pixelReader = currentImage.getPixelReader();
       PixelWriter pixelWriter = writableImage.getPixelWriter();
 
-      for (int y = 0; y < currentImage.getHeight(); y++)
-      {
-         for (int x = 0; x < currentImage.getWidth(); x++)
-         {
-            pixelWriter.setArgb(x, y, pixelReader.getArgb(x, y));
-         }
-      }
+      int[] pixels = new int[width * height];
+      pixelReader.getPixels(0, 0, width, height, PixelFormat.getIntArgbInstance(), pixels, 0, width);
+      pixelWriter.setPixels(0, 0, width, height, PixelFormat.getIntArgbInstance(), pixels, 0, width);
 
       return writableImage;
    }

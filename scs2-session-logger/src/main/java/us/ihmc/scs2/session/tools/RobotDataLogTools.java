@@ -5,7 +5,13 @@ import logger_msgs.Model;
 import logger_msgs.Variables;
 import us.ihmc.robotDataLogger.handshake.YoVariableHandshakeParser;
 import us.ihmc.robotDataLogger.logger.YoVariableLoggerListener;
+import us.ihmc.robotDataLogger.yoGraphics.YoGraphicFieldData;
+import us.ihmc.robotDataLogger.yoGraphics.YoGraphicFieldsData;
 import us.ihmc.scs2.definition.robot.RobotDefinition;
+import us.ihmc.scs2.definition.yoGraphic.YoGraphicDefinition;
+import us.ihmc.scs2.definition.yoGraphic.YoGraphicDefinition.YoGraphicFieldInfo;
+import us.ihmc.scs2.definition.yoGraphic.YoGraphicDefinition.YoGraphicFieldsSummary;
+import us.ihmc.scs2.definition.yoGraphic.YoGraphicGroupDefinition;
 import us.ihmc.scs2.session.log.LogTimeStampedIndexGenerator;
 import us.ihmc.scs2.session.log.ProgressConsumer;
 
@@ -13,6 +19,8 @@ import java.io.DataInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 public class RobotDataLogTools
 {
@@ -167,6 +175,25 @@ public class RobotDataLogTools
                                         model.getResourceDirectoriesList().toStringArray(),
                                         modelData,
                                         resourceData);
+   }
+
+   /**
+    * Converts the logger's wire-format YoGraphic field data - opaque to the logger, which knows
+    * nothing about {@link YoGraphicDefinition} - back into scs2's typed definition tree.
+    */
+   public static List<YoGraphicGroupDefinition> toYoGraphicGroupDefinitions(List<YoGraphicFieldsData> yoGraphicFieldsDataList)
+   {
+      List<YoGraphicFieldsSummary> summaries = new ArrayList<>();
+
+      for (YoGraphicFieldsData fieldsData : yoGraphicFieldsDataList)
+      {
+         YoGraphicFieldsSummary summary = new YoGraphicFieldsSummary();
+         for (YoGraphicFieldData field : fieldsData)
+            summary.add(new YoGraphicFieldInfo(field.getFieldName(), field.getFieldValue()));
+         summaries.add(summary);
+      }
+
+      return YoGraphicDefinition.parseTreeYoGraphicFieldsSummary(summaries);
    }
 
    public static void updateLogs(File directory, LogProperties properties, ProgressConsumer progressConsumer)

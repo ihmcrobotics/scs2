@@ -3,9 +3,6 @@ package us.ihmc.scs2.sessionVisualizer.jfx.managers;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.fxml.FXMLLoader;
-import javafx.scene.control.Alert;
-import javafx.scene.control.Alert.AlertType;
-import javafx.scene.control.ButtonType;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.Pane;
 import javafx.stage.Stage;
@@ -82,21 +79,13 @@ public class MultiSessionManager
                                    {
                                       if (toolkit.hasActiveSession())
                                       {
-                                         Alert alert = new Alert(AlertType.CONFIRMATION,
-                                                                 "Do you want to save the default configuration?",
-                                                                 ButtonType.YES,
-                                                                 ButtonType.NO);
                                          Stage owner;
                                          if (activeController.get() != null)
                                             owner = activeController.get().getStage();
                                          else
                                             owner = toolkit.getMainWindow();
-                                         alert.initOwner(owner);
-                                         JavaFXMissingTools.centerDialogInOwner(alert);
-
-                                         SessionVisualizerIOTools.addSCSIconToDialog(alert);
-                                         Optional<ButtonType> result = alert.showAndWait();
-                                         stopSession(result.isPresent() && result.get() == ButtonType.YES, true);
+                                         Optional<Boolean> saveConfiguration = SessionVisualizerIOTools.confirmSaveDefaultConfiguration(owner, false);
+                                         stopSession(saveConfiguration.orElse(false), true);
                                          if (oldValue != null)
                                             oldValue.shutdownSession();
                                       }

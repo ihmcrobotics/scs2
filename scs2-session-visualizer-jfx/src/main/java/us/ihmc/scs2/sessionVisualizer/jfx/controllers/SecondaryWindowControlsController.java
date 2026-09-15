@@ -17,6 +17,8 @@ import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerWindowToolki
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.FXCoalescedUpdater;
 import us.ihmc.scs2.sharedMemory.interfaces.YoBufferPropertiesReadOnly;
 
+import static us.ihmc.scs2.sessionVisualizer.jfx.controllers.SessionAdvancedControlsController.bindSessionResetControlAvailability;
+import static us.ihmc.scs2.sessionVisualizer.jfx.controllers.SessionAdvancedControlsController.bindSessionResetControlVisibility;
 import java.util.function.Consumer;
 
 import static us.ihmc.scs2.sessionVisualizer.jfx.controllers.SessionAdvancedControlsController.setupMainControlsActiveMode;
@@ -34,6 +36,8 @@ public class SecondaryWindowControlsController implements VisualizerController
    private FlowPane buttonsContainer;
    @FXML
    private JFXButton previousKeyFrameButton, nextKeyFrameButton;
+   @FXML
+   private JFXButton resetButton;
    @FXML
    private Node runningIconView, playbackIconView, pauseIconView;
 
@@ -84,7 +88,20 @@ public class SecondaryWindowControlsController implements VisualizerController
       previousKeyFrameButton.setDisable(disableKeyFrameButtons);
       nextKeyFrameButton.setDisable(disableKeyFrameButtons);
 
-      setupMainControlsActiveMode(this, toolkit, runningIconView, playbackIconView, pauseIconView);
+      bindSessionResetControlVisibility(toolkit.getGlobalToolkit(), visible ->
+      {
+         resetButton.setVisible(visible);
+         resetButton.setManaged(visible);
+      });
+      bindSessionResetControlAvailability(toolkit.getGlobalToolkit(), available -> resetButton.setDisable(!available));
+
+      setupMainControlsActiveMode(this, messager, topics, runningIconView, playbackIconView, pauseIconView);
+   }
+
+   @FXML
+   private void resetSession()
+   {
+      messager.submitMessage(topics.getSessionResetRequest(), true);
    }
 
    @FXML

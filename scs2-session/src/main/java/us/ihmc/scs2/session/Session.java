@@ -316,7 +316,7 @@ public abstract class Session
    /**
     * Used to keep track of how long the session has been running.
     */
-   private long runTickCounter = 0L;
+   protected long runTickCounter = 0L;
 
    // State listener to publish internal to outside world
    /**
@@ -364,6 +364,12 @@ public abstract class Session
    private final SessionUserField<Integer> pendingDecrementBufferIndexRequest = new SessionUserField<>();
    private final SessionUserField<Integer> pendingBufferSizeRequest = new SessionUserField<>();
    private final SessionUserField<SessionDataExportRequest> pendingDataExportRequest = new SessionUserField<>();
+
+   // Fields for resetting the session to its initial state
+   private final AtomicBoolean pendingSnapshotRestore = new AtomicBoolean(false);
+   private final List<YoVariable> initialStateSnapshotVariables = new ArrayList<>();
+   private long[] initialStateSnapshotValues = null;
+   private boolean initialStateSnapshotCaptured = false;
 
    // Strictly internal fields
    private boolean sessionThreadStarted = false;
@@ -1689,6 +1695,88 @@ public abstract class Session
    }
 
    /**
+    * Whether this session supports being reset to its initial state
+    */
+   public boolean isSessionResetSupported()
+   {
+      return false;
+   }
+
+   /**
+    * Whether this session can be reset to its initial state right now without risking leaving it in a
+    * broken state.
+    */
+   public boolean isSessionResetAvailable()
+   {
+      return isSessionResetSupported();
+   }
+
+   /**
+    * Requests to reset this session back to its initial state: every {@link YoVariable} captured when
+    * the session was first initialized is restored to its initial value, then the session is
+    * re-initialized, e.g. for a simulation session the physics engine re-applies the robots' initial
+    * state and every controller gets its {@code Controller.initialize()} invoked.
+    */
+   public void submitSessionResetRequest()
+   {
+      if (!isSessionResetSupported())
+      {
+         LogTools.warn("Session reset is not supported by this session: {}", getSessionName());
+         return;
+      }
+
+      if (getActiveMode() != SessionMode.PAUSE)
+         setSessionMode(SessionMode.PAUSE);
+      pendingSnapshotRestore.set(true);
+      reinitializeSession();
+   }
+
+   /**
+    * Captures the value of every {@link YoVariable} under {@link #rootRegistry} so it can later be
+    * restored by a session reset, see {@link #submitSessionResetRequest()}.
+    * <p>
+    * Only the first invocation captures; subsequent invocations, e.g. triggered by
+    * {@link #reinitializeSession()}, are no-ops so the snapshot always reflects the state of the very
+    * first initialization.
+    * </p>
+    */
+   protected void captureInitialStateSnapshot()
+   {
+      if (initialStateSnapshotCaptured)
+         return;
+
+      initialStateSnapshotVariables.addAll(rootRegistry.collectSubtreeVariables());
+      initialStateSnapshotValues = new long[initialStateSnapshotVariables.size()];
+      for (int i = 0; i < initialStateSnapshotVariables.size(); i++)
+         initialStateSnapshotValues[i] = initialStateSnapshotVariables.get(i).getValueAsLongBits();
+      initialStateSnapshotCaptured = true;
+   }
+
+   /**
+    * Called right after this session has been reset to its initial state, see
+    * {@link #submitSessionResetRequest()}.
+    */
+   protected void sessionResetPerformed()
+   {
+   }
+
+   /**
+    * Restores every {@link YoVariable} captured by {@link #captureInitialStateSnapshot()} to its
+    * initial value. Variables created after the capture are left untouched.
+    */
+   protected void restoreInitialStateSnapshot()
+   {
+      if (!initialStateSnapshotCaptured)
+      {
+         LogTools.warn("No initial state snapshot was captured for this session: {}", getSessionName());
+         return;
+      }
+
+      for (int i = 0; i < initialStateSnapshotVariables.size(); i++)
+         initialStateSnapshotVariables.get(i).setValueFromLongBits(initialStateSnapshotValues[i]);
+   }
+
+   /**
     * Called when starting this session regardless of the initial mode.
     */
    protected void initializeSession()
@@ -1711,9 +1799,23 @@ public abstract class Session
    {
       if (!sessionInitialized)
       {
+         boolean isSessionReset = pendingSnapshotRestore.getAndSet(false);
+         if (isSessionReset)
+            restoreInitialStateSnapshot();
          initializeSession();
+         captureInitialStateSnapshot();
+         if (isSessionReset)
+         { // Let the session re-initialize state that lives outside YoVariables before recording the reset frame.
+            sessionResetPerformed();
+         }
          // When running simulation, the session starts in PAUSE, writing in the buffer allows to write the robot initial state.
          sharedBuffer.writeBuffer();
+         if (isSessionReset)
+         { // Make the reset frame the new start point of the buffer. The frames outside the active
+           // region are not cleared but will be overwritten as the recording continues.
+            sharedBuffer.setInPoint(sharedBuffer.getProperties().getCurrentIndex());
+            sharedBuffer.setOutPoint(sharedBuffer.getProperties().getCurrentIndex());
+         }
          sessionInitialized = true;
       }
 
@@ -1932,8 +2034,8 @@ public abstract class Session
     * In order, this method calls:
     * <ol>
     * <li>{@link #doGeneric(SessionMode)}: generic set of actions regardless of the current mode,
-    * <li>{@link #initializePlaybackTick()}: prepares the buffer and reads the buffer at the current
-    * index to update the {@link YoVariable} values,
+    * <li>{@link #initializePlaybackTick()}: prepares the buffer by discarding stale user-submitted
+    * value changes,
     * <li>{@link #doSpecificPlaybackTick()}: performs the actual computation of the playback tick,
     * typically nothing happens here as we're only playing through the buffered data,
     * <li>{@link #finalizePlaybackTick()}: performs buffer operations to finalize the tick and
@@ -1976,13 +2078,15 @@ public abstract class Session
    }
 
    /**
-    * Ignores all {@link YoVariable} value changes submitted by the user via {@link LinkedYoVariable}s
-    * and reads the buffer data to update the {@link YoVariable} values.
+    * Ignores all {@link YoVariable} value changes submitted by the user via {@link LinkedYoVariable}s.
+    * <p>
+    * Reading the buffer data to update the {@link YoVariable} values happens in
+    * {@link #finalizePlaybackTick()}, only when about to publish - see the note there.
+    * </p>
     */
    protected void initializePlaybackTick()
    {
       sharedBuffer.flushLinkedPushRequests();
-      sharedBuffer.readBuffer();
    }
 
    /**
@@ -2004,6 +2108,14 @@ public abstract class Session
 
       if (currentTimestamp - lastPublishedBufferTimestamp > desiredBufferPublishPeriod.get())
       {
+         // sharedBuffer.readBuffer() reads every YoVariable in the whole registry into its live value and is
+         // expensive at scale (tens of thousands of variables). It only needs to happen right before we actually
+         // hand data to a consumer (chart, 3D pose, watch panel, ...) via prepareLinkedBuffersForPull() below - so
+         // it's throttled here to desiredBufferPublishPeriod instead of running on every playback tick. The buffer
+         // index itself (and the cheap incrementBufferIndex()/publishBufferProperties() below, which for instance
+         // drive the log scrub bar position) still advance every tick, independent of this throttle, so playback
+         // and the UI stay smooth even though the expensive read/publish only happens ~30 times per second.
+         sharedBuffer.readBuffer();
          sharedBuffer.prepareLinkedBuffersForPull();
          lastPublishedBufferTimestamp = currentTimestamp;
       }
@@ -2496,6 +2608,154 @@ public abstract class Session
    public LinkedYoVariableFactory getLinkedYoVariableFactory()
    {
       return sharedBuffer;
+   }
+
+   /**
+    * Convenience class used to hook up a session with a {@link Messager}.
+    * <p>
+    * For internal use only.
+    * </p>
+    */
+   private class SessionTopicListenerManager
+   {
+      private final Messager messager;
+
+      private final TopicListener<CropBufferRequest> cropRequestListener = Session.this::submitCropBufferRequest;
+      private final TopicListener<FillBufferRequest> fillRequestListener = Session.this::submitFillBufferRequest;
+      private final TopicListener<Integer> currentIndexListener = Session.this::submitBufferIndexRequest;
+      private final TopicListener<Integer> inPointIndexListener = Session.this::submitBufferInPointIndexRequest;
+      private final TopicListener<Integer> outPointIndexListener = Session.this::submitBufferOutPointIndexRequest;
+      private final TopicListener<Integer> incrementCurrentIndexListener = Session.this::submitIncrementBufferIndexRequest;
+      private final TopicListener<Integer> decrementCurrentIndexListener = Session.this::submitDecrementBufferIndexRequest;
+      private final TopicListener<Integer> currentBufferSizeListener = Session.this::submitBufferSizeRequest;
+      private final TopicListener<Integer> initializeBufferSizeListener = Session.this::initializeBufferSize;
+
+      // TODO Look into removing the SessionState enum, seems unnecessary
+      private final TopicListener<SessionState> sessionCurrentStateListener = state ->
+      {
+         if (state == SessionState.ACTIVE)
+            startSessionThread();
+         else if (state == SessionState.INACTIVE)
+            shutdownSession();
+      };
+      private final TopicListener<SessionMode> sessionCurrentModeListener = Session.this::setSessionMode;
+      private final TopicListener<Long> sessionDTNanosecondsListener = Session.this::setSessionDTNanoseconds;
+      private final TopicListener<Boolean> runAtRealTimeRateListener = Session.this::submitRunAtRealTimeRate;
+      private final TopicListener<Double> playbackRealTimeRateListener = Session.this::submitPlaybackRealTimeRate;
+      private final TopicListener<Integer> bufferRecordTickPeriodListener = Session.this::setBufferRecordTickPeriod;
+      private final TopicListener<Integer> initializeBufferRecordTickPeriodListener = Session.this::initializeBufferRecordTickPeriod;
+      private final TopicListener<Long> runMaxDurationListener = Session.this::submitRunMaxDuration;
+      private final TopicListener<SessionDataExportRequest> sessionDataExportRequestListener = Session.this::submitSessionDataExportRequest;
+      private final TopicListener<Boolean> sessionResetRequestListener = request -> submitSessionResetRequest();
+
+      private final TopicListener<SessionRobotDefinitionListChange> robotDefinitionListChangeRequestListener = Session.this::submitRobotDefinitionListChange;
+      private final TopicListener<YoEquationListChange> equationListChangeRequestListener = Session.this::submitEquationListChange;
+
+      private SessionTopicListenerManager(Messager messager)
+      {
+         this.messager = messager;
+
+         Consumer<YoBufferPropertiesReadOnly> bufferPropertiesListener = createBufferPropertiesListener();
+         addCurrentBufferPropertiesListener(bufferPropertiesListener);
+
+         messager.addTopicListener(YoSharedBufferMessagerAPI.CropRequest, cropRequestListener);
+         messager.addTopicListener(YoSharedBufferMessagerAPI.FillRequest, fillRequestListener);
+         messager.addTopicListener(YoSharedBufferMessagerAPI.CurrentIndexRequest, currentIndexListener);
+         messager.addTopicListener(YoSharedBufferMessagerAPI.InPointIndexRequest, inPointIndexListener);
+         messager.addTopicListener(YoSharedBufferMessagerAPI.OutPointIndexRequest, outPointIndexListener);
+         messager.addTopicListener(YoSharedBufferMessagerAPI.IncrementCurrentIndexRequest, incrementCurrentIndexListener);
+         messager.addTopicListener(YoSharedBufferMessagerAPI.DecrementCurrentIndexRequest, decrementCurrentIndexListener);
+         messager.addTopicListener(YoSharedBufferMessagerAPI.CurrentBufferSizeRequest, currentBufferSizeListener);
+         messager.addTopicListener(YoSharedBufferMessagerAPI.InitializeBufferSize, initializeBufferSizeListener);
+
+         Consumer<SessionProperties> sessionPropertiesListener = createSessionPropertiesListener();
+         addSessionPropertiesListener(sessionPropertiesListener);
+
+         messager.addTopicListener(SessionMessagerAPI.SessionCurrentState, sessionCurrentStateListener);
+         messager.addTopicListener(SessionMessagerAPI.SessionCurrentMode, sessionCurrentModeListener);
+         messager.addTopicListener(SessionMessagerAPI.SessionDTNanoseconds, sessionDTNanosecondsListener);
+         messager.addTopicListener(SessionMessagerAPI.RunAtRealTimeRate, runAtRealTimeRateListener);
+         messager.addTopicListener(SessionMessagerAPI.PlaybackRealTimeRate, playbackRealTimeRateListener);
+         messager.addTopicListener(SessionMessagerAPI.BufferRecordTickPeriod, bufferRecordTickPeriodListener);
+         messager.addTopicListener(SessionMessagerAPI.InitializeBufferRecordTickPeriod, initializeBufferRecordTickPeriodListener);
+         messager.addTopicListener(SessionMessagerAPI.RunMaxDuration, runMaxDurationListener);
+         messager.addTopicListener(SessionMessagerAPI.SessionDataExportRequest, sessionDataExportRequestListener);
+         messager.addTopicListener(SessionMessagerAPI.SessionResetRequest, sessionResetRequestListener);
+
+         bufferListenerForceUpdateListeners.add(() ->
+                                                {
+                                                   if (messager.isMessagerOpen())
+                                                      messager.submitMessage(YoSharedBufferMessagerAPI.ForceListenerUpdate, true);
+                                                });
+
+         addRobotDefinitionListChangeListener(change ->
+                                              {
+                                                 if (messager.isMessagerOpen())
+                                                    messager.submitMessage(SessionMessagerAPI.SessionRobotDefinitionListChangeState, change);
+                                              });
+
+         messager.addTopicListener(SessionMessagerAPI.SessionRobotDefinitionListChangeRequest, robotDefinitionListChangeRequestListener);
+
+         equationManager.addChangeListener(change -> messager.submitMessage(SessionMessagerAPI.SessionYoEquationListChangeState, change));
+         messager.addTopicListener(SessionMessagerAPI.SessionYoEquationListChangeRequest, equationListChangeRequestListener);
+      }
+
+      private void detachFromMessager()
+      {
+         if (messager == null)
+            return;
+
+         messager.removeTopicListener(YoSharedBufferMessagerAPI.CropRequest, cropRequestListener);
+         messager.removeTopicListener(YoSharedBufferMessagerAPI.FillRequest, fillRequestListener);
+         messager.removeTopicListener(YoSharedBufferMessagerAPI.CurrentIndexRequest, currentIndexListener);
+         messager.removeTopicListener(YoSharedBufferMessagerAPI.InPointIndexRequest, inPointIndexListener);
+         messager.removeTopicListener(YoSharedBufferMessagerAPI.OutPointIndexRequest, outPointIndexListener);
+         messager.removeTopicListener(YoSharedBufferMessagerAPI.IncrementCurrentIndexRequest, incrementCurrentIndexListener);
+         messager.removeTopicListener(YoSharedBufferMessagerAPI.DecrementCurrentIndexRequest, decrementCurrentIndexListener);
+         messager.removeTopicListener(YoSharedBufferMessagerAPI.CurrentBufferSizeRequest, currentBufferSizeListener);
+         messager.removeTopicListener(YoSharedBufferMessagerAPI.InitializeBufferSize, initializeBufferSizeListener);
+
+         messager.removeTopicListener(SessionMessagerAPI.SessionCurrentState, sessionCurrentStateListener);
+         messager.removeTopicListener(SessionMessagerAPI.SessionCurrentMode, sessionCurrentModeListener);
+         messager.removeTopicListener(SessionMessagerAPI.SessionDTNanoseconds, sessionDTNanosecondsListener);
+         messager.removeTopicListener(SessionMessagerAPI.RunAtRealTimeRate, runAtRealTimeRateListener);
+         messager.removeTopicListener(SessionMessagerAPI.PlaybackRealTimeRate, playbackRealTimeRateListener);
+         messager.removeTopicListener(SessionMessagerAPI.BufferRecordTickPeriod, bufferRecordTickPeriodListener);
+         messager.removeTopicListener(SessionMessagerAPI.InitializeBufferRecordTickPeriod, initializeBufferRecordTickPeriodListener);
+         messager.removeTopicListener(SessionMessagerAPI.RunMaxDuration, runMaxDurationListener);
+         messager.removeTopicListener(SessionMessagerAPI.SessionDataExportRequest, sessionDataExportRequestListener);
+         messager.removeTopicListener(SessionMessagerAPI.SessionResetRequest, sessionResetRequestListener);
+
+         messager.removeTopicListener(SessionMessagerAPI.SessionRobotDefinitionListChangeRequest, robotDefinitionListChangeRequestListener);
+         messager.removeTopicListener(SessionMessagerAPI.SessionYoEquationListChangeRequest, equationListChangeRequestListener);
+      }
+
+      private Consumer<YoBufferPropertiesReadOnly> createBufferPropertiesListener()
+      {
+         return bufferProperties ->
+         {
+            if (!messager.isMessagerOpen())
+               return;
+
+            messager.submitMessage(YoSharedBufferMessagerAPI.CurrentBufferProperties, bufferProperties);
+         };
+      }
+
+      private Consumer<SessionProperties> createSessionPropertiesListener()
+      {
+         return sessionProperties ->
+         {
+            if (!messager.isMessagerOpen())
+               return;
+
+            messager.submitMessage(SessionMessagerAPI.SessionCurrentMode, sessionProperties.getActiveMode());
+            messager.submitMessage(SessionMessagerAPI.SessionDTNanoseconds, sessionProperties.getSessionDTNanoseconds());
+            messager.submitMessage(SessionMessagerAPI.PlaybackRealTimeRate, sessionProperties.getPlaybackRealTimeRate());
+            messager.submitMessage(SessionMessagerAPI.RunAtRealTimeRate, sessionProperties.isRunAtRealTimeRate());
+            messager.submitMessage(SessionMessagerAPI.BufferRecordTickPeriod, sessionProperties.getBufferRecordTickPeriod());
+            messager.submitMessage(SessionMessagerAPI.RunMaxDuration, sessionProperties.getRunMaxDuration());
+         };
+      }
    }
 
    /**

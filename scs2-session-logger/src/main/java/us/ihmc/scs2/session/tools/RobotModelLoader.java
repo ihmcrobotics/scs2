@@ -23,6 +23,7 @@ import us.ihmc.yoVariables.registry.YoRegistry;
 import us.ihmc.yoVariables.variable.YoVariable;
 
 import jakarta.xml.bind.JAXBException;
+
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
@@ -76,10 +77,42 @@ public class RobotModelLoader
 
                                                                                            if (jointState != null)
                                                                                            {
+                                                                                              boolean[] wasInvalid = new boolean[1];
+
                                                                                               jointStateUpdaters.add(() ->
                                                                                                                      {
-                                                                                                                        oneDoFJoint.setQ(jointState.getQ());
-                                                                                                                        oneDoFJoint.setQd(jointState.getQd());
+                                                                                                                        double q = jointState.getQ();
+                                                                                                                        double qd = jointState.getQd();
+
+                                                                                                                        if (Double.isFinite(q)
+                                                                                                                            && Double.isFinite(qd))
+                                                                                                                        {
+                                                                                                                           oneDoFJoint.setQ(q);
+                                                                                                                           oneDoFJoint.setQd(qd);
+
+                                                                                                                           if (wasInvalid[0])
+                                                                                                                           {
+                                                                                                                              LogTools.info("Joint "
+                                                                                                                                            + oneDoFJoint.getName()
+                                                                                                                                            + " recovered valid data, resuming updates.");
+                                                                                                                              wasInvalid[0] = false;
+                                                                                                                           }
+                                                                                                                        }
+                                                                                                                        else
+                                                                                                                        {
+                                                                                                                           // Corrupt/uninitialized log data (e.g. leading placeholder ticks before a robot's
+                                                                                                                           // sensor pipeline is primed): hold the joint at its last valid state instead of
+                                                                                                                           // propagating NaN into the kinematics and rendering.
+                                                                                                                           if (!wasInvalid[0])
+                                                                                                                           {
+                                                                                                                              LogTools.warn("Joint "
+                                                                                                                                            + oneDoFJoint.getName()
+                                                                                                                                            + " received non-finite data (q="
+                                                                                                                                            + q + ", qd=" + qd
+                                                                                                                                            + "); holding last valid state.");
+                                                                                                                              wasInvalid[0] = true;
+                                                                                                                           }
+                                                                                                                        }
                                                                                                                      });
                                                                                            }
                                                                                         });
@@ -89,10 +122,29 @@ public class RobotModelLoader
 
       if (jointState != null)
       {
+         boolean[] wasInvalid = new boolean[1];
+
          jointStateUpdaters.add(() ->
                                 {
-                                   floatingJoint.getJointPose().set(jointState.getTranslation(), jointState.getRotation());
-                                   floatingJoint.getJointTwist().set(jointState.getTwistAngularPart(), jointState.getTwistLinearPart());
+                                   boolean valid = !jointState.getTranslation().containsNaN() && !jointState.getRotation().containsNaN()
+                                                   && !jointState.getTwistAngularPart().containsNaN() && !jointState.getTwistLinearPart().containsNaN();
+
+                                   if (valid)
+                                   {
+                                      floatingJoint.getJointPose().set(jointState.getTranslation(), jointState.getRotation());
+                                      floatingJoint.getJointTwist().set(jointState.getTwistAngularPart(), jointState.getTwistLinearPart());
+
+                                      if (wasInvalid[0])
+                                      {
+                                         LogTools.info("Joint " + floatingJoint.getName() + " recovered valid data, resuming updates.");
+                                         wasInvalid[0] = false;
+                                      }
+                                   }
+                                   else if (!wasInvalid[0])
+                                   {
+                                      LogTools.warn("Joint " + floatingJoint.getName() + " received non-finite data; holding last valid state.");
+                                      wasInvalid[0] = true;
+                                   }
                                 });
       }
 

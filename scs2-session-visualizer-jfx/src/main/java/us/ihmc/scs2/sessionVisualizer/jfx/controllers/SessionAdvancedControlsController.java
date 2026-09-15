@@ -15,14 +15,19 @@ import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.Region;
 import javafx.stage.Window;
 import javafx.util.Pair;
+import us.ihmc.messager.javafx.JavaFXMessager;
+import us.ihmc.scs2.session.Session;
 import us.ihmc.scs2.sessionVisualizer.jfx.messager.SCS2Messager;
 import us.ihmc.scs2.session.Session;
 import us.ihmc.scs2.session.SessionMode;
 import us.ihmc.scs2.session.SessionProperties;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerTopics;
+import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerToolkit;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerWindowToolkit;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.FXCoalescedUpdater;
 import us.ihmc.scs2.sharedMemory.interfaces.YoBufferPropertiesReadOnly;
+
+import java.util.function.Consumer;
 
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
@@ -41,6 +46,8 @@ public class SessionAdvancedControlsController implements VisualizerController
    private FlowPane buttonsContainer;
    @FXML
    private Button previousKeyFrameButton, nextKeyFrameButton;
+   @FXML
+   private Button resetButton;
    @FXML
    private Node runningIconView, playbackIconView, pauseIconView;
 
@@ -94,7 +101,36 @@ public class SessionAdvancedControlsController implements VisualizerController
       previousKeyFrameButton.setDisable(disableKeyFrameButtons);
       nextKeyFrameButton.setDisable(disableKeyFrameButtons);
 
-      setupMainControlsActiveMode(this, toolkit, runningIconView, playbackIconView, pauseIconView);
+      bindSessionResetControlVisibility(toolkit.getGlobalToolkit(), visible ->
+      {
+         resetButton.setVisible(visible);
+         resetButton.setManaged(visible);
+      });
+      bindSessionResetControlAvailability(toolkit.getGlobalToolkit(), available -> resetButton.setDisable(!available));
+
+      setupMainControlsActiveMode(this, messager, topics, runningIconView, playbackIconView, pauseIconView);
+   }
+
+   /**
+    * Shows a session reset control only when the active session supports being reset
+    */
+   public static void bindSessionResetControlVisibility(SessionVisualizerToolkit globalToolkit, Consumer<Boolean> visibleSetter)
+   {
+      globalToolkit.addSessionChangedListener((previousSession, newSession) -> Platform.runLater(() -> visibleSetter.accept(newSession != null
+                                                                                                                            && newSession.isSessionResetSupported())));
+      Session activeSession = globalToolkit.getSession();
+      visibleSetter.accept(activeSession != null && activeSession.isSessionResetSupported());
+   }
+
+   /**
+    * Disables a session reset control when the active session cannot currently be reset safely
+    */
+   public static void bindSessionResetControlAvailability(SessionVisualizerToolkit globalToolkit, Consumer<Boolean> availableSetter)
+   {
+      globalToolkit.addSessionChangedListener((previousSession, newSession) -> Platform.runLater(() -> availableSetter.accept(newSession != null
+                                                                                                                              && newSession.isSessionResetAvailable())));
+      Session activeSession = globalToolkit.getSession();
+      availableSetter.accept(activeSession != null && activeSession.isSessionResetAvailable());
    }
 
    public static void setupMainControlsActiveMode(Object bean,
@@ -196,6 +232,12 @@ public class SessionAdvancedControlsController implements VisualizerController
    {
       if (toolkit.getSession() != null)
          toolkit.getSession().setSessionMode(SessionMode.PAUSE);
+   }
+
+   @FXML
+   private void resetSession()
+   {
+      messager.submitMessage(topics.getSessionResetRequest(), true);
    }
 
    @FXML

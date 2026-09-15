@@ -10,14 +10,14 @@
 3. Install the package:
     - Open your favorite terminal application (Ctrl+Alt+T)
     - `sudo dpkg -i scs2-[version].deb`
-4. Shortly after the install completed, the desktop application should be available in the application menu as `SCS2 Session Visualizer` (`Super` key, then
-   start looking up for SCS2).
+4. Shortly after the install completed, the desktop application should be available in the application menu as `Session Visualizer` (`Super` key, then
+   start looking up for Session Visualizer).
 5. If you want to run SCS2 from the command line, you can add the following line to your `~/.bashrc` file: `export PATH=$PATH:/opt/scs2-[version]/bin`.
-    - You can then run SCS2 from the command line with: `SCS2SessionVisualizer`
+    - You can then run SCS2 from the command line with: `SessionVisualizer`
     - The application accepts arguments, for instance:
-        - `SCS2SessionVisualizer --help` to get the list of available arguments.
-        - `SCS2SessionVisualizer -l /path/to/log/file` to load a log file.
-        - `SCS2SessionVisualizer -l /path/to/log/file -r /path/to/robot/urdf/file` to load a log file and a robot definition file.
+        - `SessionVisualizer --help` to get the list of available arguments.
+        - `SessionVisualizer -l /path/to/log/file` to load a log file.
+        - `SessionVisualizer -l /path/to/log/file -r /path/to/robot/urdf/file` to load a log file and a robot definition file.
 
 To uninstall SCS2, run: `sudo dpkg -r scs2`
 
