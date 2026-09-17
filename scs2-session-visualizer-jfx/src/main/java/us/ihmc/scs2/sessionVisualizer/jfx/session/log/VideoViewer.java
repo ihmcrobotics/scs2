@@ -276,4 +276,9 @@ public class VideoViewer
    {
       return thumbnailContainer;
    }
+
+   public VideoDataReader getReader()
+   {
+      return reader;
+   }
 }

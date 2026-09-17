@@ -70,6 +70,11 @@
     -fx-icon-code: "fa-pause-circle";
 }
 
+.session-reset-icon-view {
+    -glyph-name: UNDO;
+    -fx-icon-code: "fa-undo";
+}
+
 .set-inpoint-icon-view {
     -fx-fill: -default-pale-green;
     -glyph-name: STEP_BACKWARD;
@@ -485,7 +490,7 @@
 
 .advanced-controls-button {
     -jfx-button-type: RAISED;
-    -fx-opacity: 0.95;
+    -fx-opacity: 0.9;
     -fx-content-display: GRAPHIC_ONLY;
     -fx-graphic-text-gap: 0.0;
     -fx-alignment: CENTER;

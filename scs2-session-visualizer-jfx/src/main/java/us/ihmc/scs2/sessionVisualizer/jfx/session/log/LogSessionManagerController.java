@@ -4,6 +4,7 @@ import com.jfoenix.controls.JFXTrimSlider;
 import javafx.beans.binding.StringBinding;
 import javafx.beans.property.LongProperty;
 import javafx.beans.property.ObjectProperty;
+import javafx.beans.property.Property;
 import javafx.beans.property.SimpleLongProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.value.ChangeListener;
@@ -19,6 +20,8 @@ import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.ProgressIndicator;
+import javafx.scene.control.Spinner;
+import javafx.scene.control.SpinnerValueFactory.IntegerSpinnerValueFactory;
 import javafx.scene.control.TitledPane;
 import javafx.scene.control.ToggleButton;
 import javafx.scene.input.MouseEvent;
@@ -36,11 +39,14 @@ import logger_msgs.LogProperties;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import us.ihmc.commons.lists.PairList;
 import us.ihmc.log.LogTools;
-import us.ihmc.messager.javafx.JavaFXMessager;
+import us.ihmc.scs2.sessionVisualizer.jfx.messager.SCS2Messager;
 import us.ihmc.scs2.session.log.ChildLogData;
 import us.ihmc.scs2.session.log.ChildLogSynchronization;
 import us.ihmc.scs2.session.log.LogDataReader;
 import us.ihmc.scs2.session.log.LogSession;
+import us.ihmc.scs2.session.log.MagewellScrubber;
+import us.ihmc.scs2.session.log.heightMap.HeightMapMcapScrubber;
+import us.ihmc.scs2.session.log.perception.PerceptionMcapScrubber;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerIOTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerTopics;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.SessionVariableFilterPaneController;
@@ -48,7 +54,9 @@ import us.ihmc.scs2.sessionVisualizer.jfx.managers.BackgroundExecutorManager;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerToolkit;
 import us.ihmc.scs2.sessionVisualizer.jfx.session.OpenAddLogRequest;
 import us.ihmc.scs2.sessionVisualizer.jfx.session.SessionControlsController;
+import us.ihmc.scs2.sessionVisualizer.jfx.tools.FXCoalescedUpdater;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
+import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.YoHeightGridFX3D;
 import us.ihmc.scs2.sharedMemory.interfaces.YoBufferPropertiesReadOnly;
 import us.ihmc.yoVariables.registry.YoRegistry;
 import us.ihmc.yoVariables.variable.YoVariable;
@@ -97,6 +105,8 @@ public class LogSessionManagerController implements SessionControlsController
    private TitledPane thumbnailsTitledPane;
    @FXML
    private FlowPane videoThumbnailPane;
+   @FXML
+   private Spinner<Integer> frameDelaySpinner;
 
    @FXML
    private Pane additionalLogWeightContainer;
@@ -120,7 +130,7 @@ public class LogSessionManagerController implements SessionControlsController
 
    private Stage stage;
    private SessionVisualizerTopics topics;
-   private JavaFXMessager messager;
+   private SCS2Messager messager;
 
    @Override
    public void initialize(SessionVisualizerToolkit toolkit)
@@ -181,28 +191,23 @@ public class LogSessionManagerController implements SessionControlsController
       logPositionSlider.addEventFilter(MouseEvent.MOUSE_DRAGGED, e -> sliderFeedbackEnabled.set(false));
       logPositionSlider.addEventFilter(MouseEvent.MOUSE_RELEASED, e -> sliderFeedbackEnabled.set(true));
 
-      Consumer<YoBufferPropertiesReadOnly> logPositionUpdateListener = properties ->
+      FXCoalescedUpdater<YoBufferPropertiesReadOnly> logPositionUpdater = new FXCoalescedUpdater<>(properties ->
       {
          LogSession logSession = activeSessionProperty.get();
 
-         if (sliderFeedbackEnabled.get())
+         if (logSession == null || logSession.getLogDataReader() == null || !sliderFeedbackEnabled.get())
+            return;
+
+         int currentLogPosition = logSession.getLogDataReader().getCurrentLogPosition();
+
+         if (currentLogPosition != logPositionSlider.valueProperty().intValue())
          {
-            int currentLogPosition = logSession.getLogDataReader().getCurrentLogPosition();
-
-            JavaFXMissingTools.runLater(getClass(), () ->
-            {
-               if (logSession == null || logSession.getLogDataReader() == null)
-                  return;
-
-               if (currentLogPosition != logPositionSlider.valueProperty().intValue())
-               {
-                  logPositionUpdate.set(true);
-                  logPositionSlider.setValue(currentLogPosition);
-                  logPositionUpdate.set(false);
-               }
-            });
+            logPositionUpdate.set(true);
+            logPositionSlider.setValue(currentLogPosition);
+            logPositionUpdate.set(false);
          }
-      };
+      });
+      Consumer<YoBufferPropertiesReadOnly> logPositionUpdateListener = logPositionUpdater::update;
 
       activeSessionProperty.addListener((o, oldValue, newValue) ->
                                         {
@@ -219,8 +224,22 @@ public class LogSessionManagerController implements SessionControlsController
                                               if (oldValue != null)
                                                  oldValue.stop();
                                               if (newValue != null)
+                                              {
                                                  newValue.start();
+                                                 applyFrameDelayToAllVideos(frameDelaySpinner.getValue());
+                                              }
                                            });
+
+      IntegerSpinnerValueFactory frameDelayValueFactory = new IntegerSpinnerValueFactory(-30, 30, MagewellScrubber.DEFAULT_FRAME_DELAY);
+      frameDelaySpinner.setValueFactory(frameDelayValueFactory);
+      frameDelaySpinner.focusedProperty().addListener((o, oldValue, newValue) ->
+      {
+         if (!newValue)
+         { // Losing focus, workaround to commit the edited text
+            frameDelaySpinner.getEditor().setText(frameDelayValueFactory.getConverter().toString(frameDelayValueFactory.getValue()));
+         }
+      });
+      frameDelaySpinner.valueProperty().addListener((o, oldValue, newValue) -> applyFrameDelayToAllVideos(newValue));
 
       if (toolkit.getSession() instanceof LogSession logSession)
       {
@@ -419,6 +438,52 @@ public class LogSessionManagerController implements SessionControlsController
       multiReader.readVideoFrameNow(logDataReader.getTimestamp().getLongValue());
       logDataReader.getTimestamp().addListener(v -> multiReader.readVideoFrameInBackground(v.getValueAsLongBits()));
       multiVideoViewerProperty.set(new MultiVideoViewer(stage, videoThumbnailPane, multiReader, THUMBNAIL_WIDTH));
+
+      // perception.mcap can hold several grid/map channels multiplexed together (multiple height maps, a future
+      // voxel map, ...) - one shared PerceptionMcapScrubber indexes the whole file, and each source gets its own
+      // thin typed scrubber (e.g. HeightMapMcapScrubber) on top of it rather than re-parsing the file per source.
+      File perceptionMcapFile = PerceptionMcapScrubber.findMcapFile(logDirectory);
+      if (perceptionMcapFile == null)
+      {
+         LogTools.info("No perception.mcap found next to " + logDirectory);
+      }
+      else
+      {
+         try
+         {
+            PerceptionMcapScrubber perceptionScrubber = new PerceptionMcapScrubber(perceptionMcapFile);
+            HeightMapMcapScrubber heightMapScrubber = new HeightMapMcapScrubber(perceptionScrubber);
+            // Future sources are wired the same way, e.g.:
+            // VoxelMapMcapScrubber voxelMapScrubber = new VoxelMapMcapScrubber(perceptionScrubber);
+
+            if (heightMapScrubber.isAvailable())
+            {
+               LogTools.info("Loaded " + perceptionMcapFile + ", found " + heightMapScrubber.getMessageCount() + " height map messages.");
+               YoHeightGridFX3D heightMapGraphic = new YoHeightGridFX3D();
+               heightMapGraphic.setName("HeightMap");
+               // Not toolkit.getYoGraphicFXSessionRootGroup(): that group only gets attached to the actual JavaFX
+               // scene graph when the session declares at least one YoGraphicDefinition (see
+               // YoGraphicFXManager.startSession()), which LogSession never does for this manager-driven graphic.
+               // The persistent root group is always attached, and still gets cleared on session end regardless.
+               toolkit.getYoGraphicFXRootGroup().addYoGraphicFX3D(heightMapGraphic);
+               // null (not false): SCS2JavaFXMessager.createPropertyInput only reflects the topic's actual current
+               // value when the passed-in value is null - a concrete default bypasses it and always wins.
+               Property<Boolean> showHeightMapProperty = messager.createPropertyInput(topics.getShowHeightMap(), null);
+               heightMapGraphic.visibleProperty().set(Boolean.TRUE.equals(showHeightMapProperty.getValue()));
+               showHeightMapProperty.addListener((o, oldShow, newShow) -> heightMapGraphic.setVisible(Boolean.TRUE.equals(newShow)));
+               heightMapGraphic.setData(heightMapScrubber.scrub(logDataReader.getTimestamp().getLongValue()));
+               logDataReader.getTimestamp().addListener(v -> heightMapGraphic.setData(heightMapScrubber.scrub(v.getValueAsLongBits())));
+            }
+            else
+            {
+               LogTools.info("No height map channel found in " + perceptionMcapFile);
+            }
+         }
+         catch (IOException | RuntimeException e)
+         {
+            LogTools.error("Failed to open " + perceptionMcapFile + ": " + e.getMessage());
+         }
+      }
       logCropperProperty.set(new YoVariableLogCropper(multiReader, logDirectory, logProperties));
       boolean logHasVideos = multiReader.getNumberOfVideos() > 0;
       thumbnailsTitledPane.setText(logHasVideos ? "Logged videos" : "No video");
@@ -497,6 +562,14 @@ public class LogSessionManagerController implements SessionControlsController
       loadingSpinner.setVisible(isLoading);
    }
 
+   private void applyFrameDelayToAllVideos(int frames)
+   {
+      MultiVideoViewer viewer = multiVideoViewerProperty.get();
+      if (viewer == null)
+         return;
+      viewer.getReaders().stream().filter(VideoDataReader::supportsFrameDelayAdjustment).forEach(reader -> reader.setFrameDelay(frames));
+   }
+
    private void addLogToGUI(File logDirectory, ChildLogData childLogData)
    {
       LogSession activeSession = activeSessionProperty.get();
@@ -533,20 +606,18 @@ public class LogSessionManagerController implements SessionControlsController
 
          AtomicBoolean logPositionUpdate = new AtomicBoolean(true);
 
-         Consumer<YoBufferPropertiesReadOnly> logPositionUpdateListener = properties ->
+         FXCoalescedUpdater<YoBufferPropertiesReadOnly> logPositionUpdater = new FXCoalescedUpdater<>(properties ->
          {
             int currentLogPosition = logDataReader.getCurrentLogPosition();
 
-            JavaFXMissingTools.runLater(getClass(), () ->
+            if (currentLogPosition != logPositionSlider.valueProperty().intValue())
             {
-               if (currentLogPosition != logPositionSlider.valueProperty().intValue())
-               {
-                  logPositionUpdate.set(true);
-                  logPositionSlider.setValue(currentLogPosition);
-                  logPositionUpdate.set(false);
-               }
-            });
-         };
+               logPositionUpdate.set(true);
+               logPositionSlider.setValue(currentLogPosition);
+               logPositionUpdate.set(false);
+            }
+         });
+         Consumer<YoBufferPropertiesReadOnly> logPositionUpdateListener = logPositionUpdater::update;
          activeSession.addCurrentBufferPropertiesListener(logPositionUpdateListener);
 
          activeSessionProperty.addListener((o, oldValue, newValue) ->
@@ -577,6 +648,7 @@ public class LogSessionManagerController implements SessionControlsController
 
          MultiVideoViewer viewer = multiVideoViewerProperty.get();
          viewer.addVideoReader(multiReader);
+         applyFrameDelayToAllVideos(frameDelaySpinner.getValue());
          // need to make sure to compare this against what already exists.
          boolean logHasVideos = multiReader.getNumberOfVideos() > 0 || thumbnailsTitledPane.isExpanded();
          thumbnailsTitledPane.setText(logHasVideos ? "Logged videos" : "No video");

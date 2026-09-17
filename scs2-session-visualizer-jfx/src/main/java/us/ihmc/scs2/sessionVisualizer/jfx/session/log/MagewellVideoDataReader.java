@@ -129,4 +129,22 @@ public class MagewellVideoDataReader implements VideoDataReader
    {
       return magewellScrubber.replacedRobotTimestampsContainsIndex(index);
    }
+
+   @Override
+   public boolean supportsFrameDelayAdjustment()
+   {
+      return true;
+   }
+
+   @Override
+   public int getFrameDelay()
+   {
+      return magewellScrubber.getFrameDelay();
+   }
+
+   @Override
+   public void setFrameDelay(int frames)
+   {
+      magewellScrubber.setFrameDelay(frames);
+   }
 }

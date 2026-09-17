@@ -4,9 +4,12 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.ButtonType;
+import javafx.scene.control.CheckBox;
 import javafx.scene.control.Dialog;
+import javafx.scene.control.Label;
 import javafx.scene.image.Image;
 import javafx.scene.layout.Region;
+import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
 import javafx.stage.FileChooser.ExtensionFilter;
 import javafx.stage.Stage;
@@ -651,6 +654,63 @@ public class SessionVisualizerIOTools
 
          prefs.put(key, file.getAbsolutePath());
       }
+   }
+
+   private static final String SKIP_SAVE_CONFIGURATION_PROMPT_ANSWER_KEY = "skipSaveConfigurationPromptAnswer";
+
+   public static boolean isSaveConfigurationPromptSkipped()
+   {
+      return Preferences.userNodeForPackage(SessionVisualizerIOTools.class).get(SKIP_SAVE_CONFIGURATION_PROMPT_ANSWER_KEY, null) != null;
+   }
+
+   public static boolean getSkippedSaveConfigurationAnswer()
+   {
+      return Preferences.userNodeForPackage(SessionVisualizerIOTools.class).getBoolean(SKIP_SAVE_CONFIGURATION_PROMPT_ANSWER_KEY, false);
+   }
+
+   /**
+    * Persists the user's "Don't ask again" choice for the save-configuration prompt.
+    */
+   public static void setSkipSaveConfigurationPrompt(boolean rememberedAnswer)
+   {
+      Preferences.userNodeForPackage(SessionVisualizerIOTools.class).putBoolean(SKIP_SAVE_CONFIGURATION_PROMPT_ANSWER_KEY, rememberedAnswer);
+   }
+
+   public static void resetSaveConfigurationPrompt()
+   {
+      Preferences.userNodeForPackage(SessionVisualizerIOTools.class).remove(SKIP_SAVE_CONFIGURATION_PROMPT_ANSWER_KEY);
+   }
+
+   /**
+    * Asks whether to save the default configuration, honoring a persisted "Don't ask again" choice.
+    *
+    * @param owner the dialog owner, or {@code null}
+    * @param includeCancel {@code true} to offer Cancel (close-app). An empty result means cancelled.
+    * @return whether to save, or empty if the user cancelled
+    */
+   public static Optional<Boolean> confirmSaveDefaultConfiguration(Window owner, boolean includeCancel)
+   {
+      if (isSaveConfigurationPromptSkipped())
+         return Optional.of(getSkippedSaveConfigurationAnswer());
+
+      Alert alert = includeCancel ?
+            new Alert(AlertType.CONFIRMATION, null, ButtonType.YES, ButtonType.NO, ButtonType.CANCEL) :
+            new Alert(AlertType.CONFIRMATION, null, ButtonType.YES, ButtonType.NO);
+      CheckBox doNotAskAgainCheckBox = new CheckBox("Don't ask again");
+      alert.getDialogPane().setContent(new VBox(10, new Label("Do you want to save the default configuration?"), doNotAskAgainCheckBox));
+      addSCSIconToDialog(alert);
+      if (owner != null)
+         alert.initOwner(owner);
+      JavaFXMissingTools.centerDialogInOwner(alert);
+
+      Optional<ButtonType> result = alert.showAndWait();
+      if (result.isEmpty() || result.get() == ButtonType.CANCEL)
+         return Optional.empty();
+
+      boolean save = result.get() == ButtonType.YES;
+      if (doNotAskAgainCheckBox.isSelected())
+         setSkipSaveConfigurationPrompt(save);
+      return Optional.of(save);
    }
 
    /**

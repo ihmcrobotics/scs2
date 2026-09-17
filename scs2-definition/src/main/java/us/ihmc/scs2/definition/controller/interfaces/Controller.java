@@ -24,6 +24,28 @@ public interface Controller
    }
 
    /**
+    * Called when the simulation session this controller is part of is reset to its initial state.
+    * <p>
+    * When invoked, the session's {@code YoVariable}s have been restored to their initial value and
+    * {@link #initialize()} has been called; implement this method to re-initialize any internal state
+    * that lives outside {@code YoVariable}s, e.g. plain Java fields or native resources, so the
+    * controller behaves as if it was freshly started.
+    * </p>
+    */
+   default void reset()
+   {
+   }
+
+   /**
+    * Whether this controller correctly implements {@link #reset()} and can be trusted to leave no
+    * stale state behind when the session it belongs to is reset.
+    */
+   default boolean isResetSupported()
+   {
+      return false;
+   }
+
+   /**
     * The registry used to store all the {@code YoVariable}s for the controller.
     * <p>
     * In simulation, the registry is typically attached to the robot's registry when adding it

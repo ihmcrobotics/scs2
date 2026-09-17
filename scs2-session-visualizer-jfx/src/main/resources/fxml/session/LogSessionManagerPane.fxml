@@ -7,6 +7,7 @@
 <?import com.jfoenix.controls.JFXTrimSlider?>
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Label?>
+<?import javafx.scene.control.Spinner?>
 <?import javafx.scene.control.TitledPane?>
 <?import javafx.scene.layout.*?>
 <AnchorPane fx:id="mainPane" minHeight="-Infinity" minWidth="-Infinity" stylesheets="@../../css/GeneralStylesheet.css" xmlns="http://javafx.com/javafx/15.0.1"
@@ -77,8 +78,18 @@
                 <TitledPane fx:id="thumbnailsTitledPane" animated="false" disable="true" expanded="false" maxHeight="1.7976931348623157E308"
                             maxWidth="1.7976931348623157E308" minHeight="-Infinity" minWidth="-Infinity" text="No video" VBox.vgrow="ALWAYS">
                     <content>
-                        <FlowPane fx:id="videoThumbnailPane" hgap="2.0" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308"
-                                  minHeight="-Infinity" prefWidth="660.0" vgap="2.0"/>
+                        <VBox spacing="5.0">
+                            <children>
+                                <HBox alignment="CENTER_LEFT" minHeight="-Infinity" minWidth="-Infinity" spacing="10.0">
+                                    <children>
+                                        <Label text="Frame delay (all videos):"/>
+                                        <Spinner fx:id="frameDelaySpinner" editable="true" prefWidth="70.0"/>
+                                    </children>
+                                </HBox>
+                                <FlowPane fx:id="videoThumbnailPane" hgap="2.0" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308"
+                                          minHeight="-Infinity" prefWidth="660.0" vgap="2.0"/>
+                            </children>
+                        </VBox>
                     </content>
                 </TitledPane>
             </children>
