@@ -320,9 +320,9 @@ public abstract class Session
 
    // State listener to publish internal to outside world
    /**
-    * Period at which the current session properties are to be published.
+    * Period, in nanoseconds, at which the current session properties are to be published.
     */
-   private final long sessionPropertiesPublishPeriod = 500L;
+   private final long sessionPropertiesPublishPeriod = 500_000_000L;
    /**
     * To keep track of the last time the session properties were published.
     */
