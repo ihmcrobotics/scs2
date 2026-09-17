@@ -13,6 +13,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 
 /**
@@ -91,6 +92,26 @@ public class YoSharedBuffer implements LinkedYoVariableFactory
    {
       properties.setSize(initialBufferSize);
       registryBuffer = new YoRegistryBuffer(rootRegistry, properties);
+   }
+
+   /**
+    * Restricts which future variables get a buffer allocated immediately versus on first use. See
+    * {@link YoRegistryBuffer#setEagerVariableFilter(Predicate)} - {@code null} (the default) preserves the original
+    * eager-for-everything behavior.
+    */
+   public void setEagerVariableFilter(Predicate<YoVariable> filter)
+   {
+      registryBuffer.setEagerVariableFilter(filter);
+   }
+
+   /**
+    * Sets the listener notified when a buffer skipped by {@link #setEagerVariableFilter} is later created on demand.
+    * See {@link YoRegistryBuffer#setOnDemandBufferCreatedListener(Consumer)} - {@code null} (the default) disables
+    * the notification.
+    */
+   public void setOnDemandBufferCreatedListener(Consumer<YoVariableBuffer<?>> listener)
+   {
+      registryBuffer.setOnDemandBufferCreatedListener(listener);
    }
 
    /**
@@ -372,6 +393,11 @@ public class YoSharedBuffer implements LinkedYoVariableFactory
    {
       if (isDisposed)
          return;
+
+      // Opens this cycle's allowance for pulling history out of a HistoricalValueBitsSource, which is work
+      // prepareForPull below can trigger. Doing it here, rather than per buffer, is what keeps the limit on the
+      // total: this is the one call per publish cycle that all of that work hangs off.
+      registryBuffer.getBackfillBudget().startCycle();
 
       linkedBuffersLock.lock();
       try
@@ -747,8 +773,15 @@ public class YoSharedBuffer implements LinkedYoVariableFactory
       if (isDisposed)
          return null;
 
+      // findOrCreate, not find: a variable skipped by an eager-variable filter (see setEagerVariableFilter) has no
+      // buffer yet - this is the actual "something wants this variable's history" signal, e.g. opening a chart for it.
+      // findOrCreateYoVariableBuffer (not a plain backend lookup) matters here: variableToLink is very often a
+      // UI-owned mirror variable (see YoManager.startSession's duplicateMissingYoVariablesInTarget), and this
+      // resolves through its namespace path to the real backend variable before creating anything - creating a
+      // buffer bound to the mirror object directly would silently record its permanently-stale duplicate value
+      // instead of the live backend data.
       LinkedYoVariable<?> linkedYoVariable = LinkedYoVariable.newLinkedYoVariable(variableToLink,
-                                                                                  registryBuffer.findYoVariableBuffer(variableToLink),
+                                                                                  registryBuffer.findOrCreateYoVariableBuffer(variableToLink),
                                                                                   initialUser);
       linkedBuffersLock.lock();
       try
