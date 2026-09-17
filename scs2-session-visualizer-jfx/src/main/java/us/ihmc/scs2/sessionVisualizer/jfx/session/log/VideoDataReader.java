@@ -32,4 +32,18 @@ public interface VideoDataReader
    int getCurrentIndex();
 
    boolean replacedRobotTimestampsContainsIndex(int index);
+
+   default boolean supportsFrameDelayAdjustment()
+   {
+      return false;
+   }
+
+   default int getFrameDelay()
+   {
+      return 0;
+   }
+
+   default void setFrameDelay(int frames)
+   {
+   }
 }
