@@ -1,19 +1,17 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.session.log;
 
-import javafx.scene.image.Image;
 import javafx.scene.image.PixelFormat;
-import javafx.scene.image.PixelReader;
 import javafx.scene.image.PixelWriter;
 import javafx.scene.image.WritableImage;
 import logger_msgs.Camera;
 import org.bytedeco.javacv.Frame;
-import org.bytedeco.javacv.JavaFXFrameConverter;
 import us.ihmc.concurrent.ConcurrentCopier;
 import us.ihmc.scs2.session.log.MagewellScrubber;
 import us.ihmc.scs2.session.log.ProgressConsumer;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 
 public class MagewellVideoDataReader implements VideoDataReader
 {
@@ -90,6 +88,14 @@ public class MagewellVideoDataReader implements VideoDataReader
     * Same as {@link #convertFrameToWritableImage(Frame)}, but reuses {@code imageToPack} instead of
     * allocating a new {@link WritableImage} when its dimensions already match the frame - allocating
     * one is a substantial fraction of the per-frame conversion cost.
+    * <p>
+    * This reads directly from {@code frameToConvert.image[0]} instead of going through
+    * {@code org.bytedeco.javacv.JavaFXFrameConverter}: that converter does its own hidden
+    * {@code new WritableImage(...)} allocation and populates it one pixel (four separate byte
+    * {@code put()} calls) at a time, which - unlike the allocation this method reuses - is not
+    * something we can skip by reusing anything, since it happens internally on every call. Reading
+    * the frame's raw BGR bytes directly avoids that allocation and that per-pixel copy entirely,
+    * leaving a single conversion pass instead of two.
     *
     * @param frameToConvert is the next frame we want to visualize so we convert it to be compatible with JavaFX
     * @param imageToPack    image to write into if its size already matches; a new one is allocated otherwise (or if
@@ -98,29 +104,41 @@ public class MagewellVideoDataReader implements VideoDataReader
     */
    public static WritableImage convertFrameToWritableImage(Frame frameToConvert, WritableImage imageToPack)
    {
-      Image currentImage;
-
       if (frameToConvert == null || !hasImageData(frameToConvert))
       {
          return null;
       }
 
-      try (JavaFXFrameConverter frameConverter = new JavaFXFrameConverter())
-      {
-         currentImage = frameConverter.convert(frameToConvert);
-      }
-      int width = (int) currentImage.getWidth();
-      int height = (int) currentImage.getHeight();
+      if (frameToConvert.imageChannels != 3)
+         throw new UnsupportedOperationException("Only 3-channel (BGR) frames are supported, got " + frameToConvert.imageChannels + " channels");
+
+      int width = frameToConvert.imageWidth;
+      int height = frameToConvert.imageHeight;
+      int stride = frameToConvert.imageStride;
+      ByteBuffer sourceBuffer = (ByteBuffer) frameToConvert.image[0];
 
       WritableImage writableImage = imageToPack;
       if (writableImage == null || (int) writableImage.getWidth() != width || (int) writableImage.getHeight() != height)
          writableImage = new WritableImage(width, height);
 
-      PixelReader pixelReader = currentImage.getPixelReader();
-      PixelWriter pixelWriter = writableImage.getPixelWriter();
-
       int[] pixels = new int[width * height];
-      pixelReader.getPixels(0, 0, width, height, PixelFormat.getIntArgbInstance(), pixels, 0, width);
+
+      for (int y = 0; y < height; y++)
+      {
+         int rowStart = stride * y;
+         int rowOffset = y * width;
+
+         for (int x = 0; x < width; x++)
+         {
+            int base = rowStart + 3 * x;
+            int blue = sourceBuffer.get(base) & 0xFF;
+            int green = sourceBuffer.get(base + 1) & 0xFF;
+            int red = sourceBuffer.get(base + 2) & 0xFF;
+            pixels[rowOffset + x] = 0xFF000000 | (red << 16) | (green << 8) | blue;
+         }
+      }
+
+      PixelWriter pixelWriter = writableImage.getPixelWriter();
       pixelWriter.setPixels(0, 0, width, height, PixelFormat.getIntArgbInstance(), pixels, 0, width);
 
       return writableImage;
