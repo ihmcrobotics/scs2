@@ -27,7 +27,6 @@ import us.ihmc.yoVariables.variable.YoDouble;
 public class PrismaticSpringBulletSimulation
 {
    private static final String SPRING_PENDULUM = "SpringPendulum";
-   private static final boolean VISUALIZE_WITH_DEBUG_DRAWING = false;
 
    private static final double ballRadius = 0.04;
    private static final double stringLength = 0.4;
@@ -37,15 +36,7 @@ public class PrismaticSpringBulletSimulation
    public PrismaticSpringBulletSimulation()
    {
       SimulationSession simulationSession = createSession();
-      if (VISUALIZE_WITH_DEBUG_DRAWING)
-      {
-         SessionVisualizer sessionVisualizer = BulletExampleSimulationTools.startSessionVisualizerWithDebugDrawing(simulationSession);
-         sessionVisualizer.getToolkit().getSession().runTick();
-      }
-      else
-      {
-         SessionVisualizer.startSessionVisualizer(simulationSession);
-      }
+      SessionVisualizer.startSessionVisualizer(simulationSession);
    }
 
    public static SimulationSession createSession()

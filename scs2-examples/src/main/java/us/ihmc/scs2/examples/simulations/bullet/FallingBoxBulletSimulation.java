@@ -11,8 +11,6 @@ import us.ihmc.scs2.simulation.bullet.physicsEngine.BulletPhysicsEngineFactory;
 
 public class FallingBoxBulletSimulation
 {
-   private static final boolean VISUALIZE_WITH_DEBUG_DRAWING = false;
-
    public static SimulationSession createSession()
    {
       BoxRobotDefinition definition = new BoxRobotDefinition();
@@ -30,14 +28,6 @@ public class FallingBoxBulletSimulation
    public static void main(String[] args)
    {
       SimulationSession simulationSession = createSession();
-      if (VISUALIZE_WITH_DEBUG_DRAWING)
-      {
-         SessionVisualizer sessionVisualizer = BulletExampleSimulationTools.startSessionVisualizerWithDebugDrawing(simulationSession);
-         sessionVisualizer.getToolkit().getSession().runTick();
-      }
-      else
-      {
-         SessionVisualizer.startSessionVisualizer(simulationSession);
-      }
+      SessionVisualizer.startSessionVisualizer(simulationSession);
    }
 }

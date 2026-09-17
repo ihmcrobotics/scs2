@@ -20,8 +20,8 @@ import us.ihmc.scs2.definition.visual.MaterialDefinition;
 import us.ihmc.scs2.definition.visual.VisualDefinition;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizer;
 import us.ihmc.scs2.simulation.SimulationSession;
-import us.ihmc.scs2.simulation.parameters.ContactParameters;
-import us.ihmc.scs2.simulation.physicsEngine.PhysicsEngineFactory;
+import us.ihmc.scs2.simulation.impulseBased.physicsEngine.parameters.ContactParameters;
+import us.ihmc.scs2.simulation.PhysicsEngineFactories;
 
 public class StackOfBlocksExperimentalSimulation
 {
@@ -73,7 +73,7 @@ public class StackOfBlocksExperimentalSimulation
                                                                                          new MaterialDefinition(ColorDefinitions.DarkGrey())),
                                                                     new CollisionShapeDefinition(terrainPose, terrainGeometry));
 
-      SimulationSession simulationSession = new SimulationSession(PhysicsEngineFactory.newImpulseBasedPhysicsEngineFactory(contactParameters));
+      SimulationSession simulationSession = new SimulationSession(PhysicsEngineFactories.newImpulseBasedPhysicsEngineFactory(contactParameters));
       robotDefinitions.forEach(simulationSession::addRobot);
       simulationSession.addTerrainObject(terrain);
       SessionVisualizer.startSessionVisualizer(simulationSession);

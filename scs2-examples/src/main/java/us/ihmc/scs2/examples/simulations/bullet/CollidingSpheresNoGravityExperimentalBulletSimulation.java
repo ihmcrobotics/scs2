@@ -16,8 +16,8 @@ import us.ihmc.scs2.simulation.bullet.physicsEngine.BulletPhysicsEngineFactory;
 import us.ihmc.scs2.simulation.bullet.physicsEngine.parameters.BulletContactSolverInfoParameters;
 import us.ihmc.scs2.simulation.bullet.physicsEngine.parameters.BulletMultiBodyJointParameters;
 import us.ihmc.scs2.simulation.bullet.physicsEngine.parameters.BulletMultiBodyParameters;
-import us.ihmc.scs2.simulation.parameters.ContactParameters;
-import us.ihmc.scs2.simulation.physicsEngine.PhysicsEngineFactory;
+import us.ihmc.scs2.simulation.impulseBased.physicsEngine.parameters.ContactParameters;
+import us.ihmc.scs2.simulation.PhysicsEngineFactories;
 
 public class CollidingSpheresNoGravityExperimentalBulletSimulation
 {
@@ -79,7 +79,7 @@ public class CollidingSpheresNoGravityExperimentalBulletSimulation
       {
          ContactParameters contactParameters = new ContactParameters();
          contactParameters.setCoefficientOfRestitution(0.0);
-         simulationSession = new SimulationSession(PhysicsEngineFactory.newImpulseBasedPhysicsEngineFactory(contactParameters));
+         simulationSession = new SimulationSession(PhysicsEngineFactories.newImpulseBasedPhysicsEngineFactory(contactParameters));
       }
 
       simulationSession.addRobot(sphereRobot1);

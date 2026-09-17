@@ -13,7 +13,6 @@ import us.ihmc.yoVariables.variable.YoDouble;
 
 public class MobileBulletSimulation
 {
-   private static final boolean VISUALIZE_WITH_DEBUG_DRAWING = false;
    private static final double DT = 1.0 / 250.0;
 
    public static SimulationSession createSession()
@@ -64,16 +63,7 @@ public class MobileBulletSimulation
    public static void main(String[] args)
    {
       SimulationSession simulationSession = createSession();
-      if (VISUALIZE_WITH_DEBUG_DRAWING)
-      {
-         SessionVisualizer sessionVisualizer = BulletExampleSimulationTools.startSessionVisualizerWithDebugDrawing(simulationSession);
-         sessionVisualizer.getSessionVisualizerControls().setCameraFocalPosition(0.0, 0.0, 0.7);
-         sessionVisualizer.getToolkit().getSession().runTick();
-      }
-      else
-      {
-         SessionVisualizerControls sessionVisualizerControls = SessionVisualizer.startSessionVisualizer(simulationSession, null);
-         sessionVisualizerControls.setCameraFocalPosition(0.0, 0.0, 0.7);
-      }
+      SessionVisualizerControls sessionVisualizerControls = SessionVisualizer.startSessionVisualizer(simulationSession, null);
+      sessionVisualizerControls.setCameraFocalPosition(0.0, 0.0, 0.7);
    }
 }

@@ -142,9 +142,11 @@ YoGraphic..._.
   allows playing back simulation data for instance. This project is meant to remain rather low-level in terms of dependency and limit the scope to yoVariables.
 - `scs2-session`: This project defines the base implementation of a session. A session is an abstract base layer for defining a simulation session, log session,
   or remote session.
-- `scs2-simulation`: This project provides the implementation for the simulation backend as well as 2 physics engines: contact point based physics engine (SCS1
-  like) and an impulse based physics engine.
-- `scs2-bullet-simulation`: This project provides a new physics engine that is a bridge to Bullet.
+- `scs2-simulation`: This project provides the implementation for the simulation backend: the robot/session model, collision infrastructure, and the
+  `PhysicsEngine`/`PhysicsEngineFactory` abstractions. It has no dependency on any concrete physics engine.
+- `scs2-physics-engines`: This project provides the concrete physics engines: contact point based (SCS1-like), impulse based, and bridges to
+  Bullet and MuJoCo. Consolidated into one module so `PhysicsEngineType` can be resolved to any of the four engines without forcing native dependencies onto
+  consumers (e.g. the visualizer) that never run physics.
 - `scs2-session-logger`: This project provides the backend for log session and remote session.
 - `scs2-session-visualizer`: This project provides tools for the SCS2 GUI that are graphics engine agnostic.
 - `scs2-session-visualizer-jfx`: This project provides a JavaFX implementation of the SCS2 GUI.
