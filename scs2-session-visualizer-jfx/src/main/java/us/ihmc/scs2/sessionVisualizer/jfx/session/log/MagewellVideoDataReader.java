@@ -18,6 +18,18 @@ public class MagewellVideoDataReader implements VideoDataReader
    /** Cap on consecutive non-video packets to skip per seek (audio/timecode interleaved with video). */
    private static final int MAX_NON_VIDEO_FRAMES_TO_SKIP = 256;
 
+   /**
+    * Per-thread scratch buffers for {@link #convertFrameToWritableImage(Frame, WritableImage)}. Reads
+    * off a {@code DirectByteBuffer} one {@code get(int)} call at a time (as opposed to one bulk
+    * {@code get(int, byte[])} call) was a measured hot spot in the per-pixel conversion loop, and
+    * these buffers let that bulk read - and the following {@code int[]} of decoded ARGB pixels - be
+    * reused across frames instead of reallocated every call. Thread-local because
+    * {@link #readVideoFrame(long)} runs on whichever {@code BackgroundExecutorManager} pool thread is
+    * servicing this reader, and a lock would defeat the purpose.
+    */
+   private static final ThreadLocal<byte[]> RAW_ROW_BYTES = ThreadLocal.withInitial(() -> new byte[0]);
+   private static final ThreadLocal<int[]> ARGB_PIXELS = ThreadLocal.withInitial(() -> new int[0]);
+
    private final MagewellScrubber magewellScrubber;
    /**
     * 3-slot lock-free rotation (see {@link ConcurrentCopier}): the slot currently being written on
@@ -121,7 +133,25 @@ public class MagewellVideoDataReader implements VideoDataReader
       if (writableImage == null || (int) writableImage.getWidth() != width || (int) writableImage.getHeight() != height)
          writableImage = new WritableImage(width, height);
 
-      int[] pixels = new int[width * height];
+      // One bulk native-memory read instead of 3 DirectByteBuffer#get(int) calls per pixel (measured
+      // to be a hot spot): reading into a plain heap byte[] first means the conversion loop below only
+      // ever touches cheap, bounds-checkable heap array accesses.
+      int rawByteCount = stride * (height - 1) + width * 3;
+      byte[] rawBytes = RAW_ROW_BYTES.get();
+      if (rawBytes.length < rawByteCount)
+      {
+         rawBytes = new byte[rawByteCount];
+         RAW_ROW_BYTES.set(rawBytes);
+      }
+      sourceBuffer.get(0, rawBytes, 0, rawByteCount);
+
+      int pixelCount = width * height;
+      int[] pixels = ARGB_PIXELS.get();
+      if (pixels.length < pixelCount)
+      {
+         pixels = new int[pixelCount];
+         ARGB_PIXELS.set(pixels);
+      }
 
       for (int y = 0; y < height; y++)
       {
@@ -131,9 +161,9 @@ public class MagewellVideoDataReader implements VideoDataReader
          for (int x = 0; x < width; x++)
          {
             int base = rowStart + 3 * x;
-            int blue = sourceBuffer.get(base) & 0xFF;
-            int green = sourceBuffer.get(base + 1) & 0xFF;
-            int red = sourceBuffer.get(base + 2) & 0xFF;
+            int blue = rawBytes[base] & 0xFF;
+            int green = rawBytes[base + 1] & 0xFF;
+            int red = rawBytes[base + 2] & 0xFF;
             pixels[rowOffset + x] = 0xFF000000 | (red << 16) | (green << 8) | blue;
          }
       }
