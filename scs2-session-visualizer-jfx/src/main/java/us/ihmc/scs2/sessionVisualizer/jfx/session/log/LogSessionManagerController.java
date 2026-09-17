@@ -20,6 +20,8 @@ import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.ProgressIndicator;
+import javafx.scene.control.Spinner;
+import javafx.scene.control.SpinnerValueFactory.IntegerSpinnerValueFactory;
 import javafx.scene.control.TitledPane;
 import javafx.scene.control.ToggleButton;
 import javafx.scene.input.MouseEvent;
@@ -42,6 +44,7 @@ import us.ihmc.scs2.session.log.ChildLogData;
 import us.ihmc.scs2.session.log.ChildLogSynchronization;
 import us.ihmc.scs2.session.log.LogDataReader;
 import us.ihmc.scs2.session.log.LogSession;
+import us.ihmc.scs2.session.log.MagewellScrubber;
 import us.ihmc.scs2.session.log.heightMap.HeightMapMcapScrubber;
 import us.ihmc.scs2.session.log.perception.PerceptionMcapScrubber;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerIOTools;
@@ -102,6 +105,8 @@ public class LogSessionManagerController implements SessionControlsController
    private TitledPane thumbnailsTitledPane;
    @FXML
    private FlowPane videoThumbnailPane;
+   @FXML
+   private Spinner<Integer> frameDelaySpinner;
 
    @FXML
    private Pane additionalLogWeightContainer;
@@ -219,8 +224,22 @@ public class LogSessionManagerController implements SessionControlsController
                                               if (oldValue != null)
                                                  oldValue.stop();
                                               if (newValue != null)
+                                              {
                                                  newValue.start();
+                                                 applyFrameDelayToAllVideos(frameDelaySpinner.getValue());
+                                              }
                                            });
+
+      IntegerSpinnerValueFactory frameDelayValueFactory = new IntegerSpinnerValueFactory(-30, 30, MagewellScrubber.DEFAULT_FRAME_DELAY);
+      frameDelaySpinner.setValueFactory(frameDelayValueFactory);
+      frameDelaySpinner.focusedProperty().addListener((o, oldValue, newValue) ->
+      {
+         if (!newValue)
+         { // Losing focus, workaround to commit the edited text
+            frameDelaySpinner.getEditor().setText(frameDelayValueFactory.getConverter().toString(frameDelayValueFactory.getValue()));
+         }
+      });
+      frameDelaySpinner.valueProperty().addListener((o, oldValue, newValue) -> applyFrameDelayToAllVideos(newValue));
 
       if (toolkit.getSession() instanceof LogSession logSession)
       {
@@ -543,6 +562,14 @@ public class LogSessionManagerController implements SessionControlsController
       loadingSpinner.setVisible(isLoading);
    }
 
+   private void applyFrameDelayToAllVideos(int frames)
+   {
+      MultiVideoViewer viewer = multiVideoViewerProperty.get();
+      if (viewer == null)
+         return;
+      viewer.getReaders().stream().filter(VideoDataReader::supportsFrameDelayAdjustment).forEach(reader -> reader.setFrameDelay(frames));
+   }
+
    private void addLogToGUI(File logDirectory, ChildLogData childLogData)
    {
       LogSession activeSession = activeSessionProperty.get();
@@ -621,6 +648,7 @@ public class LogSessionManagerController implements SessionControlsController
 
          MultiVideoViewer viewer = multiVideoViewerProperty.get();
          viewer.addVideoReader(multiReader);
+         applyFrameDelayToAllVideos(frameDelaySpinner.getValue());
          // need to make sure to compare this against what already exists.
          boolean logHasVideos = multiReader.getNumberOfVideos() > 0 || thumbnailsTitledPane.isExpanded();
          thumbnailsTitledPane.setText(logHasVideos ? "Logged videos" : "No video");
