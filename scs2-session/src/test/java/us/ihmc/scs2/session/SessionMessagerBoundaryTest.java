@@ -193,6 +193,30 @@ public class SessionMessagerBoundaryTest
       assertEquals(9_000_000_000L, properties.getRunMaxDuration());
    }
 
+   /**
+    * Regression test for a units bug where {@code sessionPropertiesPublishPeriod} was expressed in
+    * raw nanoseconds (500L) instead of nanoseconds-equivalent-to-500ms (500_000_000L). With the bug,
+    * {@link Session#addSessionPropertiesListener(Consumer)} fires on essentially every tick (every
+    * 10ms in {@link SessionMode#PAUSE}, i.e. ~100 times/second) instead of roughly twice a second,
+    * which is what let a live UI binding fight the user's typing (see RunMenuController).
+    */
+   @Test
+   public void testSessionPropertiesPublishRateIsThrottled() throws InterruptedException
+   {
+      session = new TestSession();
+      AtomicInteger notificationCount = new AtomicInteger();
+      session.addSessionPropertiesListener(properties -> notificationCount.incrementAndGet());
+
+      assertTrue(session.startSessionThread());
+      Thread.sleep(1000);
+
+      int count = notificationCount.get();
+      // Expect on the order of 2 notifications in one second (throttled to ~500ms). A broken
+      // throttle (tied to the 10ms PAUSE tick period) would produce roughly 100 in the same window.
+      assertTrue(count >= 1, "Expected at least one session-properties notification, got " + count);
+      assertTrue(count <= 10, "Session properties are being published far more often than the intended ~500ms throttle (got " + count + " in ~1s)");
+   }
+
    @Test
    public void testInitializeBufferRecordTickPeriodIsOneShot()
    {

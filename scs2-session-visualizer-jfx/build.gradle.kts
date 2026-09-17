@@ -71,6 +71,7 @@ testDependencies {
    api("org.apache.commons:commons-math:2.2")
    api("org.testfx:openjfx-monocle:17.0.10")
    api("org.testfx:testfx-core:4.0.18")
+   api("org.mockito:mockito-core:5.11.0")
 
 }
 
