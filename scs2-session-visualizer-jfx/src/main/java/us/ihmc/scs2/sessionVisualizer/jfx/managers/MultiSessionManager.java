@@ -191,7 +191,30 @@ public class MultiSessionManager
       {
          toolkit.startSession(session, callback);
          mainWindowController.startSession();
+         showAndBindMatchingSessionControls(session);
       });
+   }
+
+   /**
+    * After a Log session or MCAP log session is started (CLI {@code -l} or a 3D-view drop), show and
+    * raise the matching controls window and bind it to the running session. Remote sessions are left
+    * alone. Same-type already-open windows are raised rather than duplicated.
+    */
+   private void showAndBindMatchingSessionControls(Session session)
+   {
+      Class<? extends SessionControlsController> controllerType = controllerTypeForSession(session);
+      if (controllerType != LogSessionManagerController.class && controllerType != MCAPLogSessionManagerController.class)
+         return;
+
+      URL fxml = controllerType == LogSessionManagerController.class ?
+            SessionVisualizerIOTools.LOG_SESSION_MANAGER_PANE_FXML_URL :
+            SessionVisualizerIOTools.MCAP_LOG_SESSION_MANAGER_PANE_FXML_URL;
+
+      openSessionControls(toolkit.getMainWindow(), controllerType, fxml);
+
+      SessionControlsController controller = activeController.get();
+      if (controller != null)
+         controller.bindRunningSession(session);
    }
 
    public void stopSession(boolean saveConfiguration, boolean shutdownSession)
