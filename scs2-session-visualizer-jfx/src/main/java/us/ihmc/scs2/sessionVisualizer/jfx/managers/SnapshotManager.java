@@ -29,7 +29,7 @@ import javafx.stage.FileChooser.ExtensionFilter;
 import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
 import us.ihmc.log.LogTools;
-import us.ihmc.messager.javafx.JavaFXMessager;
+import us.ihmc.scs2.sessionVisualizer.jfx.messager.SCS2Messager;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerTopics;
 
 public class SnapshotManager
@@ -38,7 +38,7 @@ public class SnapshotManager
    private final Map<Object, Recordable> recordables = new LinkedHashMap<>();
    private Stage primaryStage;
 
-   public SnapshotManager(Stage mainWindow, JavaFXMessager messager, SessionVisualizerTopics topics)
+   public SnapshotManager(Stage mainWindow, SCS2Messager messager, SessionVisualizerTopics topics)
    {
       this.primaryStage = mainWindow;
       messager.addTopicListener(topics.getTakeSnapshot(), message -> takeSnapshot());

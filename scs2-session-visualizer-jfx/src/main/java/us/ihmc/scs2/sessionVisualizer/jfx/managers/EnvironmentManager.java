@@ -8,7 +8,7 @@ import javafx.scene.shape.Mesh;
 import javafx.scene.shape.MeshView;
 import javafx.scene.shape.TriangleMesh;
 import us.ihmc.log.LogTools;
-import us.ihmc.messager.javafx.JavaFXMessager;
+import us.ihmc.scs2.sessionVisualizer.jfx.messager.SCS2Messager;
 import us.ihmc.scs2.definition.terrain.TerrainObjectDefinition;
 import us.ihmc.scs2.definition.visual.VisualDefinition;
 import us.ihmc.scs2.session.Session;
@@ -45,7 +45,7 @@ public class EnvironmentManager implements Manager
 
    private final BackgroundExecutorManager backgroundExecutorManager;
 
-   public EnvironmentManager(JavaFXMessager messager, SessionVisualizerTopics topics, BackgroundExecutorManager backgroundExecutorManager)
+   public EnvironmentManager(SCS2Messager messager, SessionVisualizerTopics topics, BackgroundExecutorManager backgroundExecutorManager)
    {
       this.backgroundExecutorManager = backgroundExecutorManager;
       rootNode.getChildren().add(terrainObjectGraphics);

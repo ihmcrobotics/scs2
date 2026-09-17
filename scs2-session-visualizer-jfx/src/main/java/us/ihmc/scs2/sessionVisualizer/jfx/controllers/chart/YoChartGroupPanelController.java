@@ -40,7 +40,7 @@ import javafx.scene.transform.Scale;
 import javafx.stage.Popup;
 import javafx.stage.Window;
 import us.ihmc.log.LogTools;
-import us.ihmc.messager.javafx.JavaFXMessager;
+import us.ihmc.scs2.sessionVisualizer.jfx.messager.SCS2Messager;
 import us.ihmc.scs2.definition.yoChart.YoChartGroupConfigurationDefinition;
 import us.ihmc.scs2.definition.yoChart.YoChartGroupConfigurationListDefinition;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerIOTools;
@@ -91,7 +91,7 @@ public class YoChartGroupPanelController implements VisualizerController
    private Button dropDownMenuButton;
 
    private SessionVisualizerTopics topics;
-   private JavaFXMessager messager;
+   private SCS2Messager messager;
 
    private final ObservableList<YoVariable> plottedVariableList = FXCollections.observableArrayList();
    private Property<YoNameDisplay> userDesiredDisplayProperty;

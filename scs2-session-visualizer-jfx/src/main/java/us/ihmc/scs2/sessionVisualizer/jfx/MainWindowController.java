@@ -32,8 +32,8 @@ import javafx.scene.paint.Color;
 import javafx.util.Duration;
 import org.apache.commons.lang3.mutable.MutableBoolean;
 import us.ihmc.commons.Conversions;
-import us.ihmc.messager.MessagerAPIFactory.Topic;
-import us.ihmc.messager.javafx.JavaFXMessager;
+import us.ihmc.scs2.sessionVisualizer.jfx.messager.SCS2Messager;
+import us.ihmc.scs2.sessionVisualizer.jfx.messager.Topic;
 import us.ihmc.scs2.sessionVisualizer.jfx.HamburgerAnimationTransition.FrameType;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.SessionAdvancedControlsController;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.SessionSimpleControlsController;
@@ -107,7 +107,7 @@ public class MainWindowController extends ObservedAnimationTimer implements Visu
    private SessionVisualizerToolkit globalToolkit;
    private SessionVisualizerWindowToolkit windowToolkit;
    private SessionVisualizerTopics topics;
-   private JavaFXMessager messager;
+   private SCS2Messager messager;
 
    @Override
    public void initialize(SessionVisualizerWindowToolkit toolkit)

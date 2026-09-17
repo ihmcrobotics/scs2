@@ -1,12 +1,13 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.managers;
 
+import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.scene.Group;
 import us.ihmc.log.LogTools;
 import us.ihmc.mecano.multiBodySystem.interfaces.RigidBodyReadOnly;
-import us.ihmc.messager.javafx.JavaFXMessager;
+import us.ihmc.scs2.sessionVisualizer.jfx.messager.SCS2Messager;
 import us.ihmc.scs2.definition.robot.RobotDefinition;
 import us.ihmc.scs2.definition.robot.SixDoFJointDefinition;
 import us.ihmc.scs2.session.Session;
@@ -25,6 +26,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Consumer;
 
 public class YoRobotFXManager extends ObservedAnimationTimer implements Manager
 {
@@ -33,8 +35,10 @@ public class YoRobotFXManager extends ObservedAnimationTimer implements Manager
    private final ObservableList<RobotDefinition> robotDefinitions = FXCollections.observableArrayList();
 
    private int numberOfRobotDefinitions = -1;
+   private Session session;
+   private final Consumer<SessionRobotDefinitionListChange> robotDefinitionListChangeListener = change -> Platform.runLater(() -> handleSessionRobotDefinitionListChangeState(change));
 
-   public YoRobotFXManager(JavaFXMessager messager,
+   public YoRobotFXManager(SCS2Messager messager,
                            SessionVisualizerTopics topics,
                            YoManager yoManager,
                            ReferenceFrameManager referenceFrameManager,
@@ -135,7 +139,6 @@ public class YoRobotFXManager extends ObservedAnimationTimer implements Manager
       });
 
       messager.addTopicListener(topics.getRobotVisualRequest(), this::handleRobotVisualRequest);
-      messager.addFXTopicListener(topics.getSessionRobotDefinitionListChangeState(), this::handleSessionRobotDefinitionListChangeState);
    }
 
    public void handleSessionRobotDefinitionListChangeState(SessionRobotDefinitionListChange change)
@@ -226,11 +229,17 @@ public class YoRobotFXManager extends ObservedAnimationTimer implements Manager
       List<RobotDefinition> robotDefinitions = session.getRobotDefinitions();
       numberOfRobotDefinitions = robotDefinitions.size();
       this.robotDefinitions.addAll(robotDefinitions);
+
+      this.session = session;
+      session.addRobotDefinitionListChangeListener(robotDefinitionListChangeListener);
    }
 
    @Override
    public void stopSession()
    {
+      if (session != null)
+         session.removeRobotDefinitionListChangeListener(robotDefinitionListChangeListener);
+      session = null;
       robotDefinitions.clear();
       numberOfRobotDefinitions = -1;
    }
