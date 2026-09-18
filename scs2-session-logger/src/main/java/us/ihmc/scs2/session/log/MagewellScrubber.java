@@ -2,8 +2,8 @@ package us.ihmc.scs2.session.log;
 
 import logger_msgs.Camera;
 import org.bytedeco.javacv.Frame;
-import us.ihmc.robotDataLogger.logger.MagewellDemuxer;
-import us.ihmc.robotDataLogger.logger.MagewellMuxer;
+import us.ihmc.robotDataLogger.logger.FFmpegDemuxer;
+import us.ihmc.robotDataLogger.logger.FFmpegMuxer;
 
 import java.io.File;
 import java.io.IOException;
@@ -19,7 +19,7 @@ public class MagewellScrubber
    private final TimestampScrubber timestampScrubber;
    private final String name;
 
-   private final MagewellDemuxer magewellDemuxer;
+   private final FFmpegDemuxer magewellDemuxer;
    private final long nanosPerFrame;
 
    private final Camera camera;
@@ -44,7 +44,7 @@ public class MagewellScrubber
          throw new IOException("Cannot find video: " + videoFile);
       }
 
-      magewellDemuxer = new MagewellDemuxer(videoFile);
+      magewellDemuxer = new FFmpegDemuxer(videoFile);
       // Duration of one video frame in nanoseconds, matching the units of the robot timestamps, so a frame count
       // (e.g. the user-facing frame delay) can be converted to a delay in TimestampScrubber's search key.
       nanosPerFrame = Math.round(1.0e9 / magewellDemuxer.getFrameRate());
@@ -104,7 +104,7 @@ public class MagewellScrubber
       PrintWriter timestampWriter = new PrintWriter(timestampFile);
       timestampWriter.println(1 + "\n" + frameRate);
 
-      MagewellMuxer magewellMuxer = new MagewellMuxer(outputFile, magewellDemuxer.getImageWidth(), magewellDemuxer.getImageHeight());
+      FFmpegMuxer magewellMuxer = new FFmpegMuxer(outputFile, magewellDemuxer.getImageWidth(), magewellDemuxer.getImageHeight());
       magewellMuxer.start();
 
       Frame frame;
@@ -142,7 +142,7 @@ public class MagewellScrubber
       timestampWriter.close();
    }
 
-   private static long getFrameAtTimestamp(long endCameraTimestamp, MagewellDemuxer magewellDemuxer)
+   private static long getFrameAtTimestamp(long endCameraTimestamp, FFmpegDemuxer magewellDemuxer)
    {
       magewellDemuxer.seekToPTS(endCameraTimestamp);
       return magewellDemuxer.getFrameNumber();
@@ -163,7 +163,7 @@ public class MagewellScrubber
       return timestampScrubber;
    }
 
-   public MagewellDemuxer getMagewellDemuxer()
+   public FFmpegDemuxer getMagewellDemuxer()
    {
       return magewellDemuxer;
    }

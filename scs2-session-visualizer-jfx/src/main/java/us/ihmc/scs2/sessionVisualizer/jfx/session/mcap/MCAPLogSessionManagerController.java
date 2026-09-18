@@ -338,7 +338,7 @@ public class MCAPLogSessionManagerController implements SessionControlsControlle
       logPositionSlider.setMin(0.0);
       logPositionSlider.setMax(mcapLogFileReader.getNumberOfEntries() - 1);
       cropControlsContainer.setDisable(false);
-      FFMPEGMultiVideoDataReader multiReader = new FFMPEGMultiVideoDataReader(logFile.getParentFile(), backgroundExecutorManager);
+      FFMPEGMultiVideoDataReader multiReader = new FFMPEGMultiVideoDataReader(logFile.getParentFile());
       multiReader.readVideoFrameNow(mcapLogFileReader.getCurrentRelativeTimestamp());
       mcapLogFileReader.getCurrentTimestamp().addListener(v -> multiReader.readVideoFrameInBackground(mcapLogFileReader.getCurrentRelativeTimestamp()));
       multiVideoViewerObjectProperty.set(new FFMPEGMultiVideoViewer(stage, videoThumbnailPane, multiReader, THUMBNAIL_WIDTH));

@@ -8,6 +8,8 @@ import javafx.scene.control.Menu;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.TextField;
 import javafx.scene.control.TextFormatter;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
 import javafx.util.converter.DoubleStringConverter;
 import us.ihmc.scs2.sessionVisualizer.jfx.messager.SCS2Messager;
 import us.ihmc.scs2.session.Session;
@@ -74,15 +76,70 @@ public class RunMenuController implements VisualizerController
          if (!updatingFromSession && session != null)
             session.submitRunAtRealTimeRate(newValue);
       });
-      playbackRealTimeRateFormatter.valueProperty().addListener((o, oldValue, newValue) ->
+
+      // Only Enter commits the typed value to the session. Clicking away without pressing Enter
+      // discards the edit and reverts the field to whatever it showed before the edit started -
+      // it never submits, and it isn't fighting the periodic session-properties refresh while the
+      // user is still typing (see the focus check in the session-properties listener below).
+      //
+      // Note: TextFormatter#valueProperty() is NOT kept in sync with the field's text as the user
+      // types - TextInputControl only ever converts text -> value on commit (its own internal
+      // focus-lost listener, or an explicit TextInputControl#commitValue() call), see
+      // TextInputControl's constructor and commitValue()/cancelEdit(). So reading getValue() here
+      // must be preceded by our own commitValue() call, or it returns the pre-edit value.
+      //
+      // Also: MenuTools.configureTextFieldForCustomMenuItem() (below) installs its own KEY_PRESSED
+      // filter on these fields that consumes ENTER and moves focus to the menu item to close out
+      // its own "edit mode" - which happens before the field's own action-event machinery would
+      // normally fire, so setOnAction() alone never sees a real Enter press here, and the resulting
+      // focus loss would hit the discard branch instead. Catching ENTER with our own filter first
+      // (filters on the same node run in the order they were added, and this one is added first)
+      // lets us commit before that focus shift happens.
+      AtomicReference<Double> playbackRealTimeRateBeforeEdit = new AtomicReference<>(playbackRealTimeRateFormatter.getValue());
+      Runnable commitPlaybackRealTimeRate = () ->
       {
-         if (!updatingFromSession && session != null)
-            session.submitPlaybackRealTimeRate(newValue);
+         playbackRealTimeRateTextField.commitValue();
+         if (session != null && playbackRealTimeRateFormatter.getValue() != null)
+            session.submitPlaybackRealTimeRate(playbackRealTimeRateFormatter.getValue());
+         playbackRealTimeRateBeforeEdit.set(playbackRealTimeRateFormatter.getValue());
+      };
+      playbackRealTimeRateTextField.addEventFilter(KeyEvent.KEY_PRESSED, e ->
+      {
+         if (e.getCode() == KeyCode.ENTER)
+            commitPlaybackRealTimeRate.run();
       });
-      runMaxDurationFormatter.valueProperty().addListener((o, oldValue, newValue) ->
+      playbackRealTimeRateTextField.setOnAction(e -> commitPlaybackRealTimeRate.run());
+      playbackRealTimeRateTextField.focusedProperty().addListener((o, wasFocused, isFocused) ->
       {
-         if (!updatingFromSession && session != null)
-            session.submitRunMaxDuration(newValue != null ? (long) (newValue * 1.0E9) : -1L);
+         if (isFocused)
+            playbackRealTimeRateBeforeEdit.set(playbackRealTimeRateFormatter.getValue());
+         else
+            playbackRealTimeRateFormatter.setValue(playbackRealTimeRateBeforeEdit.get());
+      });
+
+      AtomicReference<Double> runMaxDurationBeforeEdit = new AtomicReference<>(runMaxDurationFormatter.getValue());
+      Runnable commitRunMaxDuration = () ->
+      {
+         runMaxDurationTextField.commitValue();
+         if (session != null)
+         {
+            Double value = runMaxDurationFormatter.getValue();
+            session.submitRunMaxDuration(value != null ? (long) (value * 1.0E9) : -1L);
+         }
+         runMaxDurationBeforeEdit.set(runMaxDurationFormatter.getValue());
+      };
+      runMaxDurationTextField.addEventFilter(KeyEvent.KEY_PRESSED, e ->
+      {
+         if (e.getCode() == KeyCode.ENTER)
+            commitRunMaxDuration.run();
+      });
+      runMaxDurationTextField.setOnAction(e -> commitRunMaxDuration.run());
+      runMaxDurationTextField.focusedProperty().addListener((o, wasFocused, isFocused) ->
+      {
+         if (isFocused)
+            runMaxDurationBeforeEdit.set(runMaxDurationFormatter.getValue());
+         else
+            runMaxDurationFormatter.setValue(runMaxDurationBeforeEdit.get());
       });
 
       SessionChangeListener sessionChangeListener = (previousSession, newSession) ->
@@ -111,8 +168,11 @@ public class RunMenuController implements VisualizerController
             try
             {
                simulateAtRealTimeCheckMenuItem.setSelected(properties.isRunAtRealTimeRate());
-               playbackRealTimeRateFormatter.setValue(properties.getPlaybackRealTimeRate());
-               runMaxDurationFormatter.setValue(properties.getRunMaxDuration() < 0 ? -1.0 : properties.getRunMaxDuration() / 1.0E9);
+               // Don't clobber a field the user is actively editing.
+               if (!playbackRealTimeRateTextField.isFocused())
+                  playbackRealTimeRateFormatter.setValue(properties.getPlaybackRealTimeRate());
+               if (!runMaxDurationTextField.isFocused())
+                  runMaxDurationFormatter.setValue(properties.getRunMaxDuration() < 0 ? -1.0 : properties.getRunMaxDuration() / 1.0E9);
             }
             finally
             {

@@ -1,7 +1,7 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.session.log;
 
 import logger_msgs.Camera;
-import us.ihmc.codecs.generated.YUVPicture;
+import org.bytedeco.javacv.Frame;
 import us.ihmc.concurrent.ConcurrentCopier;
 import us.ihmc.scs2.session.log.BlackMagicScrubber;
 import us.ihmc.scs2.session.log.ProgressConsumer;
@@ -11,8 +11,10 @@ import java.io.IOException;
 
 public class BlackMagicVideoDataReader implements VideoDataReader
 {
+   /** Cap on consecutive non-video packets to skip per seek (audio/timecode interleaved with video). */
+   private static final int MAX_NON_VIDEO_FRAMES_TO_SKIP = 256;
+
    private final BlackMagicScrubber blackMagicScrubber;
-   private final JavaFXPictureConverter converter = new JavaFXPictureConverter();
    private final ConcurrentCopier<FrameData> imageBuffer = new ConcurrentCopier<>(FrameData::new);
 
    public BlackMagicVideoDataReader(Camera camera, File dataDirectory, boolean hasTimeBase) throws IOException
@@ -34,23 +36,25 @@ public class BlackMagicVideoDataReader implements VideoDataReader
 
    public void readVideoFrame(long queryRobotTimestamp)
    {
-      try
-      {
-         YUVPicture nextFrame = blackMagicScrubber.readVideoFrame(queryRobotTimestamp);
+      Frame nextFrame = blackMagicScrubber.readVideoFrame(queryRobotTimestamp);
 
-         FrameData copyForWriting = imageBuffer.getCopyForWriting();
-         copyForWriting.queryRobotTimestamp = queryRobotTimestamp;
-         copyForWriting.currentRobotTimestamp = blackMagicScrubber.getCurrentRobotTimestamp();
-         copyForWriting.currentVideoTimestamp = blackMagicScrubber.getVideoTimestamp();
-         copyForWriting.currentDemuxerTimestamp = blackMagicScrubber.getDemuxer().getCurrentPTS();
-         copyForWriting.frame = converter.toFXImage(nextFrame, copyForWriting.frame);
-
-         imageBuffer.commit();
-      }
-      catch (IOException e)
+      // The underlying FFmpegFrameGrabber.grabFrame() returns the next packet from any stream,
+      // so a multi-stream MP4 (video + audio + timecode) may yield non-image frames here.
+      int skipped = 0;
+      while (nextFrame != null && !FrameImageConverter.hasImageData(nextFrame) && skipped < MAX_NON_VIDEO_FRAMES_TO_SKIP)
       {
-         e.printStackTrace();
+         nextFrame = blackMagicScrubber.getDemuxer().getNextFrame();
+         skipped++;
       }
+
+      FrameData copyForWriting = imageBuffer.getCopyForWriting();
+      copyForWriting.queryRobotTimestamp = queryRobotTimestamp;
+      copyForWriting.currentRobotTimestamp = blackMagicScrubber.getCurrentRobotTimestamp();
+      copyForWriting.currentVideoTimestamp = blackMagicScrubber.getVideoTimestamp();
+      copyForWriting.currentDemuxerTimestamp = blackMagicScrubber.getDemuxer().getCurrentPTS();
+      copyForWriting.frame = FrameImageConverter.convertFrameToWritableImage(nextFrame, copyForWriting.frame);
+
+      imageBuffer.commit();
    }
 
    public void cropVideo(File outputFile, File timestampFile, long startTimestamp, long endTimestamp, ProgressConsumer monitor) throws IOException

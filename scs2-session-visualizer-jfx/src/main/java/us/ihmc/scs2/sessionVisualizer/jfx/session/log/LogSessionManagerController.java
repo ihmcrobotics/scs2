@@ -434,7 +434,7 @@ public class LogSessionManagerController implements SessionControlsController
       logPositionSlider.setMin(0.0);
       logPositionSlider.setMax(logDataReader.getNumberOfEntries() - 1);
       cropControlsContainer.setDisable(false);
-      MultiVideoDataReader multiReader = new MultiVideoDataReader(logDirectory, logProperties, backgroundExecutorManager);
+      MultiVideoDataReader multiReader = new MultiVideoDataReader(logDirectory, logProperties);
       multiReader.readVideoFrameNow(logDataReader.getTimestamp().getLongValue());
       logDataReader.getTimestamp().addListener(v -> multiReader.readVideoFrameInBackground(v.getValueAsLongBits()));
       multiVideoViewerProperty.set(new MultiVideoViewer(stage, videoThumbnailPane, multiReader, THUMBNAIL_WIDTH));
@@ -580,7 +580,7 @@ public class LogSessionManagerController implements SessionControlsController
       ChildLogSynchronization synchronization = childLogData.getSynchronization();
 
       LogProperties logProperties = logDataReader.getLogProperties();
-      MultiVideoDataReader multiReader = new MultiVideoDataReader(logDirectory, logProperties, backgroundExecutorManager);
+      MultiVideoDataReader multiReader = new MultiVideoDataReader(logDirectory, logProperties);
       multiReader.readVideoFrameNow(logDataReader.getTimestamp().getLongValue());
       logDataReader.getTimestamp().addListener(v -> multiReader.readVideoFrameInBackground(v.getValueAsLongBits()));
 

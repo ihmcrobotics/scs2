@@ -16,6 +16,8 @@ import javafx.scene.Scene;
 import javafx.scene.control.Label;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.image.PixelReader;
+import javafx.scene.image.PixelWriter;
 import javafx.scene.image.WritableImage;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.AnchorPane;
@@ -48,6 +50,8 @@ public class VideoViewer
                                                                                                               "SCS2_GUI_LOGGER_VIDEO_DEBUG",
                                                                                                               false);
    private static final double THUMBNAIL_HIGHLIGHT_SCALE = 1.05;
+   private static final Background REPLACED_TIMESTAMP_BACKGROUND = new Background(new BackgroundFill(Color.DARKORANGE, CornerRadii.EMPTY, Insets.EMPTY));
+   private static final Background NORMAL_BACKGROUND = new Background(new BackgroundFill(Color.WHITE, CornerRadii.EMPTY, Insets.EMPTY));
 
    private final ImageView thumbnail = new ImageView();
    private final StackPane thumbnailContainer = new StackPane(thumbnail);
@@ -63,6 +67,21 @@ public class VideoViewer
    private final double defaultThumbnailSize;
 
    private final ObjectProperty<Pane> imageViewRootPane = new SimpleObjectProperty<>(this, "imageViewRootPane", null);
+
+   /**
+    * Caches to avoid redundantly re-applying unchanged layout/paint properties every pulse (60Hz) in
+    * {@link #update()} - each of these forces a CSS/layout invalidation pass for no visual benefit
+    * when the underlying value hasn't actually changed.
+    */
+   private double lastThumbnailContainerWidth = Double.NaN;
+   private double lastThumbnailContainerHeight = Double.NaN;
+   private Boolean lastReplacedTimestampHighlight = null;
+   /**
+    * Tracks which full-resolution frame the current {@link #thumbnail} image was downscaled from, so
+    * {@link #createThumbnailImage(WritableImage, int)} only runs when a genuinely new frame arrived,
+    * not on every pulse.
+    */
+   private WritableImage lastThumbnailSourceFrame = null;
 
    public VideoViewer(Window owner, VideoDataReader reader, double defaultThumbnailSize)
    {
@@ -106,6 +125,7 @@ public class VideoViewer
             stage = new Stage();
             AnchorPane anchorPane = new AnchorPane();
             Pane root = createImageViewPane(videoView);
+            root.setPadding(new Insets(16, 16, 16, 16));
             anchorPane.getChildren().add(root);
             JavaFXMissingTools.setAnchorConstraints(root, 0);
             imageViewRootPane.set(root);
@@ -234,10 +254,21 @@ public class VideoViewer
 
       WritableImage currentFrame = currentFrameData.frame;
 
-      thumbnailContainer.setPrefWidth(THUMBNAIL_HIGHLIGHT_SCALE * defaultThumbnailSize);
-      thumbnailContainer.setPrefHeight(THUMBNAIL_HIGHLIGHT_SCALE * defaultThumbnailSize * currentFrame.getHeight() / currentFrame.getWidth());
+      double thumbnailContainerWidth = THUMBNAIL_HIGHLIGHT_SCALE * defaultThumbnailSize;
+      double thumbnailContainerHeight = THUMBNAIL_HIGHLIGHT_SCALE * defaultThumbnailSize * currentFrame.getHeight() / currentFrame.getWidth();
+      if (thumbnailContainerWidth != lastThumbnailContainerWidth || thumbnailContainerHeight != lastThumbnailContainerHeight)
+      {
+         thumbnailContainer.setPrefWidth(thumbnailContainerWidth);
+         thumbnailContainer.setPrefHeight(thumbnailContainerHeight);
+         lastThumbnailContainerWidth = thumbnailContainerWidth;
+         lastThumbnailContainerHeight = thumbnailContainerHeight;
+      }
 
-      thumbnail.setImage(currentFrame);
+      if (currentFrame != lastThumbnailSourceFrame)
+      {
+         thumbnail.setImage(createThumbnailImage(currentFrame, (int) Math.round(defaultThumbnailSize)));
+         lastThumbnailSourceFrame = currentFrame;
+      }
 
       if (updateVideoView.get())
       {
@@ -249,18 +280,59 @@ public class VideoViewer
 
          if (imageViewRootPane.get() != null)
          {
-            imageViewRootPane.get().setPadding(new Insets(16, 16, 16, 16));
-
-            if (reader.replacedRobotTimestampsContainsIndex(reader.getCurrentIndex()))
+            boolean highlight = reader.replacedRobotTimestampsContainsIndex(reader.getCurrentIndex());
+            if (lastReplacedTimestampHighlight == null || lastReplacedTimestampHighlight != highlight)
             {
-               imageViewRootPane.get().setBackground(new Background(new BackgroundFill(Color.DARKORANGE, CornerRadii.EMPTY, Insets.EMPTY)));
-            }
-            else
-            {
-               imageViewRootPane.get().setBackground(new Background(new BackgroundFill(Color.WHITE, CornerRadii.EMPTY, Insets.EMPTY)));
+               imageViewRootPane.get().setBackground(highlight ? REPLACED_TIMESTAMP_BACKGROUND : NORMAL_BACKGROUND);
+               lastReplacedTimestampHighlight = highlight;
             }
          }
       }
+   }
+
+   /**
+    * Downscales {@code source} into a new, small {@link WritableImage} for thumbnail display via
+    * nearest-neighbor sampling.
+    * <p>
+    * {@code thumbnail}'s {@code fitWidth} only controls how large the image is drawn - it doesn't
+    * shrink what gets uploaded to the GPU as a texture. Handing the full-resolution decoded frame
+    * (e.g. 1280x720) straight to a small {@code ImageView} was forcing a full-resolution texture
+    * upload every pulse, for every camera, just to show a strip of tiny thumbnails.
+    * <p>
+    * Always allocates a fresh image rather than mutating a reused one in place: {@code ImageView}
+    * only re-renders on an actual reference change (a plain, non-animated {@code WritableImage}
+    * doesn't get a change listener registered for in-place pixel mutations - see
+    * {@code ImageView#imageProperty()}), and at thumbnail resolution the allocation itself is
+    * negligible (unlike the full-resolution image this method reads from, which is why that one
+    * *is* reused - see {@code FrameImageConverter}).
+    *
+    * @param source       the decoded, full-resolution frame to downscale
+    * @param targetWidth  the thumbnail's pixel width; must be positive
+    * @return a new {@link WritableImage}, {@code targetWidth} wide, matching {@code source}'s aspect ratio
+    */
+   static WritableImage createThumbnailImage(WritableImage source, int targetWidth)
+   {
+      int sourceWidth = (int) source.getWidth();
+      int sourceHeight = (int) source.getHeight();
+      int width = Math.max(1, targetWidth);
+      int height = Math.max(1, Math.round((float) width * sourceHeight / sourceWidth));
+
+      WritableImage scaled = new WritableImage(width, height);
+      PixelReader sourceReader = source.getPixelReader();
+      PixelWriter destWriter = scaled.getPixelWriter();
+
+      for (int y = 0; y < height; y++)
+      {
+         int sourceY = Math.min(sourceHeight - 1, y * sourceHeight / height);
+
+         for (int x = 0; x < width; x++)
+         {
+            int sourceX = Math.min(sourceWidth - 1, x * sourceWidth / width);
+            destWriter.setArgb(x, y, sourceReader.getArgb(sourceX, sourceY));
+         }
+      }
+
+      return scaled;
    }
 
    public void stop()
