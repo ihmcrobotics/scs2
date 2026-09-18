@@ -3,25 +3,40 @@ package us.ihmc.scs2.sessionVisualizer.jfx.session.log;
 import logger_msgs.Camera;
 import logger_msgs.LogProperties;
 import us.ihmc.fastddsjava.cdr.idl.IDLObjectSequence;
+import us.ihmc.scs2.session.DaemonThreadFactory;
 import us.ihmc.scs2.session.log.ProgressConsumer;
 import us.ihmc.scs2.session.log.ZEDSVOScrubber;
-import us.ihmc.scs2.sessionVisualizer.jfx.managers.BackgroundExecutorManager;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 public class MultiVideoDataReader
 {
    private final List<VideoDataReader> readers = new ArrayList<>();
-   private final BackgroundExecutorManager backgroundExecutorManager;
+   /**
+    * Dedicated single-thread executor for {@link #readVideoFrameInBackground(long)}, instead of
+    * sharing the general-purpose {@code BackgroundExecutorManager} pool used everywhere else in the
+    * app.
+    * <p>
+    * This work is inherently sequential - only one call is ever in flight, guarded by
+    * {@code currentTask.isDone()} below - and it fires on every timestamp change during
+    * playback/scrubbing, i.e. essentially continuously. Submitting it to a shared multi-thread pool
+    * meant each call could land on a different worker thread (a plain {@code ExecutorService} has no
+    * thread affinity), which cold-started caches on a different core every time and defeated the
+    * per-thread scratch-buffer reuse in {@link FrameImageConverter} - for work that was never actually
+    * running in parallel with itself to begin with. Profiling showed most of the wall-clock time here
+    * was that thread-hopping overhead, not the decode work itself.
+    */
+   private final ExecutorService dedicatedReadExecutor = Executors.newSingleThreadExecutor(new DaemonThreadFactory("MultiVideoDataReader"));
    private Future<?> currentTask = null;
 
-   public MultiVideoDataReader(File dataDirectory, LogProperties logProperties, BackgroundExecutorManager backgroundExecutorManager)
+   public MultiVideoDataReader(File dataDirectory, LogProperties logProperties)
    {
-      this.backgroundExecutorManager = backgroundExecutorManager;
       IDLObjectSequence<Camera> cameras = logProperties.getCameras();
 
       for (int i = 0; i < cameras.size(); i++)
@@ -77,7 +92,27 @@ public class MultiVideoDataReader
    public void readVideoFrameInBackground(long queryRobotTimestamp)
    {
       if (currentTask == null || currentTask.isDone())
-         currentTask = backgroundExecutorManager.executeInBackground(() -> readVideoFrameNow(queryRobotTimestamp));
+         currentTask = dedicatedReadExecutor.submit(() ->
+         {
+            try
+            {
+               readVideoFrameNow(queryRobotTimestamp);
+            }
+            catch (Exception e)
+            {
+               e.printStackTrace();
+            }
+         });
+   }
+
+   /**
+    * Stops the dedicated background thread used by {@link #readVideoFrameInBackground(long)}. Safe to
+    * skip if this reader is simply discarded - the thread is a daemon and does nothing once idle - but
+    * call this when a session ends to release it promptly instead of leaving it parked.
+    */
+   public void shutdown()
+   {
+      dedicatedReadExecutor.shutdownNow();
    }
 
    public void crop(File selectedDirectory, long startTimestamp, long endTimestamp, ProgressConsumer progressConsumer) throws IOException

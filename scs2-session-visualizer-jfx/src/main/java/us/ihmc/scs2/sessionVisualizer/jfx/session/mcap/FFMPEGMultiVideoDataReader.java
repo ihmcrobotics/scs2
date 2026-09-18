@@ -2,7 +2,7 @@ package us.ihmc.scs2.sessionVisualizer.jfx.session.mcap;
 
 import org.bytedeco.ffmpeg.global.avutil;
 import us.ihmc.log.LogTools;
-import us.ihmc.scs2.sessionVisualizer.jfx.managers.BackgroundExecutorManager;
+import us.ihmc.scs2.session.DaemonThreadFactory;
 
 import java.io.File;
 import java.io.IOException;
@@ -10,6 +10,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 public class FFMPEGMultiVideoDataReader
@@ -21,12 +23,16 @@ public class FFMPEGMultiVideoDataReader
    }
 
    private final List<FFMPEGVideoDataReader> readers = new ArrayList<>();
-   private final BackgroundExecutorManager backgroundExecutorManager;
+   /**
+    * Dedicated single-thread executor for {@link #readVideoFrameInBackground(long)} - see
+    * {@code MultiVideoDataReader}'s field of the same name for why this isn't the shared
+    * {@code BackgroundExecutorManager} pool.
+    */
+   private final ExecutorService dedicatedReadExecutor = Executors.newSingleThreadExecutor(new DaemonThreadFactory("FFMPEGMultiVideoDataReader"));
    private Future<?> currentTask = null;
 
-   public FFMPEGMultiVideoDataReader(File dataDirectory, BackgroundExecutorManager backgroundExecutorManager)
+   public FFMPEGMultiVideoDataReader(File dataDirectory)
    {
-      this.backgroundExecutorManager = backgroundExecutorManager;
       List<Path> videoFiles;
       LogTools.info("Searching for videos in {}", dataDirectory.getAbsolutePath());
       if (dataDirectory.isDirectory())
@@ -58,7 +64,27 @@ public class FFMPEGMultiVideoDataReader
    public void readVideoFrameInBackground(long timestamp)
    {
       if (currentTask == null || currentTask.isDone())
-         currentTask = backgroundExecutorManager.executeInBackground(() -> readVideoFrameNow(timestamp));
+         currentTask = dedicatedReadExecutor.submit(() ->
+         {
+            try
+            {
+               readVideoFrameNow(timestamp);
+            }
+            catch (Exception e)
+            {
+               e.printStackTrace();
+            }
+         });
+   }
+
+   /**
+    * Stops the dedicated background thread used by {@link #readVideoFrameInBackground(long)}. Safe to
+    * skip if this reader is simply discarded - the thread is a daemon and does nothing once idle - but
+    * call this when a session ends to release it promptly instead of leaving it parked.
+    */
+   public void shutdown()
+   {
+      dedicatedReadExecutor.shutdownNow();
    }
 
    public int getNumberOfVideos()
