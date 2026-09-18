@@ -77,11 +77,15 @@ public class YoCompositeListCell extends ListCell<YoComposite>
    {
       // Every YoCompositeSearchManager refresh wraps the underlying (stable) YoVariables in brand new YoComposite
       // instances - and YoComposite doesn't override equals() - so a reference check here (this.yoComposite ==
-      // yoComposite) fails to recognize "still the same variable", hence the extra check
+      // yoComposite) fails to recognize "still the same variable", hence the extra check.
+      // The names alone are not enough though: every new session gets a new registry with new YoVariable instances
+      // that carry the same names, and the properties created below are linked to the previous session's variables.
+      // Treating those as the same item leaves the cell showing stale values, so the YoVariables have to match too.
       boolean isSameItem = this.yoComposite != null && yoComposite != null;
       // Don't do &= because these need to exit the condition early if the values are null
       isSameItem = isSameItem && this.yoComposite.getPattern() == yoComposite.getPattern();
       isSameItem = isSameItem && this.yoComposite.getFullname().equals(yoComposite.getFullname());
+      isSameItem = isSameItem && hasSameYoComponents(this.yoComposite, yoComposite);
       this.yoComposite = yoComposite;
       super.updateItem(yoComposite, empty);
 
@@ -108,7 +112,6 @@ public class YoCompositeListCell extends ListCell<YoComposite>
          YoVariable yoVariable = yoComposite.getYoComponents().get(0);
 
          Region yoVariableControl = createYoVariableControl(yoVariable, numberPrecision, yoManager.getLinkedRootRegistry());
-         setGraphicAsNotManaged(yoVariableControl);
          setGraphic(yoVariableControl);
          setContentDisplay(ContentDisplay.LEFT);
          setAlignment(Pos.CENTER_LEFT);
@@ -137,9 +140,7 @@ public class YoCompositeListCell extends ListCell<YoComposite>
          Label label = new Label();
          yoCompositeNameDisplay = label;
          label.setFont(Font.font("System", FontWeight.BOLD, 12.0));
-         VBox compositeGraphic = new VBox(3, label, cellGraphic);
-         setGraphicAsNotManaged(compositeGraphic);
-         setGraphic(compositeGraphic);
+         setGraphic(new VBox(3, label, cellGraphic));
          setContentDisplay(ContentDisplay.GRAPHIC_ONLY);
          setAlignment(Pos.TOP_LEFT);
          setGraphicTextGap(0);
@@ -152,14 +153,20 @@ public class YoCompositeListCell extends ListCell<YoComposite>
       yoCompositeNameDisplay.setTooltip(new Tooltip(yoComposite.getName() + "\n" + yoComposite.getNamespace()));
    }
 
-   /**
-    * Prevents this cell's live value-bound graphic (which updates almost every pulse during playback) from
-    * propagating {@code requestLayout()} up into the ListView's VirtualFlow and forcing a full, expensive
-    * re-estimate of the list's content size every pulse.
-    */
-   private static void setGraphicAsNotManaged(Region graphic)
+   private static boolean hasSameYoComponents(YoComposite a, YoComposite b)
    {
-      graphic.setManaged(false);
+      List<YoVariable> componentsA = a.getYoComponents();
+      List<YoVariable> componentsB = b.getYoComponents();
+
+      if (componentsA.size() != componentsB.size())
+         return false;
+
+      for (int i = 0; i < componentsA.size(); i++)
+      {
+         if (componentsA.get(i) != componentsB.get(i))
+            return false;
+      }
+      return true;
    }
 
    private void updateYoCompositeName(YoNameDisplay nameDisplay)

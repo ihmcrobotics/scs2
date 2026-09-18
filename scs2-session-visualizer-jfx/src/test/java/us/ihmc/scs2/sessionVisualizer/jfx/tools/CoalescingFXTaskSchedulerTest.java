@@ -9,17 +9,6 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import org.junit.jupiter.api.Test;
 
-/**
- * Regression test for the FPS drop reported when the Log Session Manager window is open: before the fix, the log position
- * slider was synced via a raw {@code Session.addCurrentBufferPropertiesListener} callback that queued a fresh
- * {@code Platform.runLater} task on every single publish - which, at the session's ~100Hz pause-tick publish rate, floods
- * the FX thread with far more queued work than the UI can usefully consume in a frame, and competes with rendering.
- * <p>
- * {@link CoalescingFXTaskScheduler} fixes this by ensuring at most one task is queued at a time. This test simulates a
- * burst of rapid-fire {@code request()} calls (standing in for the session's publish callback) arriving before the FX
- * thread (standing in for {@code Platform.runLater}) gets a chance to run anything, and verifies only one task is queued.
- * </p>
- */
 public class CoalescingFXTaskSchedulerTest
 {
    @Test
