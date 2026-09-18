@@ -11,7 +11,7 @@ import javafx.scene.control.ToggleButton;
 import javafx.stage.Stage;
 import javafx.stage.Window;
 import javafx.stage.WindowEvent;
-import us.ihmc.messager.MessagerAPIFactory.Topic;
+import us.ihmc.scs2.sessionVisualizer.jfx.messager.Topic;
 import us.ihmc.scs2.definition.yoComposite.YoTuple2DDefinition;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerIOTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerTopics;
@@ -19,7 +19,7 @@ import us.ihmc.scs2.sessionVisualizer.jfx.controllers.VisualizerController;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.editor.YoCompositeEditorPaneController;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerWindowToolkit;
 import us.ihmc.scs2.sessionVisualizer.jfx.managers.YoCompositeSearchManager;
-import us.ihmc.scs2.sessionVisualizer.jfx.tools.SCS2JavaFXMessager;
+import us.ihmc.scs2.sessionVisualizer.jfx.messager.SCS2Messager;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.CompositePropertyTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoComposite.Tuple2DProperty;
@@ -44,7 +44,7 @@ public class Plotter2DOptionsStageController implements VisualizerController
       owner = toolkit.getWindow();
       yoCompositeSearchManager = toolkit.getYoCompositeSearchManager();
 
-      SCS2JavaFXMessager messager = toolkit.getMessager();
+      SCS2Messager messager = toolkit.getMessager();
       SessionVisualizerTopics topics = toolkit.getTopics();
       Topic<YoTuple2DDefinition> trackCoordsTopic = topics.getPlotter2DTrackCoordinateRequest();
       Property<YoTuple2DDefinition> lastCoordinates = new SimpleObjectProperty<>(this, "lastCoordinatesProperty", messager.getLastValue(trackCoordsTopic));

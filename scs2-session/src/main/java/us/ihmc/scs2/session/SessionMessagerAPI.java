@@ -25,6 +25,7 @@ public class SessionMessagerAPI
    private static final CategoryTheme Record = apiFactory.createCategoryTheme("Record");
    private static final CategoryTheme Export = apiFactory.createCategoryTheme("Export");
    private static final CategoryTheme Initialize = apiFactory.createCategoryTheme("Initialize");
+   private static final CategoryTheme Reset = apiFactory.createCategoryTheme("Reset");
 
    private static final CategoryTheme Run = apiFactory.createCategoryTheme("Run");
    private static final CategoryTheme Playback = apiFactory.createCategoryTheme("Playback");
@@ -53,6 +54,8 @@ public class SessionMessagerAPI
    public static final Topic<Long> RunMaxDuration = root.child(Session).child(Run).topic(MaxDuration);
 
    public static final Topic<SessionDataExportRequest> SessionDataExportRequest = root.child(Session).child(Export).topic(Data);
+
+   public static final Topic<Boolean> SessionResetRequest = root.child(Session).child(Reset).topic(Request);
    public static final Topic<SessionRobotDefinitionListChange> SessionRobotDefinitionListChangeRequest = root.child(Session)
                                                                                                              .child(Change)
                                                                                                              .child(RobotDefinition)

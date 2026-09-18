@@ -14,10 +14,13 @@ import java.io.PrintWriter;
  */
 public class MagewellScrubber
 {
+   public static final int DEFAULT_FRAME_DELAY = 4;
+
    private final TimestampScrubber timestampScrubber;
    private final String name;
 
    private final MagewellDemuxer magewellDemuxer;
+   private final long nanosPerFrame;
 
    private final Camera camera;
    private long currentVideoTimestamp;
@@ -42,9 +45,23 @@ public class MagewellScrubber
       }
 
       magewellDemuxer = new MagewellDemuxer(videoFile);
+      // Duration of one video frame in nanoseconds, matching the units of the robot timestamps, so a frame count
+      // (e.g. the user-facing frame delay) can be converted to a delay in TimestampScrubber's search key.
+      nanosPerFrame = Math.round(1.0e9 / magewellDemuxer.getFrameRate());
 
       File timestampFile = new File(dataDirectory, camera.getTimestampFileAsString());
       this.timestampScrubber = new TimestampScrubber(timestampFile, hasTimeBase, interlaced);
+      setFrameDelay(DEFAULT_FRAME_DELAY);
+   }
+
+   public void setFrameDelay(int frames)
+   {
+      timestampScrubber.setDelay(frames * nanosPerFrame);
+   }
+
+   public int getFrameDelay()
+   {
+      return nanosPerFrame == 0 ? 0 : Math.round((float) timestampScrubber.getDelay() / nanosPerFrame);
    }
 
    public int getImageHeight()

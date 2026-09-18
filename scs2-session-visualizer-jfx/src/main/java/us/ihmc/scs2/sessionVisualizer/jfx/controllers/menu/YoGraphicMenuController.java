@@ -15,7 +15,7 @@ import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.control.CheckMenuItem;
 import javafx.stage.Stage;
-import us.ihmc.messager.javafx.JavaFXMessager;
+import us.ihmc.scs2.sessionVisualizer.jfx.messager.SCS2Messager;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerIOTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerTopics;
 import us.ihmc.scs2.sessionVisualizer.jfx.controllers.VisualizerController;
@@ -33,7 +33,7 @@ public class YoGraphicMenuController implements VisualizerController
    private CheckMenuItem showTerrainMenuItem, enableWireframeTerrainModeMenuItem;
 
    private SessionVisualizerWindowToolkit toolkit;
-   private JavaFXMessager messager;
+   private SCS2Messager messager;
    private SessionVisualizerTopics topics;
    private Stage owner;
 
