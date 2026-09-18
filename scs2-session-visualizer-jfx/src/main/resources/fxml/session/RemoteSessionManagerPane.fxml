@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <?import com.jfoenix.controls.JFXButton?>
-<?import com.jfoenix.controls.JFXSpinner?>
 <?import com.jfoenix.controls.JFXTextField?>
 <?import com.jfoenix.controls.JFXTreeTableView?>
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ProgressIndicator?>
 <?import javafx.scene.control.TreeTableView?>
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.layout.HBox?>
@@ -46,7 +46,7 @@
                         </HBox>
                         <HBox alignment="CENTER_RIGHT" spacing="10.0" HBox.hgrow="SOMETIMES">
                             <children>
-                                <JFXSpinner fx:id="loadingSpinner" visible="false"/>
+                                <ProgressIndicator fx:id="loadingSpinner" visible="false"/>
                                 <JFXButton fx:id="startSessionButton" styleClass="start-session-button" text="Start session"/>
                                 <JFXButton fx:id="endSessionButton" styleClass="end-session-button" text="End session"/>
                             </children>

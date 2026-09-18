@@ -47,7 +47,7 @@ import us.ihmc.scs2.sessionVisualizer.jfx.managers.SessionVisualizerToolkit;
 import us.ihmc.scs2.sessionVisualizer.jfx.session.SessionControlsController;
 import us.ihmc.scs2.sessionVisualizer.jfx.session.log.LogSessionManagerController;
 import us.ihmc.scs2.sessionVisualizer.jfx.session.log.LogSessionManagerController.TimeStringBinding;
-import us.ihmc.scs2.sessionVisualizer.jfx.tools.FXCoalescedUpdater;
+import us.ihmc.scs2.sessionVisualizer.jfx.tools.CoalescingFXTaskScheduler;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.PositiveIntegerValueFilter;
 import us.ihmc.scs2.sharedMemory.interfaces.YoBufferPropertiesReadOnly;
@@ -62,6 +62,7 @@ import java.util.function.Consumer;
 public class MCAPLogSessionManagerController implements SessionControlsController
 {
    private static final double THUMBNAIL_WIDTH = 200.0;
+   private static final long UPDATE_INTERVAL_NANOS = TimeUnit.MILLISECONDS.toNanos(33);
 
    public static final String LOG_FILE_KEY = "MCAPLogFilePath";
    private static final String ROBOT_MODEL_FILE_KEY = "MCAPRobotModelFilePath";
@@ -209,23 +210,35 @@ public class MCAPLogSessionManagerController implements SessionControlsControlle
       logPositionSlider.addEventFilter(MouseEvent.MOUSE_DRAGGED, e -> sliderFeedbackEnabled.set(false));
       logPositionSlider.addEventFilter(MouseEvent.MOUSE_RELEASED, e -> sliderFeedbackEnabled.set(true));
 
-      FXCoalescedUpdater<YoBufferPropertiesReadOnly> logPositionUpdater = new FXCoalescedUpdater<>(properties ->
+      // The session publishes buffer properties up to 100x/sec even when idle. Coalesce those into at most one
+      // pending Platform.runLater task at a time, instead of flooding the FX thread with one task per publish -
+      // otherwise this window's slider update alone can tank the render frame rate while it's open.
+      CoalescingFXTaskScheduler logPositionUpdateScheduler = new CoalescingFXTaskScheduler(() ->
+                                                                                           {
+                                                                                              MCAPLogSession logSession = activeSessionProperty.get();
+                                                                                              if (logSession == null
+                                                                                                  || logSession.getMCAPLogFileReader() == null)
+                                                                                                 return;
+
+                                                                                              int currentLogPosition = logSession.getMCAPLogFileReader()
+                                                                                                                                 .getCurrentIndex();
+
+                                                                                              if (currentLogPosition != logPositionSlider.valueProperty()
+                                                                                                                                         .intValue())
+                                                                                              {
+                                                                                                 logPositionUpdate.set(true);
+                                                                                                 logPositionSlider.setValue(currentLogPosition);
+                                                                                                 logPositionUpdate.set(false);
+                                                                                              }
+                                                                                           },
+                                                                                           runnable -> JavaFXMissingTools.runLater(getClass(), runnable),
+                                                                                           UPDATE_INTERVAL_NANOS);
+
+      Consumer<YoBufferPropertiesReadOnly> logPositionUpdateListener = properties ->
       {
-         MCAPLogSession logSession = activeSessionProperty.get();
-
-         if (logSession == null || logSession.getMCAPLogFileReader() == null || !sliderFeedbackEnabled.get())
-            return;
-
-         int currentLogPosition = logSession.getMCAPLogFileReader().getCurrentIndex();
-
-         if (currentLogPosition != logPositionSlider.valueProperty().intValue())
-         {
-            logPositionUpdate.set(true);
-            logPositionSlider.setValue(currentLogPosition);
-            logPositionUpdate.set(false);
-         }
-      });
-      Consumer<YoBufferPropertiesReadOnly> logPositionUpdateListener = logPositionUpdater::update;
+         if (sliderFeedbackEnabled.get())
+            logPositionUpdateScheduler.request();
+      };
 
       activeSessionProperty.addListener((o, oldValue, newValue) ->
                                         {
@@ -350,7 +363,14 @@ public class MCAPLogSessionManagerController implements SessionControlsControlle
 
       consoleOutputPaneController.startSession(session);
 
-      JavaFXMissingTools.runNFramesLater(5, () -> stage.sizeToScene());
+      JavaFXMissingTools.runNFramesLater(5, () ->
+      {
+         // Force layout to settle before sizing the window - sizeToScene() otherwise picks up the root's cached
+         // preferred size, which can predate the video thumbnail/other async content actually loading.
+         mainPane.applyCss();
+         mainPane.layout();
+         stage.sizeToScene();
+      });
       JavaFXMissingTools.runNFramesLater(6, () -> stage.toFront());
    }
 
