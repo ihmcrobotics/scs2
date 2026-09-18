@@ -11,7 +11,7 @@ public class MainWindowMenuBarController implements VisualizerController
    @FXML
    private MenuBar menuBar;
    @FXML
-   private Menu fileMenu, sessionMenu, runMenu, dataBufferMenu, yoCompositeMenu, yoChartMenu, yoGraphicMenu, yoSliderboardMenu, helpMenu;
+   private Menu fileMenu, sessionMenu, runMenu, dataBufferMenu, yoCompositeMenu, yoChartMenu, yoGraphicMenu, yoPerceptionMenu, yoSliderboardMenu, helpMenu;
    @FXML
    private FileMenuController fileMenuController;
    @FXML
@@ -24,6 +24,8 @@ public class MainWindowMenuBarController implements VisualizerController
    private YoChartMenuController yoChartMenuController;
    @FXML
    private YoGraphicMenuController yoGraphicMenuController;
+   @FXML
+   private YoPerceptionMenuController yoPerceptionMenuController;
    @FXML
    private SessionMenuController sessionMenuController;
    @FXML
@@ -40,6 +42,7 @@ public class MainWindowMenuBarController implements VisualizerController
       yoCompositeMenuController.initialize(toolkit);
       yoChartMenuController.initialize(toolkit);
       yoGraphicMenuController.initialize(toolkit);
+      yoPerceptionMenuController.initialize(toolkit);
       sessionMenuController.initialize(toolkit);
       yoSliderboardMenuController.initialize(toolkit);
       helpMenuController.initialize(toolkit);

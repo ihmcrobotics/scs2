@@ -6,8 +6,12 @@ import us.hebi.matlab.mat.format.Mat5;
 import us.hebi.matlab.mat.types.MatFile;
 import us.hebi.matlab.mat.types.Matrix;
 import us.hebi.matlab.mat.types.Struct;
+import us.ihmc.log.LogTools;
 import us.ihmc.robotDataLogger.logger.YoVariableLogReader;
 import us.ihmc.scs2.session.log.ProgressConsumer;
+import us.ihmc.scs2.session.log.perception.PerceptionMcapScrubber;
+import us.ihmc.scs2.session.mcap.MCAPLogCropper;
+import us.ihmc.scs2.session.mcap.specs.MCAP;
 import us.ihmc.yoVariables.registry.YoNamespace;
 import us.ihmc.yoVariables.registry.YoRegistry;
 import us.ihmc.yoVariables.variable.YoBoolean;
@@ -18,6 +22,7 @@ import us.ihmc.yoVariables.variable.YoLong;
 import us.ihmc.yoVariables.variable.YoVariable;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
@@ -107,11 +112,21 @@ public class YoVariableLogCropper extends YoVariableLogReader
 
          progressConsumer.info("Writing variable data %d/%d".formatted(0, numberOfBatches));
 
-         ProgressConsumer dataCopyingProgress;
-         if (videoDataReaders == null || videoDataReaders.isEmpty())
-            dataCopyingProgress = progressConsumer.subProgress(0.10, 1.00);
+         File perceptionMcapFile = PerceptionMcapScrubber.findMcapFile(logDirectory);
+
+         boolean hasVideo = videoDataReaders != null && !videoDataReaders.isEmpty();
+         boolean hasPerceptionMcap = perceptionMcapFile != null;
+         double afterPerceptionCropProgress = hasVideo ? 0.50 : 1.00;
+
+         double afterDataCopyingProgress;
+         if (!hasPerceptionMcap)
+            afterDataCopyingProgress = afterPerceptionCropProgress;
+         else if (hasVideo)
+            afterDataCopyingProgress = 0.45;
          else
-            dataCopyingProgress = progressConsumer.subProgress(0.10, 0.50);
+            afterDataCopyingProgress = 0.95;
+
+         ProgressConsumer dataCopyingProgress = progressConsumer.subProgress(0.10, afterDataCopyingProgress);
 
          ByteBuffer indexBuffer = ByteBuffer.allocateDirect(16);
          for (int batch = batchFrom; batch <= batchTo; batch++)
@@ -135,15 +150,24 @@ public class YoVariableLogCropper extends YoVariableLogReader
          indexChannel.close();
          indexStream.close();
 
+         long startTimestamp = getTimestamp(batchFrom);
+         // The index only stores a timestamp per batch (the batch's first tick), so getTimestamp(batchTo) would
+         // give the start of the last batch instead of tick `to`. Decode the batch to read that tick's own
+         // timestamp, otherwise the video is cropped short relative to the variable data by up to batchSize - 1 ticks.
+         long endTimestamp = readData(batchTo).asLongBuffer().get(tickOffsetInLastBatch * getNumberOfVariables());
+
+         if (hasPerceptionMcap)
+         {
+            progressConsumer.info("Cropping perception data");
+            cropPerceptionMCAP(perceptionMcapFile, destination, startTimestamp, endTimestamp);
+            progressConsumer.progress(afterPerceptionCropProgress);
+         }
+
          progressConsumer.info("Cropping video files");
 
-         if (videoDataReaders != null && !videoDataReaders.isEmpty())
+         if (hasVideo)
          {
-            // The index only stores a timestamp per batch (the batch's first tick), so getTimestamp(batchTo) would
-            // give the start of the last batch instead of tick `to`. Decode the batch to read that tick's own
-            // timestamp, otherwise the video is cropped short relative to the variable data by up to batchSize - 1 ticks.
-            long endTimestamp = readData(batchTo).asLongBuffer().get(tickOffsetInLastBatch * getNumberOfVariables());
-            MultiVideoDataReader.crop(destination, videoDataReaders, getTimestamp(batchFrom), endTimestamp, progressConsumer.subProgress(0.50, 1.0));
+            MultiVideoDataReader.crop(destination, videoDataReaders, startTimestamp, endTimestamp, progressConsumer.subProgress(0.50, 1.0));
          }
 
          progressConsumer.done();
@@ -151,6 +175,27 @@ public class YoVariableLogCropper extends YoVariableLogReader
       catch (IOException e)
       {
          throw new RuntimeException(e);
+      }
+   }
+
+   private static void cropPerceptionMCAP(File perceptionMcapFile, File destination, long startTimestamp, long endTimestamp)
+   {
+      try (FileInputStream perceptionInputStream = new FileInputStream(perceptionMcapFile);
+           MCAP mcap = new MCAP(perceptionInputStream.getChannel()))
+      {
+         MCAPLogCropper mcapLogCropper = new MCAPLogCropper(mcap);
+         mcapLogCropper.setStartTimestamp(startTimestamp);
+         mcapLogCropper.setEndTimestamp(endTimestamp);
+         mcapLogCropper.setOutputFormat(MCAPLogCropper.OutputFormat.MCAP);
+
+         try (FileOutputStream perceptionOutputStream = new FileOutputStream(new File(destination, perceptionMcapFile.getName())))
+         {
+            mcapLogCropper.crop(perceptionOutputStream);
+         }
+      }
+      catch (IOException | RuntimeException e)
+      {
+         LogTools.error("Failed to crop " + perceptionMcapFile + ": " + e.getMessage());
       }
    }
 

@@ -23,7 +23,7 @@ import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import javafx.stage.WindowEvent;
 import javafx.util.Duration;
-import us.ihmc.messager.javafx.JavaFXMessager;
+import us.ihmc.scs2.sessionVisualizer.jfx.messager.SCS2Messager;
 import us.ihmc.scs2.definition.yoComposite.YoCompositePatternDefinition;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerIOTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerTopics;
@@ -69,7 +69,7 @@ public class YoCompositePatternPropertyWindowController
 
    private Stage window;
    private SessionVisualizerTopics topics;
-   private JavaFXMessager messager;
+   private SCS2Messager messager;
    private SessionVisualizerToolkit toolkit;
 
    public void initialize(SessionVisualizerToolkit toolkit)

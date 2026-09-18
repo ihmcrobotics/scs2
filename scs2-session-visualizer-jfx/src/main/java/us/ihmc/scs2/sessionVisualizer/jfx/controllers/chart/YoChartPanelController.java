@@ -1,5 +1,6 @@
 package us.ihmc.scs2.sessionVisualizer.jfx.controllers.chart;
 
+import javafx.application.Platform;
 import javafx.beans.property.*;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
@@ -22,12 +23,13 @@ import us.ihmc.commons.MathTools;
 import us.ihmc.euclid.tuple2D.Point2D;
 import us.ihmc.euclid.tuple2D.interfaces.Tuple2DReadOnly;
 import us.ihmc.javaFXExtensions.chart.FastNumberAxis;
-import us.ihmc.messager.MessagerAPIFactory.Topic;
-import us.ihmc.messager.TopicListener;
-import us.ihmc.messager.javafx.JavaFXMessager;
+import us.ihmc.scs2.sessionVisualizer.jfx.messager.Topic;
+import us.ihmc.scs2.sessionVisualizer.jfx.messager.TopicListener;
+import us.ihmc.scs2.sessionVisualizer.jfx.messager.SCS2Messager;
 import us.ihmc.scs2.definition.yoChart.ChartDoubleBoundsDefinition;
 import us.ihmc.scs2.definition.yoChart.YoChartConfigurationDefinition;
 import us.ihmc.scs2.session.SessionMode;
+import us.ihmc.scs2.session.SessionProperties;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerIOTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.SessionVisualizerTopics;
 import us.ihmc.scs2.sessionVisualizer.jfx.YoNameDisplay;
@@ -49,6 +51,7 @@ import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 public class YoChartPanelController extends ObservedAnimationTimer implements VisualizerController
@@ -99,9 +102,11 @@ public class YoChartPanelController extends ObservedAnimationTimer implements Vi
    private Border defaultBorder = null;
 
    private SessionVisualizerTopics topics;
-   private JavaFXMessager messager;
+   private SCS2Messager messager;
    private YoManager yoManager;
    private SessionVisualizerWindowToolkit toolkit;
+   private Consumer<YoBufferPropertiesReadOnly> newBufferPropertiesListener;
+   private Consumer<SessionProperties> sessionModeListener;
 
    @Override
    public void initialize(SessionVisualizerWindowToolkit toolkit)
@@ -114,7 +119,7 @@ public class YoChartPanelController extends ObservedAnimationTimer implements Vi
       topics = toolkit.getTopics();
       BackgroundExecutorManager backgroundExecutorManager = toolkit.getBackgroundExecutorManager();
 
-      newBufferProperties = messager.createInput(topics.getYoBufferCurrentProperties());
+      newBufferProperties = new AtomicReference<>(null);
       legendPrecision = messager.createPropertyInput(topics.getControlsNumberPrecision(), 5);
 
       dynamicLineChart = new DynamicLineChart(new FastNumberAxis(0.0, 0.0),
@@ -261,7 +266,28 @@ public class YoChartPanelController extends ObservedAnimationTimer implements Vi
 
       messager.addFXTopicListener(topics.getCurrentKeyFrames(), keyFrameMarkerListener);
       // Only show the update markers when the session is running and the chart may be behind.
-      messager.addFXTopicListener(topics.getSessionCurrentMode(), m -> dynamicLineChart.updateIndexMarkersVisible().set(m == SessionMode.RUNNING));
+      toolkit.addAndTriggerSessionChangedListener((previousSession, newSession) ->
+      {
+         if (previousSession != null)
+         {
+            previousSession.removeCurrentBufferPropertiesListener(newBufferPropertiesListener);
+            previousSession.removeSessionPropertiesListener(sessionModeListener);
+         }
+
+         if (newSession == null)
+         {
+            newBufferPropertiesListener = null;
+            sessionModeListener = null;
+            return;
+         }
+
+         newBufferPropertiesListener = newBufferProperties::set;
+         newSession.addCurrentBufferPropertiesListener(newBufferPropertiesListener);
+
+         sessionModeListener = properties -> Platform.runLater(() -> dynamicLineChart.updateIndexMarkersVisible().set(properties.getActiveMode() == SessionMode.RUNNING));
+         newSession.addSessionPropertiesListener(sessionModeListener);
+         sessionModeListener.accept(newSession.getSessionProperties());
+      });
       messager.submitMessage(topics.getRequestCurrentKeyFrames(), new Object());
       messager.addFXTopicListener(topics.getYoChartShowYAxis(), m ->
       {
@@ -423,7 +449,13 @@ public class YoChartPanelController extends ObservedAnimationTimer implements Vi
       charts.clear();
       chartsCopy.forEach(YoVariableChartPackage::close);
 
-      messager.removeInput(topics.getYoBufferCurrentProperties(), newBufferProperties);
+      if (toolkit.getSession() != null)
+      {
+         if (newBufferPropertiesListener != null)
+            toolkit.getSession().removeCurrentBufferPropertiesListener(newBufferPropertiesListener);
+         if (sessionModeListener != null)
+            toolkit.getSession().removeSessionPropertiesListener(sessionModeListener);
+      }
       messager.removeFXTopicListener(topics.getCurrentKeyFrames(), keyFrameMarkerListener);
    }
 
@@ -534,7 +566,8 @@ public class YoChartPanelController extends ObservedAnimationTimer implements Vi
                return; // Don't perform scroll when clicking on the legend
 
             int index = screenToBufferIndex(event.getScreenX(), event.getScreenY());
-            messager.submitMessage(topics.getYoBufferCurrentIndexRequest(), index);
+            if (toolkit.getSession() != null)
+               toolkit.getSession().submitBufferIndexRequest(index);
             event.consume();
          }
       }
@@ -664,10 +697,13 @@ public class YoChartPanelController extends ObservedAnimationTimer implements Vi
 
          hideContextMenu();
 
-         if (event.getDeltaY() < 0.0)
-            messager.submitMessage(topics.getYoBufferDecrementCurrentIndexRequest(), scrollDelta);
-         else
-            messager.submitMessage(topics.getYoBufferIncrementCurrentIndexRequest(), scrollDelta);
+         if (toolkit.getSession() != null)
+         {
+            if (event.getDeltaY() < 0.0)
+               toolkit.getSession().submitDecrementBufferIndexRequest(scrollDelta);
+            else
+               toolkit.getSession().submitIncrementBufferIndexRequest(scrollDelta);
+         }
       }
    }
 

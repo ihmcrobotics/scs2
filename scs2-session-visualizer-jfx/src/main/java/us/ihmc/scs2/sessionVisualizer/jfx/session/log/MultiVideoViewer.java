@@ -2,6 +2,7 @@ package us.ihmc.scs2.sessionVisualizer.jfx.session.log;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import javafx.scene.layout.Pane;
 import javafx.stage.Window;
@@ -25,6 +26,11 @@ public class MultiVideoViewer extends ObservedAnimationTimer
       {
          videoViewers.add(new VideoViewer(owner, reader, defaultThumbnailWidth));
       }
+   }
+
+   public List<VideoDataReader> getReaders()
+   {
+      return videoViewers.stream().map(VideoViewer::getReader).collect(Collectors.toList());
    }
 
    public void addVideoReader(MultiVideoDataReader multiReader)

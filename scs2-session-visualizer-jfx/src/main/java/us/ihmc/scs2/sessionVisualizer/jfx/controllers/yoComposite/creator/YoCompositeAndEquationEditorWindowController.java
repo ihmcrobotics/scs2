@@ -3,6 +3,7 @@ package us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoComposite.creator;
 import javafx.animation.KeyFrame;
 import javafx.animation.KeyValue;
 import javafx.animation.Timeline;
+import javafx.application.Platform;
 import javafx.beans.property.Property;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.ObservableList;
@@ -27,7 +28,7 @@ import javafx.stage.StageStyle;
 import javafx.stage.WindowEvent;
 import javafx.util.Duration;
 import org.kordamp.ikonli.javafx.FontIcon;
-import us.ihmc.messager.javafx.JavaFXMessager;
+import us.ihmc.scs2.sessionVisualizer.jfx.messager.SCS2Messager;
 import us.ihmc.scs2.definition.DefinitionIOTools;
 import us.ihmc.scs2.definition.yoVariable.YoEquationDefinition;
 import us.ihmc.scs2.definition.yoVariable.YoEquationListDefinition;
@@ -72,7 +73,7 @@ public class YoCompositeAndEquationEditorWindowController
    private Stage window;
    private SessionVisualizerToolkit toolkit;
    private SessionVisualizerTopics topics;
-   private JavaFXMessager messager;
+   private SCS2Messager messager;
    private YoManager yoManager;
 
    public void initialize(SessionVisualizerToolkit toolkit)
@@ -116,7 +117,7 @@ public class YoCompositeAndEquationEditorWindowController
                                                                                             showEquationEditorPane(newValue);
                                                                                       });
 
-      messager.addFXTopicListener(topics.getSessionYoEquationListChangeState(), m ->
+      toolkit.getSession().addYoEquationListChangeListener(m -> Platform.runLater(() ->
       {
          if (yoEquationEditorListView.getSelectionModel().getSelectedIndex() >= m.getEquations().size())
             yoEquationEditorListView.getSelectionModel().clearSelection();
@@ -129,7 +130,7 @@ public class YoCompositeAndEquationEditorWindowController
          }
 
          yoEquationEditorListView.getItems().remove(m.getEquations().size(), yoEquationEditorListView.getItems().size());
-      });
+      }));
 
       MenuTools.setupContextMenu(yoEquationEditorListView, ListViewTools.removeMenuItemFactory(false));
 
@@ -236,8 +237,7 @@ public class YoCompositeAndEquationEditorWindowController
          yoEquationEditorPaneController.setUpdateListener(() ->
                                                           {
                                                              if (areAllEquationsValid())
-                                                                messager.submitMessage(topics.getSessionYoEquationListChangeRequest(),
-                                                                                       YoEquationListChange.newList(collectEquationDefinitions()));
+                                                                toolkit.getSession().submitEquationListChange(YoEquationListChange.newList(collectEquationDefinitions()));
                                                           });
          yoEquationEditorPaneController.definitionProperty().setValue(equation);
       }
