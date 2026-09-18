@@ -193,23 +193,6 @@ public class LogSessionManagerController implements SessionControlsController
       logPositionSlider.addEventFilter(MouseEvent.MOUSE_DRAGGED, e -> sliderFeedbackEnabled.set(false));
       logPositionSlider.addEventFilter(MouseEvent.MOUSE_RELEASED, e -> sliderFeedbackEnabled.set(true));
 
-      FXCoalescedUpdater<YoBufferPropertiesReadOnly> logPositionUpdater = new FXCoalescedUpdater<>(properties ->
-      {
-         LogSession logSession = activeSessionProperty.get();
-
-         if (logSession == null || logSession.getLogDataReader() == null || !sliderFeedbackEnabled.get())
-            return;
-
-         int currentLogPosition = logSession.getLogDataReader().getCurrentLogPosition();
-
-         if (currentLogPosition != logPositionSlider.valueProperty().intValue())
-         {
-            logPositionUpdate.set(true);
-            logPositionSlider.setValue(currentLogPosition);
-            logPositionUpdate.set(false);
-         }
-      });
-      Consumer<YoBufferPropertiesReadOnly> logPositionUpdateListener = logPositionUpdater::update;
       // The session publishes buffer properties up to 100x/sec even when idle. Coalesce those into at most one
       // pending Platform.runLater task at a time, instead of flooding the FX thread with one task per publish -
       // otherwise this window's slider update alone can tank the render frame rate while it's open.
