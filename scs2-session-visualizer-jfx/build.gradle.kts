@@ -39,6 +39,9 @@ mainDependencies {
 
    api("org.reflections:reflections:0.9.11")
 
+   // Used to set __GL_SYNC_TO_VBLANK from within the JVM, see JavaFXApplicationCreator.
+   api("net.java.dev.jna:jna:5.19.1")
+
    // JavaFX extensions
    api("org.controlsfx:controlsfx:11.1.0")
    // TODO Switch away from the de.jensd to ikonli
