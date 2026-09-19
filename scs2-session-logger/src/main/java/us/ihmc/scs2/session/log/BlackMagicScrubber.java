@@ -18,6 +18,7 @@ public class BlackMagicScrubber
    private final String name;
 
    private final FFmpegDemuxer demuxer;
+   private final boolean hasTimeBase;
 
    private final Camera camera;
    private long videoTimestamp;
@@ -26,6 +27,7 @@ public class BlackMagicScrubber
    public BlackMagicScrubber(Camera camera, File dataDirectory, boolean hasTimeBase) throws IOException
    {
       this.camera = camera;
+      this.hasTimeBase = hasTimeBase;
       name = camera.getNameAsString();
       boolean interlaced = camera.getInterlaced();
 
@@ -49,18 +51,33 @@ public class BlackMagicScrubber
 
    public Frame readVideoFrame(long queryRobotTimestamp)
    {
-      videoTimestamp = timestampScrubber.getVideoTimestampFromRobotTimestamp(queryRobotTimestamp);
+      long scrubbedVideoValue = timestampScrubber.getVideoTimestampFromRobotTimestamp(queryRobotTimestamp);
       currentRobotTimestamp = timestampScrubber.getCurrentRobotTimestamp();
 
+      videoTimestamp = toVideoPTS(scrubbedVideoValue);
       demuxer.seekToPTS(videoTimestamp);
 
       return demuxer.getNextFrame(); // Increment frame index after getting frame.
    }
 
+   /**
+    * When {@code hasTimeBase} is true, the Timestamps.dat file's second column is a video frame
+    * number (0, 1, 2, ...), not a timestamp - it has to be converted to the microsecond PTS
+    * {@link FFmpegDemuxer#seekToPTS} actually expects using the video's own frame rate, or every
+    * seek lands inside frame 0's PTS window and playback never advances past the first frame.
+    */
+   private long toVideoPTS(long scrubbedVideoValue)
+   {
+      if (!hasTimeBase)
+         return scrubbedVideoValue;
+
+      return Math.round(1.0e6 * scrubbedVideoValue / demuxer.getFrameRate());
+   }
+
    public void cropVideo(File outputFile, File timestampFile, long startTimestamp, long endTimestamp, ProgressConsumer progressConsumer) throws IOException
    {
-      long startVideoTimestamp = timestampScrubber.getVideoTimestampFromRobotTimestamp(startTimestamp);
-      long endVideoTimestamp = timestampScrubber.getVideoTimestampFromRobotTimestamp(endTimestamp);
+      long startVideoTimestamp = toVideoPTS(timestampScrubber.getVideoTimestampFromRobotTimestamp(startTimestamp));
+      long endVideoTimestamp = toVideoPTS(timestampScrubber.getVideoTimestampFromRobotTimestamp(endTimestamp));
 
       long[] robotTimestampsForCroppedLog = timestampScrubber.getCroppedRobotTimestamps(startTimestamp, endTimestamp);
       long[] videoTimestampsForCroppedLog = new long[robotTimestampsForCroppedLog.length];

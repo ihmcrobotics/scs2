@@ -19,7 +19,7 @@ public class MagewellScrubber
    private final TimestampScrubber timestampScrubber;
    private final String name;
 
-   private final FFmpegDemuxer magewellDemuxer;
+   private final FFmpegDemuxer ffmpegDemuxer;
    private final long nanosPerFrame;
 
    private final Camera camera;
@@ -44,10 +44,10 @@ public class MagewellScrubber
          throw new IOException("Cannot find video: " + videoFile);
       }
 
-      magewellDemuxer = new FFmpegDemuxer(videoFile);
+      ffmpegDemuxer = new FFmpegDemuxer(videoFile);
       // Duration of one video frame in nanoseconds, matching the units of the robot timestamps, so a frame count
       // (e.g. the user-facing frame delay) can be converted to a delay in TimestampScrubber's search key.
-      nanosPerFrame = Math.round(1.0e9 / magewellDemuxer.getFrameRate());
+      nanosPerFrame = Math.round(1.0e9 / ffmpegDemuxer.getFrameRate());
 
       File timestampFile = new File(dataDirectory, camera.getTimestampFileAsString());
       this.timestampScrubber = new TimestampScrubber(timestampFile, hasTimeBase, interlaced);
@@ -66,12 +66,12 @@ public class MagewellScrubber
 
    public int getImageHeight()
    {
-      return magewellDemuxer.getImageHeight();
+      return ffmpegDemuxer.getImageHeight();
    }
 
    public int getImageWidth()
    {
-      return magewellDemuxer.getImageWidth();
+      return ffmpegDemuxer.getImageWidth();
    }
 
    public Frame readVideoFrame(long queryRobotTimestamp)
@@ -79,9 +79,9 @@ public class MagewellScrubber
       currentVideoTimestamp = timestampScrubber.getVideoTimestampFromRobotTimestamp(queryRobotTimestamp);
       currentRobotTimestamp = timestampScrubber.getCurrentRobotTimestamp();
 
-      magewellDemuxer.seekToPTS(currentVideoTimestamp);
+      ffmpegDemuxer.seekToPTS(currentVideoTimestamp);
 
-      return magewellDemuxer.getNextFrame();
+      return ffmpegDemuxer.getNextFrame();
    }
 
    public void cropVideo(File outputFile, File timestampFile, long startTimestamp, long endTimestamp, ProgressConsumer progressConsumer) throws IOException
@@ -94,21 +94,21 @@ public class MagewellScrubber
       int i = 0;
 
       // This stuff is used to print to SCS2 so the user knows how the cropped log is going, progress wise
-      long startFrame = getFrameAtTimestamp(startVideoTimestamp, magewellDemuxer); // This also moves the stream to the startFrame
-      long endFrame = getFrameAtTimestamp(endVideoTimestamp, magewellDemuxer);
+      long startFrame = getFrameAtTimestamp(startVideoTimestamp, ffmpegDemuxer); // This also moves the stream to the startFrame
+      long endFrame = getFrameAtTimestamp(endVideoTimestamp, ffmpegDemuxer);
       long numberOfFrames = endFrame - startFrame;
-      int frameRate = (int) magewellDemuxer.getFrameRate();
+      int frameRate = (int) ffmpegDemuxer.getFrameRate();
 
-      magewellDemuxer.seekToPTS(startVideoTimestamp);
+      ffmpegDemuxer.seekToPTS(startVideoTimestamp);
 
       PrintWriter timestampWriter = new PrintWriter(timestampFile);
       timestampWriter.println(1 + "\n" + frameRate);
 
-      FFmpegMuxer magewellMuxer = new FFmpegMuxer(outputFile, magewellDemuxer.getImageWidth(), magewellDemuxer.getImageHeight());
+      FFmpegMuxer magewellMuxer = new FFmpegMuxer(outputFile, ffmpegDemuxer.getImageWidth(), ffmpegDemuxer.getImageHeight());
       magewellMuxer.start();
 
       Frame frame;
-      while (i < videoTimestampsForCroppedLog.length && (frame = magewellDemuxer.getNextFrame()) != null && magewellDemuxer.getFrameNumber() <= endFrame)
+      while (i < videoTimestampsForCroppedLog.length && (frame = ffmpegDemuxer.getNextFrame()) != null && ffmpegDemuxer.getFrameNumber() <= endFrame)
       {
          // Skip non-video packets (audio, timecode) that grabFrame() returns from multi-stream MP4s.
          if (frame.image == null || frame.imageWidth <= 0 || frame.imageHeight <= 0)
@@ -116,15 +116,15 @@ public class MagewellScrubber
 
          // Use the frame's original PTS (relative to the crop start) so playback speed matches the source
          // recording, regardless of how fast this machine happens to decode/encode during cropping.
-         long videoTimestamp = magewellDemuxer.getCurrentPTS() - startVideoTimestamp;
+         long videoTimestamp = ffmpegDemuxer.getCurrentPTS() - startVideoTimestamp;
          magewellMuxer.recordFrame(frame, videoTimestamp);
          videoTimestampsForCroppedLog[i] = magewellMuxer.getTimeStamp();
          i++;
 
          if (progressConsumer != null)
          {
-            progressConsumer.info("frame %d/%d".formatted(magewellDemuxer.getFrameNumber() - startFrame, numberOfFrames));
-            progressConsumer.progress((double) (magewellDemuxer.getFrameNumber() - startFrame) / (double) numberOfFrames);
+            progressConsumer.info("frame %d/%d".formatted(ffmpegDemuxer.getFrameNumber() - startFrame, numberOfFrames));
+            progressConsumer.progress((double) (ffmpegDemuxer.getFrameNumber() - startFrame) / (double) numberOfFrames);
          }
       }
 
@@ -163,9 +163,9 @@ public class MagewellScrubber
       return timestampScrubber;
    }
 
-   public FFmpegDemuxer getMagewellDemuxer()
+   public FFmpegDemuxer getFfmpegDemuxer()
    {
-      return magewellDemuxer;
+      return ffmpegDemuxer;
    }
 
    public String getName()

@@ -3,6 +3,7 @@ package us.ihmc.scs2.sessionVisualizer.jfx.session.log;
 import logger_msgs.Camera;
 import org.bytedeco.javacv.Frame;
 import us.ihmc.concurrent.ConcurrentCopier;
+import us.ihmc.log.LogTools;
 import us.ihmc.scs2.session.log.BlackMagicScrubber;
 import us.ihmc.scs2.session.log.ProgressConsumer;
 
@@ -36,25 +37,37 @@ public class BlackMagicVideoDataReader implements VideoDataReader
 
    public void readVideoFrame(long queryRobotTimestamp)
    {
-      Frame nextFrame = blackMagicScrubber.readVideoFrame(queryRobotTimestamp);
-
-      // The underlying FFmpegFrameGrabber.grabFrame() returns the next packet from any stream,
-      // so a multi-stream MP4 (video + audio + timecode) may yield non-image frames here.
-      int skipped = 0;
-      while (nextFrame != null && !FrameImageConverter.hasImageData(nextFrame) && skipped < MAX_NON_VIDEO_FRAMES_TO_SKIP)
+      try
       {
-         nextFrame = blackMagicScrubber.getDemuxer().getNextFrame();
-         skipped++;
+         Frame nextFrame = blackMagicScrubber.readVideoFrame(queryRobotTimestamp);
+
+         // The underlying FFmpegFrameGrabber.grabFrame() returns the next packet from any stream,
+         // so a multi-stream MP4 (video + audio + timecode) may yield non-image frames here.
+         int skipped = 0;
+         while (nextFrame != null && !FrameImageConverter.hasImageData(nextFrame) && skipped < MAX_NON_VIDEO_FRAMES_TO_SKIP)
+         {
+            nextFrame = blackMagicScrubber.getDemuxer().getNextFrame();
+            skipped++;
+         }
+
+         FrameData copyForWriting = imageBuffer.getCopyForWriting();
+         copyForWriting.queryRobotTimestamp = queryRobotTimestamp;
+         copyForWriting.currentRobotTimestamp = blackMagicScrubber.getCurrentRobotTimestamp();
+         copyForWriting.currentVideoTimestamp = blackMagicScrubber.getVideoTimestamp();
+         copyForWriting.currentDemuxerTimestamp = blackMagicScrubber.getDemuxer().getCurrentPTS();
+         copyForWriting.frame = FrameImageConverter.convertFrameToWritableImage(nextFrame, copyForWriting.frame);
+
+         imageBuffer.commit();
       }
-
-      FrameData copyForWriting = imageBuffer.getCopyForWriting();
-      copyForWriting.queryRobotTimestamp = queryRobotTimestamp;
-      copyForWriting.currentRobotTimestamp = blackMagicScrubber.getCurrentRobotTimestamp();
-      copyForWriting.currentVideoTimestamp = blackMagicScrubber.getVideoTimestamp();
-      copyForWriting.currentDemuxerTimestamp = blackMagicScrubber.getDemuxer().getCurrentPTS();
-      copyForWriting.frame = FrameImageConverter.convertFrameToWritableImage(nextFrame, copyForWriting.frame);
-
-      imageBuffer.commit();
+      catch (RuntimeException e)
+      {
+         // Without this, a single bad frame silently aborts MultiVideoDataReader's forEach for every
+         // reader after this one in the list, and this reader's view is left showing its last frame
+         // forever with no indication anything went wrong. Logging the frame's shape alongside the
+         // exception is what actually lets us tell "wrong pixel format" apart from "seek/EOF issue".
+         LogTools.error("Failed to read/convert BlackMagic video frame at robot timestamp " + queryRobotTimestamp + ": " + e);
+         e.printStackTrace();
+      }
    }
 
    public void cropVideo(File outputFile, File timestampFile, long startTimestamp, long endTimestamp, ProgressConsumer monitor) throws IOException

@@ -25,12 +25,12 @@ public class MagewellVideoDataReader implements VideoDataReader
 
    public int getImageHeight()
    {
-      return magewellScrubber.getMagewellDemuxer().getImageHeight();
+      return magewellScrubber.getFfmpegDemuxer().getImageHeight();
    }
 
    public int getImageWidth()
    {
-      return magewellScrubber.getMagewellDemuxer().getImageWidth();
+      return magewellScrubber.getFfmpegDemuxer().getImageWidth();
    }
 
    public void readVideoFrame(long queryRobotTimestamp)
@@ -42,7 +42,7 @@ public class MagewellVideoDataReader implements VideoDataReader
       int skipped = 0;
       while (nextFrame != null && !FrameImageConverter.hasImageData(nextFrame) && skipped < MAX_NON_VIDEO_FRAMES_TO_SKIP)
       {
-         nextFrame = magewellScrubber.getMagewellDemuxer().getNextFrame();
+         nextFrame = magewellScrubber.getFfmpegDemuxer().getNextFrame();
          skipped++;
       }
 
@@ -51,7 +51,7 @@ public class MagewellVideoDataReader implements VideoDataReader
       copyForWriting.queryRobotTimestamp = queryRobotTimestamp;
       copyForWriting.currentRobotTimestamp = magewellScrubber.getCurrentRobotTimestamp();
       copyForWriting.currentVideoTimestamp = magewellScrubber.getCurrentVideoTimestamp();
-      copyForWriting.currentDemuxerTimestamp = magewellScrubber.getMagewellDemuxer().getCurrentPTS();
+      copyForWriting.currentDemuxerTimestamp = magewellScrubber.getFfmpegDemuxer().getCurrentPTS();
       copyForWriting.frame = FrameImageConverter.convertFrameToWritableImage(nextFrame, copyForWriting.frame);
 
       imageBuffer.commit();
