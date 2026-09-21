@@ -35,12 +35,12 @@ jobs:
             --rm \
             --user $(id -u):$(id -g) \
             --volume ${{ github.workspace }}:/simulation-construction-set-2 \
-            scs2-debian-ci gradle buildDebianPackage
+            scs2-debian-ci gradle packageLinuxDeb
 
       - uses: actions/upload-artifact@v4
         with:
           name: scs2-deb
-          path: scs2-session-visualizer-jfx/deployment/debian/*.deb
+          path: scs2-session-visualizer-jfx/deployment/linux/deb/*.deb
           if-no-files-found: error
 
   build-windows:
