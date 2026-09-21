@@ -10,6 +10,7 @@ public class MujocoSimulationParameters implements MujocoSimulationParametersBas
    private int subSteps = 1;
    private double timestep = 0.0;
    private boolean filterParentCollisions = true;
+   private boolean enforceJointLimits = true;
    private int perContactDiagnosticsCapacity = 16;
 
    private double solref_timeconst = 0.02;
@@ -64,6 +65,18 @@ public class MujocoSimulationParameters implements MujocoSimulationParametersBas
    public boolean getFilterParentCollisions()
    {
       return filterParentCollisions;
+   }
+
+   @Override
+   public boolean getEnforceJointLimits()
+   {
+      return enforceJointLimits;
+   }
+
+   @Override
+   public void setEnforceJointLimits(boolean enforceJointLimits)
+   {
+      this.enforceJointLimits = enforceJointLimits;
    }
 
    @Override

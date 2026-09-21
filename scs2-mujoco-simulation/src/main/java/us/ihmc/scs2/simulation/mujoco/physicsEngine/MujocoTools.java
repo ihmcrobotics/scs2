@@ -11,6 +11,7 @@ import org.bytedeco.javacpp.BytePointer;
 import org.bytedeco.javacpp.DoublePointer;
 import org.bytedeco.javacpp.IntPointer;
 
+import us.ihmc.euclid.matrix.Matrix3D;
 import us.ihmc.euclid.orientation.interfaces.Orientation3DReadOnly;
 import us.ihmc.euclid.shape.convexPolytope.interfaces.Vertex3DReadOnly;
 import us.ihmc.euclid.transform.interfaces.RigidBodyTransformReadOnly;
@@ -28,6 +29,7 @@ import us.ihmc.scs2.definition.geometry.Ellipsoid3DDefinition;
 import us.ihmc.scs2.definition.geometry.GeometryDefinition;
 import us.ihmc.scs2.definition.geometry.ModelFileGeometryDefinition;
 import us.ihmc.scs2.definition.geometry.Ramp3DDefinition;
+import us.ihmc.scs2.simulation.mujoco.physicsEngine.parameters.MujocoSimulationParametersReadOnly;
 import us.ihmc.scs2.definition.geometry.Sphere3DDefinition;
 import us.ihmc.scs2.definition.robot.JointDefinition;
 import us.ihmc.scs2.definition.robot.OneDoFJointDefinition;
@@ -285,12 +287,25 @@ public final class MujocoTools
       sb.append(x).append(' ').append(y).append(' ').append(z);
    }
 
-   /** Emit a body's {@code <inertial>} element (CoM offset, mass, and full inertia tensor). */
+   /**
+    * Emit a body's {@code <inertial>} element (CoM offset, mass, and full inertia tensor).
+    *
+    * <p>SCS2 expresses the moment of inertia in the frame given by
+    * {@link RigidBodyDefinition#getInertiaPose()}, whose translation is the CoM offset and whose
+    * rotation is the inertia frame's orientation relative to the body frame. MuJoCo's
+    * {@code fullinertia} is read in the body frame (the compiler eigen-decomposes it and derives
+    * the inertial frame orientation itself), so a rotated inertia frame has to be folded in first
+    * as {@code R * I * R^T}. Most URDFs, Alex included, give zero rpy on every inertial, in which
+    * case this is a no-op.
+    */
    static void appendInertial(StringBuilder sb, RigidBodyDefinition body, int indent)
    {
       String pad = "  ".repeat(indent);
       Tuple3DReadOnly comOffset = body.getCenterOfMassOffset();
-      var inertia = body.getMomentOfInertia();
+      Matrix3D inertia = new Matrix3D(body.getMomentOfInertia());
+      Orientation3DReadOnly inertiaFrameRotation = body.getInertiaPose().getRotation();
+      if (!inertiaFrameRotation.isZeroOrientation())
+         inertiaFrameRotation.transform(inertia);
 
       sb.append(pad).append("<inertial")
         .append(" pos=\"").append(comOffset.getX()).append(' ').append(comOffset.getY()).append(' ').append(comOffset.getZ()).append('"')
@@ -311,7 +326,11 @@ public final class MujocoTools
    }
 
    /** Emit a joint's MJCF element: {@code <freejoint>} for the root, {@code <joint>} for 1-DoF. */
-   static void appendJoint(StringBuilder sb, JointDefinition joint, String namePrefix, int indent)
+   static void appendJoint(StringBuilder sb,
+                           JointDefinition joint,
+                           String namePrefix,
+                           MujocoSimulationParametersReadOnly parameters,
+                           int indent)
    {
       String pad = "  ".repeat(indent);
       if (joint instanceof SixDoFJointDefinition)
@@ -320,11 +339,11 @@ public final class MujocoTools
       }
       else if (joint instanceof RevoluteJointDefinition rev)
       {
-         appendOneDofJoint(sb, pad, "hinge", namePrefix, rev);
+         appendOneDofJoint(sb, pad, "hinge", namePrefix, rev, parameters);
       }
       else if (joint instanceof PrismaticJointDefinition pris)
       {
-         appendOneDofJoint(sb, pad, "slide", namePrefix, pris);
+         appendOneDofJoint(sb, pad, "slide", namePrefix, pris, parameters);
       }
       else
       {
@@ -333,7 +352,12 @@ public final class MujocoTools
       }
    }
 
-   private static void appendOneDofJoint(StringBuilder sb, String pad, String mjcfType, String namePrefix, OneDoFJointDefinition jointDef)
+   private static void appendOneDofJoint(StringBuilder sb,
+                                         String pad,
+                                         String mjcfType,
+                                         String namePrefix,
+                                         OneDoFJointDefinition jointDef,
+                                         MujocoSimulationParametersReadOnly parameters)
    {
       Tuple3DReadOnly axis = jointDef.getAxis();
       sb.append(pad).append("<joint name=\"").append(namePrefix).append(jointDef.getName())
@@ -343,7 +367,49 @@ public final class MujocoTools
       // Damping
       if (jointDef.getDamping() > 0.0)
          sb.append(" damping=\"").append(jointDef.getDamping()).append('"');
+
+      // Coulomb joint friction. No SCS2 engine reads stiction today, so for the URDFs in use
+      // (Alex and Zulu both declare friction="0.0") this emits nothing.
+      if (jointDef.getStiction() > 0.0)
+         sb.append(" frictionloss=\"").append(jointDef.getStiction()).append('"');
+
+      // Position limits. solreflimit is deliberately left at MuJoCo's default rather than derived
+      // from getKpSoftLimitStop()/getKdSoftLimitStop(): MuJoCo's negative-solref form specifies
+      // stiffness per unit of acceleration, so those gains would need scaling by the joint's
+      // effective inertia to mean the same thing. A default-stiffness stop is closer to the other
+      // engines than no stop at all; gain-matching it is a follow-up.
+      if (parameters.getEnforceJointLimits() && hasFinitePositionLimits(jointDef))
+      {
+         sb.append(" limited=\"true\" range=\"").append(jointDef.getPositionLowerLimit())
+           .append(' ').append(jointDef.getPositionUpperLimit()).append('"');
+      }
+
+      // Total actuator force limit. This clamps qfrc_actuator only, so it has no effect while the
+      // engine runs in TORQUE_PASSTHROUGH (which writes qfrc_applied); it is what reproduces
+      // SCS2OutputWriter's clamp of the summed torque once actuators drive the joint.
+      if (hasFiniteEffortLimits(jointDef))
+      {
+         sb.append(" actuatorfrclimited=\"true\" actuatorfrcrange=\"").append(jointDef.getEffortLowerLimit())
+           .append(' ').append(jointDef.getEffortUpperLimit()).append('"');
+      }
+
       sb.append("/>\n");
+   }
+
+   /** True when the joint declares a usable position range, matching {@code OneDoFJointDefinition}'s unset sentinels. */
+   static boolean hasFinitePositionLimits(OneDoFJointDefinition jointDef)
+   {
+      double lower = jointDef.getPositionLowerLimit();
+      double upper = jointDef.getPositionUpperLimit();
+      return Double.isFinite(lower) && Double.isFinite(upper) && lower < upper;
+   }
+
+   /** True when the joint declares a usable effort range. */
+   static boolean hasFiniteEffortLimits(OneDoFJointDefinition jointDef)
+   {
+      double lower = jointDef.getEffortLowerLimit();
+      double upper = jointDef.getEffortUpperLimit();
+      return Double.isFinite(lower) && Double.isFinite(upper) && lower < upper;
    }
 
    /** True if the transform has neither rotation nor translation (so pos/quat can be omitted). */
