@@ -55,7 +55,7 @@ public class BlackMagicScrubber
       currentRobotTimestamp = timestampScrubber.getCurrentRobotTimestamp();
 
       videoTimestamp = toVideoPTS(scrubbedVideoValue);
-      demuxer.seekToPTS(videoTimestamp);
+      demuxer.seekToPTS(toSeekPTS(scrubbedVideoValue));
 
       return demuxer.getNextFrame(); // Increment frame index after getting frame.
    }
@@ -74,31 +74,49 @@ public class BlackMagicScrubber
       return Math.round(1.0e6 * scrubbedVideoValue / demuxer.getFrameRate());
    }
 
+   /**
+    * The PTS to seek to in order to land on the frame that {@link #toVideoPTS(long)} refers to.
+    * <p>
+    * {@link FFmpegDemuxer#seekToPTS} returns the frame at or before the requested timestamp, with only about a
+    * microsecond of tolerance. Seeking to the exact start of a frame therefore lands on the previous frame whenever the
+    * container's timebase cannot represent that start exactly, e.g. frame 13 of a 30 fps video is at 433333.33 us. Aiming
+    * for the middle of the frame is robust to that rounding, and to a small error in the frame rate.
+    * </p>
+    */
+   private long toSeekPTS(long scrubbedVideoValue)
+   {
+      if (!hasTimeBase)
+         return scrubbedVideoValue;
+
+      return Math.round(1.0e6 * (scrubbedVideoValue + 0.5) / demuxer.getFrameRate());
+   }
+
    public void cropVideo(File outputFile, File timestampFile, long startTimestamp, long endTimestamp, ProgressConsumer progressConsumer) throws IOException
    {
-      long startVideoTimestamp = toVideoPTS(timestampScrubber.getVideoTimestampFromRobotTimestamp(startTimestamp));
-      long endVideoTimestamp = toVideoPTS(timestampScrubber.getVideoTimestampFromRobotTimestamp(endTimestamp));
+      long scrubbedStartValue = timestampScrubber.getVideoTimestampFromRobotTimestamp(startTimestamp);
+      long scrubbedEndValue = timestampScrubber.getVideoTimestampFromRobotTimestamp(endTimestamp);
+      long startVideoTimestamp = toVideoPTS(scrubbedStartValue);
 
       long[] robotTimestampsForCroppedLog = timestampScrubber.getCroppedRobotTimestamps(startTimestamp, endTimestamp);
-      long[] videoTimestampsForCroppedLog = new long[robotTimestampsForCroppedLog.length];
       int i = 0;
 
       // This stuff is used to print to SCS2 so the user knows how the cropped log is going, progress wise
-      long startFrame = getFrameAtTimestamp(startVideoTimestamp, demuxer); // This also moves the stream to the startFrame
-      long endFrame = getFrameAtTimestamp(endVideoTimestamp, demuxer);
+      long startFrame = getFrameAtTimestamp(toSeekPTS(scrubbedStartValue), demuxer); // This also moves the stream to the startFrame
+      long endFrame = getFrameAtTimestamp(toSeekPTS(scrubbedEndValue), demuxer);
       long numberOfFrames = endFrame - startFrame;
       int frameRate = (int) demuxer.getFrameRate();
 
-      demuxer.seekToPTS(startVideoTimestamp);
+      demuxer.seekToPTS(toSeekPTS(scrubbedStartValue));
 
       PrintWriter timestampWriter = new PrintWriter(timestampFile);
       timestampWriter.println(1 + "\n" + frameRate);
 
-      FFmpegMuxer muxer = new FFmpegMuxer(outputFile, demuxer.getImageWidth(), demuxer.getImageHeight());
+      // Keep the source's frame rate: toVideoPTS() converts the frame numbers written below using the frame rate the cropped video reports.
+      FFmpegMuxer muxer = new FFmpegMuxer(outputFile, demuxer.getImageWidth(), demuxer.getImageHeight(), demuxer.getFrameRate());
       muxer.start();
 
       Frame frame;
-      while (i < videoTimestampsForCroppedLog.length && (frame = demuxer.getNextFrame()) != null && demuxer.getFrameNumber() <= endFrame)
+      while (i < robotTimestampsForCroppedLog.length && (frame = demuxer.getNextFrame()) != null && demuxer.getFrameNumber() <= endFrame)
       {
          // Skip non-video packets (audio, timecode) that grabFrame() returns from multi-stream MP4s.
          if (frame.image == null || frame.imageWidth <= 0 || frame.imageHeight <= 0)
@@ -108,7 +126,6 @@ public class BlackMagicScrubber
          // recording, regardless of how fast this machine happens to decode/encode during cropping.
          long frameVideoTimestamp = demuxer.getCurrentPTS() - startVideoTimestamp;
          muxer.recordFrame(frame, frameVideoTimestamp);
-         videoTimestampsForCroppedLog[i] = muxer.getTimeStamp();
          i++;
 
          if (progressConsumer != null)
@@ -118,14 +135,16 @@ public class BlackMagicScrubber
          }
       }
 
-      // i may be less than videoTimestampsForCroppedLog.length if the demuxer ran out of frames before reaching
+      // i may be less than robotTimestampsForCroppedLog.length if the demuxer ran out of frames before reaching
       // endFrame (e.g. seeking landed short on an old, keyframe-less recording); only pair up what was actually written.
       int framesWritten = i;
       for (i = 0; i < framesWritten; i++)
       {
+         // BlackMagic logs (hasTimebase) store the video frame number, not a PTS, in the second column, see toVideoPTS(long).
+         // Writing the muxer's microsecond PTS here would make readVideoFrame() seek far beyond the end of the cropped video.
          timestampWriter.print(robotTimestampsForCroppedLog[i]);
          timestampWriter.print(" ");
-         timestampWriter.println(videoTimestampsForCroppedLog[i]);
+         timestampWriter.println(i);
       }
 
       muxer.stopRecording();
