@@ -233,8 +233,16 @@ public class MujocoRobot extends RobotExtension
    }
 
    /**
-    * Write joint efforts (torques/forces from the controller) into MuJoCo's {@code qfrc_applied}
-    * for each managed joint. Floating root contributes no controller torque.
+    * Write the SCS2 joint state ({@code q}, {@code qd}) into MuJoCo's {@code qpos} / {@code qvel}, and the joint
+    * efforts (torques/forces from the controller) into {@code qfrc_applied}, for each managed joint. The floating
+    * root contributes no controller torque.
+    *
+    * <p>The SCS2 joints are the state of record, as with the other SCS2 engines: anything that edits them between
+    * steps (a test teleporting the robot, a GUI edit, rewinding the buffer and resuming) takes effect on the next
+    * step. A joint's state is only written when it differs from MuJoCo's by more than {@link #STATE_EDIT_EPSILON}:
+    * the pull/push round trip (frame conversion of the root velocity, quaternion handling) leaves ~1e-16 of
+    * floating-point noise, and writing that back every step would perturb an untouched simulation. No
+    * {@code mj_forward} is needed: {@code mj_step} recomputes everything from {@code qpos} / {@code qvel}.
     */
    public void pushStateToMujoco(DoublePointer qfrcApplied, DoublePointer qpos, DoublePointer qvel)
    {
@@ -243,13 +251,66 @@ public class MujocoRobot extends RobotExtension
          JointAddress address = mujocoMultiBodyRobot.getJointAddress(joint.getName());
          if (address == null)
             continue;
-         if (address.isFloatingRoot)
-            continue;
-         if (joint instanceof OneDoFJointBasics oneDoF)
+         if (address.isFloatingRoot && joint instanceof SixDoFJointBasics floating)
          {
+            int qp = address.qposadr;
+            int qv = address.qveladr;
+            // MuJoCo quaternion order is (w, x, y, z).
+            quaternion.set(floating.getJointPose().getOrientation());
+            // Inverse of pullStateFromMujoco: the freejoint's linear velocity is in the world frame and its angular
+            // velocity in the body frame, while the mecano twist has both in the body frame.
+            linearVelocity.set(floating.getJointTwist().getLinearPart());
+            quaternion.transform(linearVelocity);
+            angularVelocity.set(floating.getJointTwist().getAngularPart());
+
+            boolean edited = isEdited(qpos, qp, floating.getJointPose().getPosition()) || !isSameOrientation(qpos, qp + 3, quaternion)
+                             || isEdited(qvel, qv, linearVelocity) || isEdited(qvel, qv + 3, angularVelocity);
+            if (edited)
+            {
+               qpos.put(qp, floating.getJointPose().getX());
+               qpos.put(qp + 1, floating.getJointPose().getY());
+               qpos.put(qp + 2, floating.getJointPose().getZ());
+               qpos.put(qp + 3, quaternion.getS());
+               qpos.put(qp + 4, quaternion.getX());
+               qpos.put(qp + 5, quaternion.getY());
+               qpos.put(qp + 6, quaternion.getZ());
+               qvel.put(qv, linearVelocity.getX());
+               qvel.put(qv + 1, linearVelocity.getY());
+               qvel.put(qv + 2, linearVelocity.getZ());
+               qvel.put(qv + 3, angularVelocity.getX());
+               qvel.put(qv + 4, angularVelocity.getY());
+               qvel.put(qv + 5, angularVelocity.getZ());
+            }
+         }
+         else if (joint instanceof OneDoFJointBasics oneDoF)
+         {
+            if (Math.abs(qpos.get(address.qposadr) - oneDoF.getQ()) > STATE_EDIT_EPSILON)
+               qpos.put(address.qposadr, oneDoF.getQ());
+            if (Math.abs(qvel.get(address.qveladr) - oneDoF.getQd()) > STATE_EDIT_EPSILON)
+               qvel.put(address.qveladr, oneDoF.getQd());
             qfrcApplied.put(address.qveladr, oneDoF.getTau());
          }
       }
+   }
+
+   /** Differences below this are floating-point noise from the pull/push round trip, not edits made through SCS2. */
+   private static final double STATE_EDIT_EPSILON = 1.0e-10;
+
+   private static boolean isEdited(DoublePointer array, int start, us.ihmc.euclid.tuple3D.interfaces.Tuple3DReadOnly value)
+   {
+      return Math.abs(array.get(start) - value.getX()) > STATE_EDIT_EPSILON || Math.abs(array.get(start + 1) - value.getY()) > STATE_EDIT_EPSILON
+             || Math.abs(array.get(start + 2) - value.getZ()) > STATE_EDIT_EPSILON;
+   }
+
+   /** Compares a MuJoCo (w, x, y, z) quaternion with {@code orientation}, treating q and -q as the same rotation. */
+   private static boolean isSameOrientation(DoublePointer array, int start, Quaternion orientation)
+   {
+      double w = array.get(start), x = array.get(start + 1), y = array.get(start + 2), z = array.get(start + 3);
+      boolean same = Math.abs(w - orientation.getS()) <= STATE_EDIT_EPSILON && Math.abs(x - orientation.getX()) <= STATE_EDIT_EPSILON
+                     && Math.abs(y - orientation.getY()) <= STATE_EDIT_EPSILON && Math.abs(z - orientation.getZ()) <= STATE_EDIT_EPSILON;
+      boolean opposite = Math.abs(w + orientation.getS()) <= STATE_EDIT_EPSILON && Math.abs(x + orientation.getX()) <= STATE_EDIT_EPSILON
+                         && Math.abs(y + orientation.getY()) <= STATE_EDIT_EPSILON && Math.abs(z + orientation.getZ()) <= STATE_EDIT_EPSILON;
+      return same || opposite;
    }
 
    // Scratch for pushExternalWrenchesToMujoco moment-arm correction.

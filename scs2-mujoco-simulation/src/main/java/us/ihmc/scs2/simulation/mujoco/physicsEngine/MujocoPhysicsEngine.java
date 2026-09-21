@@ -164,8 +164,8 @@ public class MujocoPhysicsEngine implements PhysicsEngine
          robot.saveRobotBeforePhysicsState();
       }
 
-      // qfrc_applied is zeroed every step by MuJoCo, so we must push the controller torques on
-      // every call before stepping.
+      // Push the SCS2 joint state and the controller torques on every call before stepping, so edits made to the
+      // SCS2 joints since the last step (tests, GUI, buffer rewind) take effect.
       for (MujocoRobot robot : robotList)
       {
          robot.pushStateToMujoco(dynamicsWorld.getData().qfrc_applied(),
