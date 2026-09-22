@@ -24,7 +24,7 @@ The ZED SDK has no macOS build, so ZED video log data is unsupported on macOS an
   that tag's existing release.
 - Or build a single platform's installer locally, the way it was done before this workflow existed:
   - **Linux**: `cd docker/debian; ./buildDebianInstaller.sh` (runs in Docker, no Linux-specific host
-    requirements). Output: `scs2-session-visualizer-jfx/deployment/debian/scs2-<version>.deb`
+    requirements). Output: `scs2-session-visualizer-jfx/deployment/linux/deb/scs2_<version>-1_amd64.deb`.
   - **Windows**: on a Windows machine with WiX Toolset 3.x and JDK 17 (providing `jpackage`/`jlink`),
     from the repository root: `gradle :scs2-session-visualizer-jfx:buildWindowsPackagesJlink`. Output:
     `scs2-session-visualizer-jfx/deployment/windows/msi-jlink/SessionVisualizer-<version>.msi`. (The
