@@ -695,3 +695,186 @@ tasks.register("packageMacDmgJlink") {
 tasks.register("buildMacPackagesJlink") {
    dependsOn("packageMacAppImageJlink", "packageMacDmgJlink")
 }
+
+// Linux packaging with jpackage: unlike buildDebianPackage above, the resulting .deb bundles its own (jlink-trimmed)
+// Java runtime, so users do not need to install Java. Same approach as the Windows and macOS installers.
+val linuxPackageName = "scs2" // Kept identical to the historical package name so `dpkg -r scs2` and upgrades keep working.
+val linuxDeploymentRoot = "${project.projectDir}/deployment/linux"
+val linuxLaunchersDir = "$linuxDeploymentRoot/launchers"
+val linuxDebDir = "$linuxDeploymentRoot/deb"
+val linuxResourcesDir = "$linuxDeploymentRoot/resources"
+val linuxIcon = "${project.projectDir}/src/main/resources/icons/scs-icon.png"
+
+// System libraries loaded by the JavaFX natives (libglassgtk3, libprism_es2, ...). They are packed inside the JavaFX jars, so
+// jpackage cannot discover them, and they used to come in through the openjdk-17-jre dependency. The GTK package was renamed
+// libgtk-3-0t64 on Ubuntu 24.04.
+val linuxPackageDeps = listOf(
+      "libgtk-3-0t64 | libgtk-3-0", "libgl1", "libxtst6", "libxi6", "libxrender1", "libfontconfig1"
+).joinToString(", ")
+
+fun requireLinuxHost()
+{
+   if (!Os.isFamily(Os.FAMILY_UNIX) || Os.isFamily(Os.FAMILY_MAC))
+      throw GradleException("Linux packaging tasks only run on Linux.")
+}
+
+/**
+ * jpackage (JDK 17) creates a menu entry for every launcher and ignores `linux-shortcut=false` in the add-launcher properties. Only the
+ * Session Visualizer should show up in the application menu, so the maintainer scripts and the .desktop file are overridden through
+ * jpackage's resource directory. The .desktop override also keeps the "Session Visualizer" menu name (with a space), which jpackage would
+ * otherwise replace with the launcher name. Menu registration is made non-fatal so that installing on a machine without a desktop
+ * environment (where xdg-desktop-menu fails) does not leave the package half-configured.
+ */
+fun writeLinuxResourceDir()
+{
+   val desktopFile = "/opt/$linuxPackageName/lib/$linuxPackageName-$sessionVisualizerExecutableName.desktop"
+   File(linuxResourcesDir).deleteRecursively()
+   File(linuxResourcesDir).mkdirs()
+
+   File("$linuxResourcesDir/postinst").writeText(
+         """
+         #!/bin/sh
+         set -e
+         case "${'$'}1" in
+             configure)
+                 xdg-desktop-menu install $desktopFile || echo "Could not add Session Visualizer to the application menu (no desktop environment?)." >&2
+                 ;;
+             abort-upgrade|abort-remove|abort-deconfigure)
+                 ;;
+             *)
+                 echo "postinst called with unknown argument ${'$'}1" >&2
+                 exit 1
+                 ;;
+         esac
+         exit 0
+         
+         """.trimIndent()
+   )
+
+   File("$linuxResourcesDir/prerm").writeText(
+         """
+         #!/bin/sh
+         set -e
+         case "${'$'}1" in
+             remove|upgrade|deconfigure)
+                 xdg-desktop-menu uninstall $desktopFile || true
+                 ;;
+             failed-upgrade)
+                 ;;
+             *)
+                 echo "prerm called with unknown argument ${'$'}1" >&2
+                 exit 1
+                 ;;
+         esac
+         exit 0
+         
+         """.trimIndent()
+   )
+
+   // The all-caps words are jpackage template placeholders.
+   File("$linuxResourcesDir/$sessionVisualizerExecutableName.desktop").writeText(
+         """
+         [Desktop Entry]
+         Name=Session Visualizer
+         Comment=APPLICATION_DESCRIPTION
+         Exec=APPLICATION_LAUNCHER
+         Icon=APPLICATION_ICON
+         Terminal=false
+         Type=Application
+         Categories=DEPLOY_BUNDLE_CATEGORY
+         
+         """.trimIndent()
+   )
+}
+
+fun writeMcapLauncherPropertiesLinux()
+{
+   File(linuxLaunchersDir).mkdirs()
+   File("$linuxLaunchersDir/$mcapRepackAppExecutableName.properties").writeText(
+         """
+         main-jar=${windowsMainJar()}
+         main-class=$mcapRepackMainClass
+         icon=$linuxIcon
+         java-options=-Djdk.gtk.version=3
+         java-options=-Dprism.vsync=false
+         """.trimIndent()
+   )
+}
+
+fun jpackageArgsCommonLinux(type: String, dest: String, runtimeImage: String): List<String> = listOf(
+      jpackageExecutable(),
+      "--type", type,
+      "--name", sessionVisualizerExecutableName,
+      // Same version as the historical .deb; keeps upgrades from older releases monotonic for dpkg/apt.
+      "--app-version", ihmc.version,
+      "--vendor", "IHMC",
+      "--description", "Simulation Construction Set 2 - Session Visualizer",
+      "--copyright", "IHMC",
+      "--input", "${project.projectDir}/build/install/scs2-session-visualizer-jfx/lib",
+      "--dest", dest,
+      "--main-jar", windowsMainJar(),
+      "--main-class", windowsMainClass,
+      "--icon", linuxIcon,
+      "--runtime-image", runtimeImage,
+      "--java-options", "-Djdk.gtk.version=3",
+      "--java-options", "-Dprism.vsync=false",
+      "--add-launcher", "$mcapRepackAppExecutableName=$linuxLaunchersDir/$mcapRepackAppExecutableName.properties",
+      "--linux-package-name", linuxPackageName,
+      "--linux-deb-maintainer", "nkitchel@ihmc.org",
+      "--linux-menu-group", "Utility",
+      "--linux-shortcut",
+      "--linux-package-deps", linuxPackageDeps,
+      "--resource-dir", linuxResourcesDir
+)
+
+/**
+ * Builds a trimmed JRE image for Linux using jlink, same module list and same JavaFX-stays-on-classpath
+ * reasoning as buildJlinkRuntime above.
+ */
+tasks.register("buildJlinkRuntimeLinux") {
+   doFirst {
+      requireLinuxHost()
+      requireJdk17Plus()
+   }
+
+   doLast {
+      val javaHome = System.getProperty("java.home")
+            ?: throw GradleException("java.home system property is not set.")
+      val modulePath = "$javaHome/jmods"
+
+      File(jlinkRuntimeDir).deleteRecursively()
+
+      ihmc.exec(ProcessBuilder(
+            jlinkExecutable(),
+            "--module-path", modulePath,
+            "--add-modules", jlinkAddModules,
+            "--strip-debug",
+            "--no-man-pages",
+            "--no-header-files",
+            "--compress=2",
+            "--include-locales=en",
+            "--output", jlinkRuntimeDir
+      ))
+   }
+}
+
+/**
+ * Builds a .deb that bundles its own Java runtime. Requires a JDK 17+ with jpackage, plus fakeroot and dpkg-deb.
+ * Output: deployment/linux/deb/scs2_<version>-1_<arch>.deb
+ */
+tasks.register("packageLinuxDeb") {
+   dependsOn("installDistLinux", "buildJlinkRuntimeLinux")
+
+   doFirst {
+      requireLinuxHost()
+      requireJdk17Plus()
+   }
+
+   doLast {
+      File(linuxDebDir).deleteRecursively()
+      File(linuxDebDir).mkdirs()
+      writeMcapLauncherPropertiesLinux()
+      writeLinuxResourceDir()
+      ihmc.exec(ProcessBuilder(jpackageArgsCommonLinux("deb", linuxDebDir, jlinkRuntimeDir)))
+   }
+}
