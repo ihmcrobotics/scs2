@@ -74,15 +74,33 @@ public class RunMenuController implements VisualizerController
          if (!updatingFromSession && session != null)
             session.submitRunAtRealTimeRate(newValue);
       });
-      playbackRealTimeRateFormatter.valueProperty().addListener((o, oldValue, newValue) ->
+
+      // Only submit the typed rate once the edit is committed (Enter or focus lost), so the field
+      // isn't fighting the periodic session-properties refresh while the user is still typing.
+      Runnable commitPlaybackRealTimeRate = () ->
       {
-         if (!updatingFromSession && session != null)
-            session.submitPlaybackRealTimeRate(newValue);
+         if (session != null && playbackRealTimeRateFormatter.getValue() != null)
+            session.submitPlaybackRealTimeRate(playbackRealTimeRateFormatter.getValue());
+      };
+      playbackRealTimeRateTextField.setOnAction(e -> commitPlaybackRealTimeRate.run());
+      playbackRealTimeRateTextField.focusedProperty().addListener((o, wasFocused, isFocused) ->
+      {
+         if (!isFocused)
+            commitPlaybackRealTimeRate.run();
       });
-      runMaxDurationFormatter.valueProperty().addListener((o, oldValue, newValue) ->
+
+      Runnable commitRunMaxDuration = () ->
       {
-         if (!updatingFromSession && session != null)
-            session.submitRunMaxDuration(newValue != null ? (long) (newValue * 1.0E9) : -1L);
+         if (session == null)
+            return;
+         Double value = runMaxDurationFormatter.getValue();
+         session.submitRunMaxDuration(value != null ? (long) (value * 1.0E9) : -1L);
+      };
+      runMaxDurationTextField.setOnAction(e -> commitRunMaxDuration.run());
+      runMaxDurationTextField.focusedProperty().addListener((o, wasFocused, isFocused) ->
+      {
+         if (!isFocused)
+            commitRunMaxDuration.run();
       });
 
       SessionChangeListener sessionChangeListener = (previousSession, newSession) ->
@@ -111,8 +129,11 @@ public class RunMenuController implements VisualizerController
             try
             {
                simulateAtRealTimeCheckMenuItem.setSelected(properties.isRunAtRealTimeRate());
-               playbackRealTimeRateFormatter.setValue(properties.getPlaybackRealTimeRate());
-               runMaxDurationFormatter.setValue(properties.getRunMaxDuration() < 0 ? -1.0 : properties.getRunMaxDuration() / 1.0E9);
+               // Don't clobber a field the user is actively editing.
+               if (!playbackRealTimeRateTextField.isFocused())
+                  playbackRealTimeRateFormatter.setValue(properties.getPlaybackRealTimeRate());
+               if (!runMaxDurationTextField.isFocused())
+                  runMaxDurationFormatter.setValue(properties.getRunMaxDuration() < 0 ? -1.0 : properties.getRunMaxDuration() / 1.0E9);
             }
             finally
             {
