@@ -33,7 +33,12 @@ mainDependencies {
    api("us.ihmc:euclid:0.22.5")
    api("us.ihmc:euclid-shape:0.22.5")
    api("us.ihmc:euclid-frame:0.22.5")
-   api("us.ihmc:ihmc-video-codecs:2.1.6")
+   val ffmpegVersion = "7.1-1.5.11" // Keep in sync with ihmc-robot-data-logger
+   api("org.bytedeco:ffmpeg:$ffmpegVersion")
+   api("org.bytedeco:ffmpeg:$ffmpegVersion:linux-arm64")
+   api("org.bytedeco:ffmpeg:$ffmpegVersion:linux-x86_64")
+   api("org.bytedeco:ffmpeg:$ffmpegVersion:macosx-arm64")
+   api("org.bytedeco:ffmpeg:$ffmpegVersion:windows-x86_64")
    api("us.ihmc:ihmc-javafx-extensions:17-0.2.2")
    api("org.apache.commons:commons-lang3:3.12.0")
 
