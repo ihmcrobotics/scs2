@@ -269,6 +269,7 @@ public class YoGraphicPropertyWindowController extends ObservedAnimationTimer
       defaultRootItem = new CheckBoxTreeItem<>(rootGroup);
       defaultRootItem.setExpanded(true);
       defaultRootItem.selectedProperty().bindBidirectional(defaultRootItem.getValue().visibleProperty());
+      defaultRootItem.selectedProperty().addListener((o, oldValue, newValue) -> toolkit.getYoGraphicFXManager().requestRender());
       buildTreeRecursively(defaultRootItem);
       yoGraphicTreeView.setRoot(defaultRootItem);
       copyExpandedPropertyRecursively(oldRootItem, defaultRootItem);
@@ -775,6 +776,7 @@ public class YoGraphicPropertyWindowController extends ObservedAnimationTimer
          CheckBoxTreeItem<YoGraphicFXItem> childItem = new CheckBoxTreeItem<>(child);
          childItem.setIndependent(true);
          childItem.selectedProperty().bindBidirectional(childItem.getValue().visibleProperty());
+         childItem.selectedProperty().addListener((o, oldValue, newValue) -> toolkit.getYoGraphicFXManager().requestRender());
          parent.getChildren().add(childItem);
          buildTreeRecursively(childItem);
       }

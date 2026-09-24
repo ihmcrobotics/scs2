@@ -2,7 +2,6 @@ package us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoGraphic.group.graphic3D
 
 import static us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoGraphic.group.YoGroupFXEditorTools.getCommonValue;
 import static us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoGraphic.group.YoGroupFXEditorTools.getField;
-import static us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoGraphic.group.YoGroupFXEditorTools.setField;
 
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.value.ObservableBooleanValue;
