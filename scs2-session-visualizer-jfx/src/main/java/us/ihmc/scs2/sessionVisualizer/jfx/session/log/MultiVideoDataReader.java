@@ -3,25 +3,31 @@ package us.ihmc.scs2.sessionVisualizer.jfx.session.log;
 import logger_msgs.Camera;
 import logger_msgs.LogProperties;
 import us.ihmc.fastddsjava.cdr.idl.IDLObjectSequence;
+import us.ihmc.scs2.session.DaemonThreadFactory;
 import us.ihmc.scs2.session.log.ProgressConsumer;
 import us.ihmc.scs2.session.log.ZEDSVOScrubber;
-import us.ihmc.scs2.sessionVisualizer.jfx.managers.BackgroundExecutorManager;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 public class MultiVideoDataReader
 {
+   /**
+    * Single thread shared by all the video readers, such that video frames are always read from the same thread instead of hopping between the threads of the
+    * general purpose background pool. Each read is short, so sharing the thread between the readers of a main log and its added logs is not a concern.
+    */
+   private static final ExecutorService VIDEO_READ_EXECUTOR = Executors.newSingleThreadExecutor(new DaemonThreadFactory(MultiVideoDataReader.class.getSimpleName()));
+
    private final List<VideoDataReader> readers = new ArrayList<>();
-   private final BackgroundExecutorManager backgroundExecutorManager;
    private Future<?> currentTask = null;
 
-   public MultiVideoDataReader(File dataDirectory, LogProperties logProperties, BackgroundExecutorManager backgroundExecutorManager)
+   public MultiVideoDataReader(File dataDirectory, LogProperties logProperties)
    {
-      this.backgroundExecutorManager = backgroundExecutorManager;
       IDLObjectSequence<Camera> cameras = logProperties.getCameras();
 
       for (int i = 0; i < cameras.size(); i++)
@@ -77,7 +83,19 @@ public class MultiVideoDataReader
    public void readVideoFrameInBackground(long queryRobotTimestamp)
    {
       if (currentTask == null || currentTask.isDone())
-         currentTask = backgroundExecutorManager.executeInBackground(() -> readVideoFrameNow(queryRobotTimestamp));
+      {
+         currentTask = VIDEO_READ_EXECUTOR.submit(() ->
+         { // A task submitted to an executor swallows its exceptions, so they need to be printed here.
+            try
+            {
+               readVideoFrameNow(queryRobotTimestamp);
+            }
+            catch (Exception e)
+            {
+               e.printStackTrace();
+            }
+         });
+      }
    }
 
    public void crop(File selectedDirectory, long startTimestamp, long endTimestamp, ProgressConsumer progressConsumer) throws IOException

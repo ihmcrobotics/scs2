@@ -14,10 +14,10 @@ import javafx.scene.SnapshotParameters;
 import javafx.scene.SubScene;
 import javafx.scene.image.WritableImage;
 import javafx.scene.paint.Color;
-import us.ihmc.codecs.builder.H264Settings;
-import us.ihmc.codecs.builder.MP4H264MovieBuilder;
-import us.ihmc.codecs.generated.EProfileIdc;
-import us.ihmc.codecs.generated.EUsageType;
+import org.bytedeco.ffmpeg.global.avcodec;
+import org.bytedeco.ffmpeg.global.avutil;
+import org.bytedeco.javacv.FFmpegFrameRecorder;
+import org.bytedeco.javacv.Java2DFrameConverter;
 import us.ihmc.commons.Conversions;
 import us.ihmc.log.LogTools;
 import us.ihmc.scs2.session.Session;
@@ -162,14 +162,10 @@ public class VideoRecordingManager
          this.params = params;
          this.stopListener = stopListener;
 
-         H264Settings settings = new H264Settings();
-         settings.setBitrate(request.getWidth() * request.getHeight() / 100);
-         settings.setUsageType(EUsageType.CAMERA_VIDEO_REAL_TIME);
-         settings.setProfileIdc(EProfileIdc.PRO_HIGH);
-
          backgroundExecutorManager.executeInBackground(new Runnable()
          {
-            MP4H264MovieBuilder movieBuilder;
+            FFmpegFrameRecorder recorder;
+            final Java2DFrameConverter frameConverter = new Java2DFrameConverter();
             BufferedImage bufferedImage = new BufferedImage(request.getWidth(), request.getHeight(), BufferedImage.TYPE_INT_ARGB);
 
             @Override
@@ -194,7 +190,8 @@ public class VideoRecordingManager
                                    SessionVisualizerIOTools.videoFileExtension);
                   }
 
-                  movieBuilder = new MP4H264MovieBuilder(request.getFile(), request.getWidth(), request.getHeight(), (int) request.getFrameRate(), settings);
+                  recorder = createRecorder(request);
+                  recorder.start();
                }
                catch (IOException e)
                {
@@ -213,7 +210,8 @@ public class VideoRecordingManager
 
                try
                {
-                  movieBuilder.close();
+                  recorder.stop();
+                  recorder.release();
                }
                catch (IOException e)
                {
@@ -234,7 +232,8 @@ public class VideoRecordingManager
 
                try
                {
-                  movieBuilder.encodeFrame(bufferedImage);
+                  // TYPE_INT_ARGB pixels are copied as big-endian ints, i.e. ARGB byte order.
+                  recorder.record(frameConverter.convert(bufferedImage), avutil.AV_PIX_FMT_ARGB);
                }
                catch (IOException e)
                {
@@ -243,6 +242,24 @@ public class VideoRecordingManager
                }
             }
          });
+      }
+
+      private static FFmpegFrameRecorder createRecorder(SceneVideoRecordingRequest request)
+      {
+         // H.264 with YUV 4:2:0 requires even dimensions, frames get scaled to fit.
+         int width = request.getWidth() & ~1;
+         int height = request.getHeight() & ~1;
+
+         FFmpegFrameRecorder recorder = new FFmpegFrameRecorder(request.getFile(), width, height);
+         recorder.setFormat("mp4");
+         recorder.setVideoCodec(avcodec.AV_CODEC_ID_H264);
+         recorder.setPixelFormat(avutil.AV_PIX_FMT_YUV420P);
+         recorder.setFrameRate(request.getFrameRate());
+         recorder.setVideoBitrate(request.getWidth() * request.getHeight() / 100 * 1024);
+         recorder.setGopSize(100);
+         // The bundled FFmpeg encodes H.264 with libopenh264, which only accepts the numeric profile.
+         recorder.setVideoOption("profile", String.valueOf(avcodec.AV_PROFILE_H264_HIGH));
+         return recorder;
       }
 
       @Override

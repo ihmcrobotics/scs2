@@ -229,7 +229,8 @@ public class VideoViewer
    {
       FrameData currentFrameData = reader.pollCurrentFrame();
 
-      if (currentFrameData.frame == null)
+      // Readers backed by a ConcurrentCopier return null until the first frame has been committed.
+      if (currentFrameData == null || currentFrameData.frame == null)
          return;
 
       WritableImage currentFrame = currentFrameData.frame;

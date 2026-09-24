@@ -2,12 +2,15 @@ package us.ihmc.scs2.sessionVisualizer.jfx.session.log;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import javafx.scene.image.PixelReader;
 import javafx.scene.image.WritableImage;
 import org.bytedeco.javacv.Frame;
 import org.junit.jupiter.api.Test;
+import us.ihmc.concurrent.ConcurrentCopier;
 
 import java.nio.Buffer;
 import java.nio.ByteBuffer;
@@ -61,6 +64,75 @@ public class MagewellVideoDataReaderTest
 
       assertTrue(averageMillisPerFrame < MAX_AVERAGE_MILLIS_PER_FRAME,
                  "convertFrameToWritableImage averaged " + averageMillisPerFrame + " ms/frame, expected < " + MAX_AVERAGE_MILLIS_PER_FRAME);
+   }
+
+   /**
+    * Regression test for the reused-image overload: {@link BlackMagicVideoDataReader} (via its
+    * {@link ConcurrentCopier}-backed frame buffer) relies on a correctly-sized image being reused in
+    * place rather than reallocated every frame - that's the whole point of passing one in.
+    */
+   @Test
+   void convertFrameToWritableImageReusesACorrectlySizedImage()
+   {
+      Frame frame = buildTestFrame(WIDTH, HEIGHT);
+      WritableImage imageToReuse = new WritableImage(WIDTH, HEIGHT);
+
+      WritableImage result = FrameImageConverter.convertFrameToWritableImage(frame, imageToReuse);
+
+      assertSame(imageToReuse, result, "A correctly-sized image should be reused in place instead of reallocated");
+
+      PixelReader resultReader = result.getPixelReader();
+      assertEquals(expectedArgb(0, 0), resultReader.getArgb(0, 0));
+      assertEquals(expectedArgb(WIDTH - 1, HEIGHT - 1), resultReader.getArgb(WIDTH - 1, HEIGHT - 1));
+   }
+
+   /**
+    * A mismatched-size (or {@code null}) image must never be reused - most commonly hit when the
+    * video's resolution changes mid-stream, or on the very first frame.
+    */
+   @Test
+   void convertFrameToWritableImageAllocatesWhenTheSizeDoesNotMatch()
+   {
+      Frame frame = buildTestFrame(WIDTH, HEIGHT);
+      WritableImage wrongSize = new WritableImage(WIDTH / 2, HEIGHT / 2);
+
+      WritableImage result = FrameImageConverter.convertFrameToWritableImage(frame, wrongSize);
+
+      assertNotSame(wrongSize, result, "A mismatched-size image must not be reused");
+      assertEquals(WIDTH, (int) result.getWidth());
+      assertEquals(HEIGHT, (int) result.getHeight());
+   }
+
+   /**
+    * Quantifies the win from reusing the {@link WritableImage} instead of allocating a fresh one
+    * every frame (as {@link #convertFrameToWritableImageIsFastAndCorrect()} above measures).
+    */
+   @Test
+   void convertFrameToWritableImageReuseIsFasterThanReallocating()
+   {
+      Frame frame = buildTestFrame(WIDTH, HEIGHT);
+      WritableImage reused = new WritableImage(WIDTH, HEIGHT);
+
+      for (int i = 0; i < WARMUP_ITERATIONS; i++)
+      {
+         FrameImageConverter.convertFrameToWritableImage(frame, reused);
+      }
+
+      long startTime = System.nanoTime();
+
+      for (int i = 0; i < TIMED_ITERATIONS; i++)
+      {
+         FrameImageConverter.convertFrameToWritableImage(frame, reused);
+      }
+
+      long elapsedNanos = System.nanoTime() - startTime;
+      double averageMillisPerFrame = elapsedNanos / 1_000_000.0 / TIMED_ITERATIONS;
+
+      System.out.printf("convertFrameToWritableImage (reused image): %.3f ms/frame average over %d iterations (%dx%d)%n",
+                        averageMillisPerFrame,
+                        TIMED_ITERATIONS,
+                        WIDTH,
+                        HEIGHT);
    }
 
    /**
