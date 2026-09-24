@@ -21,7 +21,7 @@ mainDependencies {
    api("us.ihmc:euclid-frame:0.22.5")
    api("us.ihmc:ihmc-commons:0.35.1")
    api("us.ihmc:ihmc-yovariables:0.13.8")
-   api("us.ihmc:mecano:17-0.19.3")
+   api("us.ihmc:mecano:17-0.19.4")
    api("com.sun.xml.bind:jaxb-impl:4.0.5")
 }
 
