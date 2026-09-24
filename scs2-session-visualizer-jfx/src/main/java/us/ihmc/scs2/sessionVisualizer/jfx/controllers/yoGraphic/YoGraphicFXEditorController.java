@@ -50,7 +50,17 @@ public abstract class YoGraphicFXEditorController<G extends YoGraphicFX> impleme
    protected YoCompositeSearchManager yoCompositeSearchManager;
    protected SessionVisualizerToolkit toolkit;
 
-   protected final BooleanProperty hasChangesPendingProperty = new SimpleBooleanProperty(this, "hasChangesPending", false);
+   // Overrides set() because the value often doesn't change (true -> true) while the graphic being edited does, which listeners wouldn't see.
+   protected final BooleanProperty hasChangesPendingProperty = new SimpleBooleanProperty(this, "hasChangesPending", false)
+   {
+      @Override
+      public void set(boolean newValue)
+      {
+         super.set(newValue);
+         if (toolkit != null)
+            toolkit.getYoGraphicFXManager().requestRender();
+      }
+   };
 
    @Override
    public void initialize(SessionVisualizerToolkit toolkit, G yoGraphicToEdit)

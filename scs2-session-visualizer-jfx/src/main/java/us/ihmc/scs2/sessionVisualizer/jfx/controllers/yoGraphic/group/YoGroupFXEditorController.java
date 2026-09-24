@@ -3,9 +3,9 @@ package us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoGraphic.group;
 import static us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoGraphic.group.YoGroupFXEditorTools.getCommonString;
 import static us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoGraphic.group.YoGroupFXEditorTools.getCommonValue;
 import static us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoGraphic.group.YoGroupFXEditorTools.getField;
-import static us.ihmc.scs2.sessionVisualizer.jfx.controllers.yoGraphic.group.YoGroupFXEditorTools.setField;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
@@ -71,6 +71,12 @@ public abstract class YoGroupFXEditorController<T extends YoGraphicFX> implement
          if (change.wasAdded() && childrenCommonType.isInstance(change.getElementAdded()))
             graphicChildren.remove(change.getElementAdded());
       });
+   }
+
+   protected <F> void setField(Collection<T> collection, BiConsumer<T, F> fieldSetter, F fieldValue)
+   {
+      YoGroupFXEditorTools.setField(collection, fieldSetter, fieldValue);
+      toolkit.getYoGraphicFXManager().requestRender();
    }
 
    protected void setupNameEditor(YoGraphicNameEditorPaneController nameEditorController)

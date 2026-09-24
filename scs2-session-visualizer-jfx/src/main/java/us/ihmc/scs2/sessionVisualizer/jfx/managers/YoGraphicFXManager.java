@@ -16,6 +16,8 @@ import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.YoGraphicFXItem;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.YoGraphicFXResourceManager;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.YoGraphicTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.YoGroupFX;
+import us.ihmc.scs2.sharedMemory.LinkedBufferProperties;
+import us.ihmc.scs2.sharedMemory.interfaces.YoBufferPropertiesReadOnly;
 
 import java.io.File;
 import java.util.List;
@@ -34,6 +36,12 @@ public class YoGraphicFXManager extends ObservedAnimationTimer implements Manage
    private final BackgroundExecutorManager backgroundExecutorManager;
    private final ReferenceFrameManager referenceFrameManager;
    private Future<?> backgroundTask = null;
+
+   // Used to skip root.render() on pulses where the buffer hasn't advanced (e.g. while paused), since a no-op render still re-touches every graphic.
+   private LinkedBufferProperties linkedBufferProperties;
+   private YoBufferPropertiesReadOnly lastRenderedBufferProperties;
+   // Forces the next pulse to render even if the buffer hasn't advanced, for changes that bypass the buffer (GUI edits, added graphics).
+   private volatile boolean renderRequested = false;
 
    // TODO Not sure if that belongs here.
    private final YoGraphicFXResourceManager yoGraphicFXResourceManager = new YoGraphicFXResourceManager();
@@ -67,9 +75,24 @@ public class YoGraphicFXManager extends ObservedAnimationTimer implements Manage
       }
    }
 
+   public void requestRender()
+   {
+      renderRequested = true;
+   }
+
    @Override
    public void handleImpl(long now)
    {
+      if (linkedBufferProperties != null)
+      {
+         YoBufferPropertiesReadOnly currentBufferProperties = linkedBufferProperties.peekCurrentBufferProperties();
+         if (!renderRequested && currentBufferProperties != null && currentBufferProperties.equals(lastRenderedBufferProperties))
+            return;
+         lastRenderedBufferProperties = currentBufferProperties;
+      }
+
+      renderRequested = false;
+
       try
       {
          root.render();
@@ -91,6 +114,11 @@ public class YoGraphicFXManager extends ObservedAnimationTimer implements Manage
                          () -> root.addChild(sessionRoot));
       }
 
+      // yoManager.startSession(...) already ran by this point (see SessionVisualizerToolkit), so its
+      // linked-buffer-properties factory is ready.
+      linkedBufferProperties = yoManager.newLinkedBufferProperties();
+      lastRenderedBufferProperties = null;
+
       start();
       backgroundTask = backgroundExecutorManager.scheduleTaskInBackground(this::computeBackground, 1000, 100, TimeUnit.MILLISECONDS);
    }
@@ -111,6 +139,12 @@ public class YoGraphicFXManager extends ObservedAnimationTimer implements Manage
          backgroundTask.cancel(false);
          backgroundTask = null;
       }
+      if (linkedBufferProperties != null)
+      {
+         linkedBufferProperties.dispose();
+         linkedBufferProperties = null;
+      }
+      lastRenderedBufferProperties = null;
    }
 
    @Override
@@ -138,8 +172,18 @@ public class YoGraphicFXManager extends ObservedAnimationTimer implements Manage
       YoGraphicFXItem graphic = root.findYoGraphicFX(name);
       if (graphic == null)
          return false;
-      JavaFXMissingTools.runAndWait(getClass(), () -> graphic.setVisible(visible));
+      JavaFXMissingTools.runAndWait(getClass(), () ->
+      {
+         graphic.setVisible(visible);
+         requestRender();
+      });
       return true;
+   }
+
+   private void addToGroup(YoGroupFX group, YoGraphicFXItem item)
+   {
+      group.addYoGraphicFXItem(item);
+      requestRender();
    }
 
    private void loadYoGraphicFromFile(File yoGraphicFile, SynchronizeHint hint)
@@ -170,7 +214,7 @@ public class YoGraphicFXManager extends ObservedAnimationTimer implements Manage
          {
             JavaFXMissingTools.runAndWait(getClass(), () ->
             {
-               items.forEach(parentGroup::addYoGraphicFXItem);
+               items.forEach(item -> addToGroup(parentGroup, item));
 
                if (postLoadingCallback != null)
                   postLoadingCallback.run();
@@ -190,7 +234,7 @@ public class YoGraphicFXManager extends ObservedAnimationTimer implements Manage
             {
                JavaFXMissingTools.runLater(getClass(), () ->
                {
-                  items.forEach(parentGroup::addYoGraphicFXItem);
+                  items.forEach(item -> addToGroup(parentGroup, item));
 
                   if (postLoadingCallback != null)
                      postLoadingCallback.run();
@@ -222,7 +266,7 @@ public class YoGraphicFXManager extends ObservedAnimationTimer implements Manage
                      JavaFXMissingTools.runLater(getClass(), () ->
                      {
                         for (YoGraphicFXItem item : items)
-                           root.addYoGraphicFXItem(item);
+                           addToGroup(root, item);
                      });
                }
                else
@@ -230,7 +274,7 @@ public class YoGraphicFXManager extends ObservedAnimationTimer implements Manage
 
                   YoGraphicFXItem item = YoGraphicTools.createYoGraphicFX(yoManager, root, yoGraphicFXResourceManager, referenceFrameManager, definition);
                   if (item != null)
-                     JavaFXMissingTools.runLater(getClass(), () -> root.addYoGraphicFXItem(item));
+                     JavaFXMissingTools.runLater(getClass(), () -> addToGroup(root, item));
                }
             }
          });
@@ -253,14 +297,14 @@ public class YoGraphicFXManager extends ObservedAnimationTimer implements Manage
                   JavaFXMissingTools.runLater(getClass(), () ->
                   {
                      for (YoGraphicFXItem item : items)
-                        root.addYoGraphicFXItem(item);
+                        addToGroup(root, item);
                   });
             }
             else
             {
                YoGraphicFXItem item = YoGraphicTools.createYoGraphicFX(yoManager, root, yoGraphicFXResourceManager, referenceFrameManager, definition);
                if (item != null)
-                  JavaFXMissingTools.runLater(getClass(), () -> root.addYoGraphicFXItem(item));
+                  JavaFXMissingTools.runLater(getClass(), () -> addToGroup(root, item));
             }
          });
       });
