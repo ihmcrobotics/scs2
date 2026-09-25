@@ -87,6 +87,46 @@ public class MujocoSimulationParameters implements MujocoSimulationParametersBas
    }
 
    @Override
+
+   @Override
+   public double getActuatorDelay()
+   {
+      return actuatorDelay;
+   }
+
+   @Override
+   public void setActuatorDelay(double actuatorDelay)
+   {
+      this.actuatorDelay = actuatorDelay;
+   }
+
+   @Override
+   public int getActuatorDelaySamples()
+   {
+      return actuatorDelaySamples;
+   }
+
+   @Override
+   public void setActuatorDelaySamples(int actuatorDelaySamples)
+   {
+      if (actuatorDelaySamples < 2)
+         throw new IllegalArgumentException("MuJoCo needs at least 2 history samples to interpolate a delay; got " + actuatorDelaySamples);
+      this.actuatorDelaySamples = actuatorDelaySamples;
+   }
+
+   @Override
+   public Map<String, Double> getActuatorDelayByJointName()
+   {
+      return actuatorDelayByJointName;
+   }
+
+   @Override
+   public void setActuatorDelay(String jointName, double actuatorDelay)
+   {
+      actuatorDelayByJointName.put(jointName, actuatorDelay);
+   }
+
+   @Override
    public void setActuationMode(MujocoActuationMode actuationMode)
    {
       this.actuationMode = actuationMode;

@@ -13,6 +13,9 @@ public interface MujocoSimulationParametersBasics extends MujocoSimulationParame
       setTimestep(other.getTimestep());
       setFilterParentCollisions(other.getFilterParentCollisions());
       setEnforceJointLimits(other.getEnforceJointLimits());
+      setActuatorDelay(other.getActuatorDelay());
+      setActuatorDelaySamples(other.getActuatorDelaySamples());
+      other.getActuatorDelayByJointName().forEach(this::setActuatorDelay);
       setActuationMode(other.getActuationMode());
       setPerContactDiagnosticsCapacity(other.getPerContactDiagnosticsCapacity());
 
@@ -82,4 +85,13 @@ public interface MujocoSimulationParametersBasics extends MujocoSimulationParame
    void set_gap(double gap);
 
    void set_armature(double armature);
+
+   /** @see MujocoSimulationParametersReadOnly#getActuatorDelay() */
+   void setActuatorDelay(double actuatorDelay);
+
+   /** @see MujocoSimulationParametersReadOnly#getActuatorDelaySamples() */
+   void setActuatorDelaySamples(int actuatorDelaySamples);
+
+   /** Overrides {@link #setActuatorDelay(double)} for one joint. */
+   void setActuatorDelay(String jointName, double actuatorDelay);
 }

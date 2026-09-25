@@ -57,6 +57,28 @@ public class YoMujocoOptions
          "mjENBL_OVERRIDE: o_* values replace margin/solref/solimp/friction on EVERY contact", false);
    public final YoBoolean enableEnergy = var("enableEnergy",
          "mjENBL_ENERGY: compute energy into the MujocoStatistics energy variables", false);
+   public final YoBoolean enableFwdinv = var("enableFwdinv",
+         "mjENBL_FWDINV: compare forward against inverse dynamics each step into MujocoStatistics solver_fwdinv_*; "
+         + "costs an extra inverse dynamics evaluation per step, so off by default", false);
+
+   // Disable flags. All default false, i.e. nothing disabled, so the simulation is unchanged unless
+   // one is deliberately flipped. These exist to answer "is it contact?" / "is it gravity?" from the
+   // GUI without rebuilding a sim; a stray toggle silently changes the physics, hence the blunt names.
+   // Deliberately not the full set of twenty: the rest are noise, and mjDSBL_FILTERPARENT in
+   // particular is owned by the MJCF and must not be shadowed here.
+   public final YoBoolean disableContact = var("disableContact",
+         "mjDSBL_CONTACT: drop all contact constraints; the robot falls through the terrain", false);
+   public final YoBoolean disableGravity = var("disableGravity",
+         "mjDSBL_GRAVITY: drop gravitational force without touching the session's gravity vector", false);
+   public final YoBoolean disableEquality = var("disableEquality",
+         "mjDSBL_EQUALITY: drop equality constraints, which also releases any pinned joint", false);
+   public final YoBoolean disableActuation = var("disableActuation",
+         "mjDSBL_ACTUATION: drop actuator forces; no effect in TORQUE_PASSTHROUGH, where torque arrives as qfrc_applied", false);
+   public final YoBoolean disableWarmstart = var("disableWarmstart",
+         "mjDSBL_WARMSTART: stop seeding the constraint solver from the previous step's accelerations", false);
+   public final YoBoolean disableAutoReset = var("disableAutoReset",
+         "mjDSBL_AUTORESET: stop MuJoCo silently resetting the state when it detects a numerical problem. "
+         + "Worth setting in a test: with autoreset on, a diverging simulation reports a tidy zero rather than blowing up", false);
 
    // ---------- MuJoCo-owned (mjOption, in struct order) ----------
 

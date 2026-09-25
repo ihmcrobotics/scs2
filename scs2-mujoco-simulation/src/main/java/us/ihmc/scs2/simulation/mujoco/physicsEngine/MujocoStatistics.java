@@ -54,6 +54,7 @@ public class MujocoStatistics
    private final YoInteger warning_badqacc;
    private final YoInteger warning_badctrl;
    private final YoDouble energy_potential;
+   public final YoDouble solver_fwdinv_qfrc, solver_fwdinv_efc;
    private final YoDouble energy_kinetic;
 
    private mjData data;
@@ -91,8 +92,18 @@ public class MujocoStatistics
       warning_badctrl = new YoInteger("warning_badctrl", "Cumulative mjWARN_BADCTRL count: bad number in ctrl", registry);
       energy_potential = new YoDouble("energy_potential", "mjData.energy[0]: potential energy; NaN unless MujocoOptions enableEnergy", registry);
       energy_kinetic = new YoDouble("energy_kinetic", "mjData.energy[1]: kinetic energy; NaN unless MujocoOptions enableEnergy", registry);
+      solver_fwdinv_qfrc = new YoDouble("solver_fwdinv_qfrc",
+                                        "mjData.solver_fwdinv[0]: forward-vs-inverse dynamics discrepancy in generalized force; "
+                                        + "a direct measure of how well the constraint solver converged. NaN unless MujocoOptions enableFwdinv",
+                                        registry);
+      solver_fwdinv_efc = new YoDouble("solver_fwdinv_efc",
+                                       "mjData.solver_fwdinv[1]: the same comparison in constraint space. "
+                                       + "NaN unless MujocoOptions enableFwdinv",
+                                       registry);
       energy_potential.set(Double.NaN);
       energy_kinetic.set(Double.NaN);
+      solver_fwdinv_qfrc.set(Double.NaN);
+      solver_fwdinv_efc.set(Double.NaN);
    }
 
    /** Caches native pointers; call once, right after the model has compiled. */
@@ -152,6 +163,30 @@ public class MujocoStatistics
     * Reads {@code mjData.energy} when the energy flag is enabled, NaN otherwise — MuJoCo leaves
     * zeros in the array when {@code mjENBL_ENERGY} is off, which would read as a plausible value.
     */
+   /**
+    * Reads the forward-vs-inverse dynamics comparison MuJoCo writes when {@code mjENBL_FWDINV} is
+    * set. Both numbers should sit near zero; a rising value means the constraint solver is not
+    * converging, which shows up here before it shows up as a robot falling over.
+    */
+   public void updateSolverDiagnostics(boolean fwdinvEnabled)
+   {
+      if (data == null)
+         return;
+
+      if (fwdinvEnabled)
+      {
+         solver_fwdinv_qfrc.set(data.solver_fwdinv(0));
+         solver_fwdinv_efc.set(data.solver_fwdinv(1));
+      }
+      else
+      {
+         // Deliberately NaN rather than left stale: with the flag off MuJoCo does not touch the
+         // array, and a frozen plausible-looking number reads as a converged solver.
+         solver_fwdinv_qfrc.set(Double.NaN);
+         solver_fwdinv_efc.set(Double.NaN);
+      }
+   }
+
    public void updateEnergy(boolean energyEnabled)
    {
       if (data == null)
