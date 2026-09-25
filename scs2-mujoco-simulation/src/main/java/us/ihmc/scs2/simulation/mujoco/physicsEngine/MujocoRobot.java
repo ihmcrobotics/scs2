@@ -49,6 +49,9 @@ public class MujocoRobot extends RobotExtension
    /** Populated only under JOINT_SERVO; keyed by SCS2 joint name, iterated in registration order. */
    private final Map<String, MujocoJointActuation> jointActuationByName = new LinkedHashMap<>();
    private final List<MujocoJointActuation> jointActuationList = new ArrayList<>();
+   /** Parallel to {@link #jointActuationList}: the mecano joint and its DoF address, cached to keep the per-tick loop free of lookups. */
+   private final List<OneDoFJointBasics> actuatedJoints = new ArrayList<>();
+   private int[] actuatedJointDofAddresses = new int[0];
 
    private final Quaternion quaternion = new Quaternion();
    private final Vector3D linearVelocity = new Vector3D();
@@ -116,6 +119,14 @@ public class MujocoRobot extends RobotExtension
             MujocoJointActuation actuation = new MujocoJointActuation(joint.getName(), actuatorBaseIndex, yoRegistry);
             jointActuationByName.put(joint.getName(), actuation);
             jointActuationList.add(actuation);
+            actuatedJoints.add((OneDoFJointBasics) joint);
+         }
+
+         actuatedJointDofAddresses = new int[jointActuationList.size()];
+         for (int i = 0; i < jointActuationList.size(); i++)
+         {
+            JointAddress address = mujocoMultiBodyRobot.getJointAddress(jointActuationList.get(i).getJointName());
+            actuatedJointDofAddresses[i] = address == null ? -1 : address.qveladr;
          }
       }
    }
@@ -201,12 +212,9 @@ public class MujocoRobot extends RobotExtension
          int base = actuation.getActuatorBaseIndex();
          actuation.setRealizedTorques(actuatorForce.get(base), actuatorForce.get(base + 1), actuatorForce.get(base + 2));
 
-         JointAddress address = mujocoMultiBodyRobot.getJointAddress(actuation.getJointName());
-         if (address == null)
-            continue;
-         SimJointBasics joint = getRobot().getJoint(actuation.getJointName());
-         if (joint instanceof OneDoFJointBasics oneDoF)
-            oneDoF.setTau(qfrcActuator.get(address.qveladr));
+         int dofAddress = actuatedJointDofAddresses[i];
+         if (dofAddress >= 0)
+            actuatedJoints.get(i).setTau(qfrcActuator.get(dofAddress));
       }
    }
 
