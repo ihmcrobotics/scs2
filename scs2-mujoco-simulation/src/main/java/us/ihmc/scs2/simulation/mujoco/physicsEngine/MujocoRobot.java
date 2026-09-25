@@ -1,6 +1,9 @@
 package us.ihmc.scs2.simulation.mujoco.physicsEngine;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.bytedeco.javacpp.BoolPointer;
@@ -22,6 +25,7 @@ import us.ihmc.scs2.simulation.mujoco.Mujoco;
 import us.ihmc.scs2.simulation.mujoco.Mujoco.mjData;
 import us.ihmc.scs2.simulation.mujoco.Mujoco.mjModel;
 import us.ihmc.scs2.simulation.mujoco.physicsEngine.MujocoMultiBodyRobot.JointAddress;
+import us.ihmc.scs2.simulation.mujoco.physicsEngine.parameters.MujocoActuationMode;
 import us.ihmc.scs2.simulation.robot.Robot;
 import us.ihmc.scs2.simulation.robot.RobotExtension;
 import us.ihmc.scs2.simulation.robot.RobotPhysicsOutput;
@@ -39,6 +43,10 @@ public class MujocoRobot extends RobotExtension
 {
    private final MujocoMultiBodyRobot mujocoMultiBodyRobot;
    private final YoRegistry yoRegistry;
+   private final MujocoActuationMode actuationMode;
+   /** Populated only under JOINT_SERVO; keyed by SCS2 joint name, iterated in registration order. */
+   private final Map<String, MujocoJointActuation> jointActuationByName = new LinkedHashMap<>();
+   private final List<MujocoJointActuation> jointActuationList = new ArrayList<>();
 
    private final Quaternion quaternion = new Quaternion();
    private final Vector3D linearVelocity = new Vector3D();
@@ -66,10 +74,11 @@ public class MujocoRobot extends RobotExtension
    // Scratch for cacc CoM-to-joint-origin spatial acceleration shift.
    private final Vector3D caccCoMShift = new Vector3D();
 
-   public MujocoRobot(Robot robot, YoRegistry physicsRegistry, MujocoMultiBodyRobot mujocoMultiBodyRobot)
+   public MujocoRobot(Robot robot, YoRegistry physicsRegistry, MujocoMultiBodyRobot mujocoMultiBodyRobot, MujocoActuationMode actuationMode)
    {
       super(robot, physicsRegistry);
       this.mujocoMultiBodyRobot = mujocoMultiBodyRobot;
+      this.actuationMode = actuationMode;
       this.yoRegistry = new YoRegistry(getRobotDefinition().getName() + getClass().getSimpleName());
       robot.getRegistry().addChild(yoRegistry);
 
@@ -92,7 +101,115 @@ public class MujocoRobot extends RobotExtension
          if (bodyId >= 0)
             mecanoBodyByMujocoId.put(bodyId, body);
       }
+
+      if (actuationMode == MujocoActuationMode.JOINT_SERVO)
+      {
+         for (SimJointBasics joint : getJointsToConsider())
+         {
+            if (!(joint instanceof OneDoFJointBasics))
+               continue;
+            int actuatorBaseIndex = mujocoMultiBodyRobot.getActuatorBaseIndex(joint.getName());
+            if (actuatorBaseIndex < 0)
+               continue;
+            MujocoJointActuation actuation = new MujocoJointActuation(joint.getName(), actuatorBaseIndex, yoRegistry);
+            jointActuationByName.put(joint.getName(), actuation);
+            jointActuationList.add(actuation);
+         }
+      }
    }
+
+   public MujocoActuationMode getActuationMode()
+   {
+      return actuationMode;
+   }
+
+   /**
+    * The low-level command block for a joint, or {@code null} when the engine is not in
+    * {@link MujocoActuationMode#JOINT_SERVO} or the joint has no actuators (the free root, welded
+    * subtrees, and any joint type the MJCF builder cannot map).
+    */
+   public MujocoJointActuation getJointActuation(String jointName)
+   {
+      return jointActuationByName.get(jointName);
+   }
+
+   /** Every joint that has a low-level command block, in model order. */
+   public List<MujocoJointActuation> getJointActuations()
+   {
+      return jointActuationList;
+   }
+
+   /**
+    * Write each joint's setpoints into {@code mjData.ctrl} and, when they have changed, its gains
+    * into {@code mjModel.actuator_gainprm} / {@code actuator_biasprm}.
+    *
+    * <p>Writing gains into {@code mjModel} between steps is supported: they take part in no derived
+    * constant and change no array size, so no recompile is needed. They live in the model rather
+    * than in {@code mjData} purely because MuJoCo treats them as actuator description.
+    */
+   public void pushActuationToMujoco(mjModel model, mjData data)
+   {
+      if (jointActuationList.isEmpty())
+         return;
+
+      DoublePointer ctrl = data.ctrl();
+      DoublePointer gainprm = model.actuator_gainprm();
+      DoublePointer biasprm = model.actuator_biasprm();
+
+      for (int i = 0; i < jointActuationList.size(); i++)
+      {
+         MujocoJointActuation actuation = jointActuationList.get(i);
+         int base = actuation.getActuatorBaseIndex();
+
+         ctrl.put(base, actuation.getFeedforwardTorque());
+         ctrl.put(base + 1, actuation.getDesiredPosition());
+         ctrl.put(base + 2, actuation.getDesiredVelocity());
+
+         if (actuation.gainsNeedWriting())
+         {
+            double kp = actuation.getStiffness();
+            double kd = actuation.getDamping();
+            // PositionTau: force = kp * ctrl - kp * q
+            gainprm.put((long) (base + 1) * MJ_NGAIN, kp);
+            biasprm.put((long) (base + 1) * MJ_NBIAS + 1, -kp);
+            // VelocityTau: force = kd * ctrl - kd * qdot
+            gainprm.put((long) (base + 2) * MJ_NGAIN, kd);
+            biasprm.put((long) (base + 2) * MJ_NBIAS + 2, -kd);
+            actuation.markGainsWritten();
+         }
+      }
+   }
+
+   /**
+    * Read each joint's three actuator forces back out of {@code mjData.actuator_force} into the
+    * YoVariables, and write the applied total onto the SCS2 joint so {@code tau} reflects what
+    * MuJoCo actually did rather than the stale value the controller wrote.
+    */
+   public void pullActuationFromMujoco(mjData data)
+   {
+      if (jointActuationList.isEmpty())
+         return;
+
+      DoublePointer actuatorForce = data.actuator_force();
+      DoublePointer qfrcActuator = data.qfrc_actuator();
+
+      for (int i = 0; i < jointActuationList.size(); i++)
+      {
+         MujocoJointActuation actuation = jointActuationList.get(i);
+         int base = actuation.getActuatorBaseIndex();
+         actuation.setRealizedTorques(actuatorForce.get(base), actuatorForce.get(base + 1), actuatorForce.get(base + 2));
+
+         JointAddress address = mujocoMultiBodyRobot.getJointAddress(actuation.getJointName());
+         if (address == null)
+            continue;
+         SimJointBasics joint = getRobot().getJoint(actuation.getJointName());
+         if (joint instanceof OneDoFJointBasics oneDoF)
+            oneDoF.setTau(qfrcActuator.get(address.qveladr));
+      }
+   }
+
+   private static final int MJ_NGAIN = Mujoco.mjNGAIN;
+   private static final int MJ_NBIAS = Mujoco.mjNBIAS;
 
    public MujocoMultiBodyRobot getMujocoMultiBodyRobot()
    {
@@ -294,7 +411,10 @@ public class MujocoRobot extends RobotExtension
                qpos.put(address.qposadr, oneDoF.getQ());
             if (Math.abs(qvel.get(address.qveladr) - oneDoF.getQd()) > STATE_EDIT_EPSILON)
                qvel.put(address.qveladr, oneDoF.getQd());
-            qfrcApplied.put(address.qveladr, oneDoF.getTau());
+            // Under JOINT_SERVO the torque arrives through the actuators instead; writing it here
+            // as well would apply the feedforward term twice.
+            if (actuationMode == MujocoActuationMode.TORQUE_PASSTHROUGH)
+               qfrcApplied.put(address.qveladr, oneDoF.getTau());
          }
       }
    }

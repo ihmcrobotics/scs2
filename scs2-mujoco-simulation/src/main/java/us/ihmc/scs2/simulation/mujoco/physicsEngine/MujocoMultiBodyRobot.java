@@ -24,6 +24,7 @@ public class MujocoMultiBodyRobot
    private final Map<String, JointAddress> jointAddressByName = new LinkedHashMap<>();
    private final Map<String, Integer> bodyIdByName = new LinkedHashMap<>();
    private final Map<String, Integer> pinEqualityIdByJointName = new LinkedHashMap<>();
+   private final Map<String, Integer> actuatorBaseIndexByJointName = new LinkedHashMap<>();
    private JointAddress rootJointAddress;  // null if robot has no floating joint
 
    public MujocoMultiBodyRobot(String robotName, mjModel model)
@@ -113,6 +114,29 @@ public class MujocoMultiBodyRobot
    {
       Integer id = pinEqualityIdByJointName.get(scs2JointName);
       return id == null ? -1 : id;
+   }
+
+   /**
+    * Resolve and cache the index of the joint's first JOINT_SERVO actuator. The other two are the
+    * next two indices, because {@code MujocoMultiBodyRobotFactory.appendJointServoActuators} emits
+    * them consecutively. A no-op when the model carries no actuators (TORQUE_PASSTHROUGH).
+    */
+   public void registerJointServoActuators(String scs2JointName)
+   {
+      int actuatorId;
+      try (BytePointer name = new BytePointer(namePrefix + scs2JointName + MujocoMultiBodyRobotFactory.ACTUATOR_SUFFIX_CONTROLLER_TAU))
+      {
+         actuatorId = Mujoco.mj_name2id(model, Mujoco.mjOBJ_ACTUATOR, name);
+      }
+      if (actuatorId >= 0)
+         actuatorBaseIndexByJointName.put(scs2JointName, actuatorId);
+   }
+
+   /** The index of the joint's first actuator, or -1 when it has none. */
+   public int getActuatorBaseIndex(String scs2JointName)
+   {
+      Integer index = actuatorBaseIndexByJointName.get(scs2JointName);
+      return index == null ? -1 : index;
    }
 
    public JointAddress getRootJointAddress()

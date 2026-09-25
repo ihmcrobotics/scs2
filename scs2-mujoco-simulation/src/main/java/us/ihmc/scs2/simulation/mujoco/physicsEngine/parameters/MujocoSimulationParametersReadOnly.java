@@ -61,6 +61,12 @@ public interface MujocoSimulationParametersReadOnly
    boolean getEnforceJointLimits();
 
    /**
+    * Whether MuJoCo receives a finished torque or the setpoints and gains to close the low-level
+    * loop itself. Compile-time: it decides whether the MJCF carries an {@code <actuator>} block.
+    */
+   MujocoActuationMode getActuationMode();
+
+   /**
     * Number of pre-allocated per-contact YoVariable slots (penetration, forces, slip flag);
     * 0 disables per-contact readback. Compile-time by nature: the variables must exist before the
     * session buffer is set up.
