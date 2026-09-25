@@ -6,10 +6,13 @@ import java.util.List;
 import java.util.Set;
 
 import us.ihmc.euclid.transform.RigidBodyTransform;
+import us.ihmc.euclid.tuple3D.Vector3D;
 import us.ihmc.euclid.tuple4D.Quaternion;
 import us.ihmc.scs2.definition.collision.CollisionShapeDefinition;
 import us.ihmc.scs2.definition.robot.JointDefinition;
 import us.ihmc.scs2.definition.robot.OneDoFJointDefinition;
+import us.ihmc.scs2.definition.robot.PrismaticJointDefinition;
+import us.ihmc.scs2.definition.robot.RevoluteJointDefinition;
 import us.ihmc.scs2.definition.robot.RigidBodyDefinition;
 import us.ihmc.scs2.definition.robot.RobotDefinition;
 import us.ihmc.scs2.definition.robot.SixDoFJointDefinition;
@@ -154,17 +157,20 @@ public final class MujocoMultiBodyRobotFactory
 
       for (JointDefinition jointDefinition : robotDefinition.getAllJoints())
       {
-         if (ignoredJointNames.contains(jointDefinition.getName()))
-            continue;
-         boolean isFloatingRoot = jointDefinition instanceof SixDoFJointDefinition
-                                  && jointDefinition.getParentJoint() == null;
-         try
+         // A welded joint has no <joint> element to resolve, but its body does exist in the MJCF
+         // and still needs a body id so contact wrenches and external wrenches can be routed to it.
+         if (!isWeldedToParent(jointDefinition, ignoredJointNames))
          {
-            mujocoRobot.registerJoint(jointDefinition.getName(), isFloatingRoot);
-         }
-         catch (RuntimeException e)
-         {
-            System.err.println("[MujocoMultiBodyRobotFactory] SKIPPED joint '" + jointDefinition.getName() + "': " + e.getMessage());
+            boolean isFloatingRoot = jointDefinition instanceof SixDoFJointDefinition
+                                     && jointDefinition.getParentJoint() == null;
+            try
+            {
+               mujocoRobot.registerJoint(jointDefinition.getName(), isFloatingRoot);
+            }
+            catch (RuntimeException e)
+            {
+               System.err.println("[MujocoMultiBodyRobotFactory] SKIPPED joint '" + jointDefinition.getName() + "': " + e.getMessage());
+            }
          }
          RigidBodyDefinition successor = jointDefinition.getSuccessor();
          if (successor != null)
@@ -208,15 +214,27 @@ public final class MujocoMultiBodyRobotFactory
       List<JointDefinition> rootJoints = robotDefinition.getRootJointDefinitions();
       for (JointDefinition rootJoint : rootJoints)
       {
-         appendBody(sb, rootJoint, rootJoint.getSuccessor(), namePrefix, ignoredJointNames, indentLevel);
+         appendBody(sb, rootJoint, rootJoint.getSuccessor(), namePrefix, ignoredJointNames, false, indentLevel);
       }
    }
 
+   /**
+    * Emit one {@code <body>} and recurse into its children.
+    *
+    * <p>{@code weldToParent} suppresses the {@code <joint>} element, which is how MuJoCo expresses
+    * a body rigidly attached to its parent. That is what a joint in
+    * {@link RobotDefinition#getNameOfJointsToIgnore()} means for the dynamics: mecano's
+    * {@code ForwardDynamicsCalculator} defaults {@code considerIgnoredSubtreesInertia} to true, so
+    * the other engines keep the subtree's inertia rigidly attached. Dropping those bodies from the
+    * MJCF entirely, as this used to, silently lost their mass under MuJoCo only -- which on the
+    * hand-equipped Alex versions is the whole hand.
+    */
    private static void appendBody(StringBuilder sb,
                                   JointDefinition joint,
                                   RigidBodyDefinition body,
                                   String namePrefix,
                                   Set<String> ignoredJointNames,
+                                  boolean weldToParent,
                                   int indent)
    {
       String pad = "  ".repeat(indent);
@@ -224,13 +242,17 @@ public final class MujocoMultiBodyRobotFactory
       sb.append(pad).append("<body name=\"").append(namePrefix).append(body.getName()).append('"');
       // For the root joint, place the body at its initial pose (MuJoCo uses the body's pos/quat
       // attributes as the starting qpos for the freejoint). Non-root joints use transformToParent
-      // since the parent body's frame is the reference.
+      // since the parent body's frame is the reference. A welded joint additionally folds in its
+      // initial configuration, since it has no qpos entry to carry it.
       RigidBodyTransform spawnTransform = computeSpawnTransform(joint);
+      if (weldToParent)
+         appendWeldedJointConfiguration(spawnTransform, joint);
       if (!MujocoTools.isIdentity(spawnTransform))
          sb.append(' ').append(MujocoTools.toPosQuatAttributes(spawnTransform));
       sb.append(">\n");
 
-      MujocoTools.appendJoint(sb, joint, namePrefix, indent + 1);
+      if (!weldToParent)
+         MujocoTools.appendJoint(sb, joint, namePrefix, indent + 1);
       MujocoTools.appendInertial(sb, body, indent + 1);
 
       int geomIndex = 0;
@@ -244,12 +266,46 @@ public final class MujocoMultiBodyRobotFactory
       {
          if (childJoint.getSuccessor() == null)
             continue;
-         if (ignoredJointNames.contains(childJoint.getName()))
-            continue;
-         appendBody(sb, childJoint, childJoint.getSuccessor(), namePrefix, ignoredJointNames, indent + 1);
+         boolean childWelded = weldToParent || ignoredJointNames.contains(childJoint.getName());
+         appendBody(sb, childJoint, childJoint.getSuccessor(), namePrefix, ignoredJointNames, childWelded, indent + 1);
       }
 
       sb.append(pad).append("</body>\n");
+   }
+
+   /**
+    * Fold a welded 1-DoF joint's initial configuration into its fixed transform, so a subtree
+    * ignored at a non-zero angle is welded in the pose it actually holds rather than at q = 0.
+    */
+   private static void appendWeldedJointConfiguration(RigidBodyTransform transformToUpdate, JointDefinition joint)
+   {
+      if (!(joint instanceof OneDoFJointDefinition oneDoFJoint))
+         return;
+      if (!(joint.getInitialJointState() instanceof OneDoFJointStateReadOnly initialState))
+         return;
+      double q = initialState.getConfiguration();
+      if (Double.isNaN(q) || q == 0.0)
+         return;
+
+      Vector3D axis = new Vector3D(oneDoFJoint.getAxis());
+      RigidBodyTransform jointTransform = new RigidBodyTransform();
+      if (joint instanceof RevoluteJointDefinition)
+      {
+         axis.normalize();
+         axis.scale(q);
+         jointTransform.getRotation().setRotationVector(axis);
+      }
+      else if (joint instanceof PrismaticJointDefinition)
+      {
+         axis.normalize();
+         axis.scale(q);
+         jointTransform.getTranslation().set(axis);
+      }
+      else
+      {
+         return;
+      }
+      transformToUpdate.multiply(jointTransform);
    }
 
    private static void appendRobotMeshAssets(StringBuilder sb, RobotDefinition robotDefinition, File workingDirectory)
@@ -270,15 +326,9 @@ public final class MujocoMultiBodyRobotFactory
    {
       String namePrefix = robotDefinition.getName() + "_";
       String pad = "  ".repeat(indent);
-      Set<String> ignoredJointNames = new HashSet<>(robotDefinition.getNameOfJointsToIgnore());
       StringBuilder excludes = new StringBuilder();
       for (JointDefinition joint : robotDefinition.getAllJoints())
       {
-         // Hands and other ignored subtrees are omitted from the MJCF (see appendBody); do not emit
-         // <exclude> pairs that reference bodies MuJoCo never created.
-         if (isJointOmittedFromMjcf(joint, ignoredJointNames))
-            continue;
-
          JointDefinition parentJoint = joint.getParentJoint();
          RigidBodyDefinition childBody = joint.getSuccessor();
          if (parentJoint == null || childBody == null)
@@ -299,10 +349,10 @@ public final class MujocoMultiBodyRobotFactory
    }
 
    /**
-    * True when this joint (or an ancestor) is in {@code ignoredJointNames}, matching the subtree
-    * pruning in {@link #appendBody}.
+    * True when this joint (or an ancestor) is in {@code ignoredJointNames}, i.e. it is welded to its
+    * parent in the MJCF and so has no {@code <joint>} element to resolve. Matches {@link #appendBody}.
     */
-   private static boolean isJointOmittedFromMjcf(JointDefinition joint, Set<String> ignoredJointNames)
+   private static boolean isWeldedToParent(JointDefinition joint, Set<String> ignoredJointNames)
    {
       for (JointDefinition current = joint; current != null; current = current.getParentJoint())
       {
