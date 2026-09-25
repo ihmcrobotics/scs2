@@ -20,6 +20,7 @@ public abstract class OneDoFJointDefinition extends JointDefinition
    private double effortLowerLimit = Double.NEGATIVE_INFINITY, effortUpperLimit = Double.POSITIVE_INFINITY;
    private double damping = 0.0;
    private double stiction = 0.0;
+   private double armature = 0.0;
 
    private double kpSoftLimitStop = 0.0;
    private double kdSoftLimitStop = 0.0;
@@ -55,6 +56,7 @@ public abstract class OneDoFJointDefinition extends JointDefinition
       effortUpperLimit = other.effortUpperLimit;
       damping = other.damping;
       stiction = other.stiction;
+      armature = other.armature;
       kpSoftLimitStop = other.kpSoftLimitStop;
       kdSoftLimitStop = other.kdSoftLimitStop;
       dampingVelocitySoftLimit = other.dampingVelocitySoftLimit;
@@ -184,6 +186,33 @@ public abstract class OneDoFJointDefinition extends JointDefinition
       return stiction;
    }
 
+   /**
+    * Sets the joint's armature: the rotor inertia of the actuator reflected through its gear ratio,
+    * added to the joint's own inertia.
+    * <p>
+    * For a highly geared joint this is not a small correction -- the reflected rotor inertia can
+    * dominate the link inertia -- and leaving it out makes the simulated plant easier to accelerate
+    * than the real one. It also conditions the mass matrix, which is why it is the usual first
+    * remedy for a stiff joint that will not stay stable at a given timestep.
+    * </p>
+    * <p>
+    * Defaults to 0.0, i.e. no reflected inertia, which is also MuJoCo's default. Honored by the
+    * MuJoCo physics engine; the other engines ignore it for now.
+    * </p>
+    *
+    * @param armature the reflected rotor inertia in kg*m^2 (revolute) or kg (prismatic).
+    */
+   @XmlElement
+   public void setArmature(double armature)
+   {
+      this.armature = armature;
+   }
+
+   public double getArmature()
+   {
+      return armature;
+   }
+
    @XmlElement
    public void setDamping(double damping)
    {
@@ -284,6 +313,7 @@ public abstract class OneDoFJointDefinition extends JointDefinition
       bits = EuclidHashCodeTools.addToHashCode(bits, effortUpperLimit);
       bits = EuclidHashCodeTools.addToHashCode(bits, damping);
       bits = EuclidHashCodeTools.addToHashCode(bits, stiction);
+      bits = EuclidHashCodeTools.addToHashCode(bits, armature);
       bits = EuclidHashCodeTools.addToHashCode(bits, kpSoftLimitStop);
       bits = EuclidHashCodeTools.addToHashCode(bits, kdSoftLimitStop);
       bits = EuclidHashCodeTools.addToHashCode(bits, dampingVelocitySoftLimit);
@@ -316,6 +346,8 @@ public abstract class OneDoFJointDefinition extends JointDefinition
       if (!EuclidCoreTools.equals(effortUpperLimit, other.effortUpperLimit))
          return false;
       if (!EuclidCoreTools.equals(damping, other.damping))
+         return false;
+      if (!EuclidCoreTools.equals(armature, other.armature))
          return false;
       if (!EuclidCoreTools.equals(stiction, other.stiction))
          return false;

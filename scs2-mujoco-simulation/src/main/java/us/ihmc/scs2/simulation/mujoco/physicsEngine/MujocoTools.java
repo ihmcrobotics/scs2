@@ -373,6 +373,11 @@ public final class MujocoTools
       if (jointDef.getStiction() > 0.0)
          sb.append(" frictionloss=\"").append(jointDef.getStiction()).append('"');
 
+      // Reflected rotor inertia. Emitted only when the joint carries its own value; otherwise the
+      // joint inherits the <default> block's armature, which is the model-wide fallback.
+      if (jointDef.getArmature() > 0.0)
+         sb.append(" armature=\"").append(jointDef.getArmature()).append('"');
+
       // Position limits. solreflimit is deliberately left at MuJoCo's default rather than derived
       // from getKpSoftLimitStop()/getKdSoftLimitStop(): MuJoCo's negative-solref form specifies
       // stiffness per unit of acceleration, so those gains would need scaling by the joint's
