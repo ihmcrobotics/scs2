@@ -126,6 +126,40 @@ public class MujocoStateSyncTest
       assertEquals(0.5, childJoint.getQ(), 1.0e-9);
    }
 
+   /**
+    * The everyday case: reach in and move a joint on a robot that is not pinned, under gravity,
+    * mid-simulation. MuJoCo must continue from the joint angle that was set, and then keep
+    * simulating from it rather than either ignoring it or holding it there.
+    */
+   @Test
+   public void testJointEditUnderGravityIsHonoredThenSimulatedFrom()
+   {
+      Robot robot = createSession(true, -9.81);
+      // Hold the base so the arm has a fixed reference to swing against. In free fall the whole
+      // system accelerates together, no relative moment reaches the joint, and it would correctly
+      // just sit wherever it was put -- which would not distinguish live state from a hold.
+      robot.getFloatingRootJoint().setPinned(true);
+      simulate(200); // Let it move under gravity so the edit is against a non-trivial state.
+
+      OneDoFJointBasics childJoint = (OneDoFJointBasics) robot.getJoint(CHILD_JOINT);
+      double qBeforeEdit = childJoint.getQ();
+      double editedQ = qBeforeEdit + 0.5;
+      childJoint.setQ(editedQ);
+      childJoint.setQd(0.0);
+      robot.updateFrames();
+
+      // One tick cannot move the joint far, so this is the edit landing rather than being ignored.
+      simulate(1);
+      assertEquals(editedQ, childJoint.getQ(), 1.0e-3, "The joint edit was ignored");
+
+      // And it is live state, not a hold: gravity keeps acting from the edited angle.
+      simulate(200);
+      assertTrue(Math.abs(childJoint.getQ() - editedQ) > 1.0e-3,
+                 "The joint was pinned to the edited value rather than simulated from it");
+      assertTrue(Math.abs(childJoint.getQ() - qBeforeEdit) > 1.0e-3,
+                 "The joint snapped back to its pre-edit value");
+   }
+
    @Test
    public void testUntouchedRoundTripDoesNotPerturbFreeFlight()
    {
