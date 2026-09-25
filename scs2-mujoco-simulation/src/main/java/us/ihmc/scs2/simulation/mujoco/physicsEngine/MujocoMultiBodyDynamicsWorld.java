@@ -106,6 +106,18 @@ public class MujocoMultiBodyDynamicsWorld
       gravityPointer.put(2, gravity.getZ());
    }
 
+   /**
+    * Resets {@code mjData} to the compiled model's defaults: clears time, velocities, activations,
+    * applied forces, and the constraint solver warm-start. The model, including its options, is
+    * left untouched.
+    */
+   public void resetData()
+   {
+      if (model == null || data == null)
+         return;
+      Mujoco.mj_resetData(model, data);
+   }
+
    public void step()
    {
       Mujoco.mj_step(model, data);
@@ -120,15 +132,6 @@ public class MujocoMultiBodyDynamicsWorld
       for (int i = 0; i < substeps; i++)
          Mujoco.mj_step(model, data);
       Mujoco.mj_rnePostConstraint(model, data);
-   }
-
-   /**
-    * Resets {@code mjData} to the model defaults: clears time, velocities, activations, applied
-    * forces, and the constraint solver warm-start. The model (including options) is left untouched.
-    */
-   public void resetData()
-   {
-      Mujoco.mj_resetData(model, data);
    }
 
    /**

@@ -11,6 +11,7 @@ public class MujocoSimulationParameters implements MujocoSimulationParametersBas
    private double timestep = 0.0;
    private boolean filterParentCollisions = true;
    private boolean enforceJointLimits = true;
+   private MujocoActuationMode actuationMode = MujocoActuationMode.TORQUE_PASSTHROUGH;
    private int perContactDiagnosticsCapacity = 16;
 
    private double solref_timeconst = 0.02;
@@ -77,6 +78,18 @@ public class MujocoSimulationParameters implements MujocoSimulationParametersBas
    public void setEnforceJointLimits(boolean enforceJointLimits)
    {
       this.enforceJointLimits = enforceJointLimits;
+   }
+
+   @Override
+   public MujocoActuationMode getActuationMode()
+   {
+      return actuationMode;
+   }
+
+   @Override
+   public void setActuationMode(MujocoActuationMode actuationMode)
+   {
+      this.actuationMode = actuationMode;
    }
 
    @Override

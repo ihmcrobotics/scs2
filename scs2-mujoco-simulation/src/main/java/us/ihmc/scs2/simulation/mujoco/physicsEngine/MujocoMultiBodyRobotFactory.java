@@ -23,6 +23,7 @@ import us.ihmc.scs2.simulation.mujoco.Mujoco;
 import us.ihmc.scs2.simulation.mujoco.Mujoco.mjData;
 import us.ihmc.scs2.simulation.mujoco.Mujoco.mjModel;
 import us.ihmc.scs2.simulation.mujoco.physicsEngine.MujocoMultiBodyRobot.JointAddress;
+import us.ihmc.scs2.simulation.mujoco.physicsEngine.parameters.MujocoActuationMode;
 import us.ihmc.scs2.simulation.mujoco.physicsEngine.parameters.MujocoSimulationParametersReadOnly;
 import us.ihmc.scs2.simulation.robot.Robot;
 
@@ -58,6 +59,21 @@ public final class MujocoMultiBodyRobotFactory
    private static final int ROBOT_CONAFFINITY = 2;
    private static final int TERRAIN_CONTYPE = 2;
    private static final int TERRAIN_CONAFFINITY = 1;
+
+   /** Appended to a joint name to form the name of its pin equality constraint in the MJCF. */
+   public static final String PIN_EQUALITY_SUFFIX = "_pin";
+   /**
+    * Solver settings for the pin equalities. Pinning in SCS2 means "hold this joint exactly", so
+    * these are much stiffer than MuJoCo's equality defaults (solref 0.02, solimp dmax 0.95), which
+    * would let a pinned pelvis visibly sag under the robot's own weight. The 0.005 s time constant
+    * stays above the usual 2 * timestep stability floor for the session rates in use.
+    */
+   private static final String PIN_EQUALITY_SOLVER_ATTRIBUTES = " solref=\"0.005 1\" solimp=\"0.95 0.9999 0.001\"";
+
+   /** Name suffixes of a joint's three JOINT_SERVO actuators, in the order they are emitted. */
+   public static final String ACTUATOR_SUFFIX_CONTROLLER_TAU = "_ControllerTau";
+   public static final String ACTUATOR_SUFFIX_POSITION_TAU = "_PositionTau";
+   public static final String ACTUATOR_SUFFIX_VELOCITY_TAU = "_VelocityTau";
 
    private MujocoMultiBodyRobotFactory()
    {
@@ -133,11 +149,32 @@ public final class MujocoMultiBodyRobotFactory
          appendRobotBodies(mjcf, robotDefinition, ignoredJointNames, parameters, 2);
       }
       mjcf.append("  </worldbody>\n");
+      StringBuilder pinEqualities = new StringBuilder();
+      for (Robot robot : robots)
+      {
+         appendPinEqualities(pinEqualities, robot.getRobotDefinition(), 2);
+      }
+      if (pinEqualities.length() > 0)
+      {
+         mjcf.append("  <equality>\n").append(pinEqualities).append("  </equality>\n");
+      }
       if (parameters.getFilterParentCollisions())
       {
          for (Robot robot : robots)
          {
             appendParentChildContactExcludes(mjcf, robot.getRobotDefinition(), 2);
+         }
+      }
+      if (parameters.getActuationMode() == MujocoActuationMode.JOINT_SERVO)
+      {
+         StringBuilder actuators = new StringBuilder();
+         for (Robot robot : robots)
+         {
+            appendJointServoActuators(actuators, robot.getRobotDefinition(), 2);
+         }
+         if (actuators.length() > 0)
+         {
+            mjcf.append("  <actuator>\n").append(actuators).append("  </actuator>\n");
          }
       }
       mjcf.append("</mujoco>\n");
@@ -171,6 +208,8 @@ public final class MujocoMultiBodyRobotFactory
             {
                System.err.println("[MujocoMultiBodyRobotFactory] SKIPPED joint '" + jointDefinition.getName() + "': " + e.getMessage());
             }
+            mujocoRobot.registerPinEquality(jointDefinition.getName());
+            mujocoRobot.registerJointServoActuators(jointDefinition.getName());
          }
          RigidBodyDefinition successor = jointDefinition.getSuccessor();
          if (successor != null)
@@ -325,6 +364,107 @@ public final class MujocoMultiBodyRobotFactory
             geomIndex++;
          }
       }
+   }
+
+   /**
+    * Emit one disabled equality constraint per joint, used to implement
+    * {@code SimJointBasics.setPinned(boolean)}.
+    *
+    * <p>The other SCS2 engines pin a joint by switching it to an acceleration source and skipping
+    * its integration, which freezes it without the solver knowing. MuJoCo can do better: an
+    * equality constraint holds the joint through the same solver that resolves contact, so a
+    * pinned body produces correct reaction forces instead of being teleported back after the step.
+    *
+    * <p>A free root joint gets a {@code weld} to the world; a 1-DoF joint gets a {@code joint}
+    * equality with no second joint, which MuJoCo constrains to a constant. All are emitted
+    * inactive; {@code MujocoRobot.pushPinnedJointsToMujoco} flips {@code mjData.eq_active} and
+    * writes the held target into {@code mjModel.eq_data} each tick.
+    */
+   private static void appendPinEqualities(StringBuilder sb, RobotDefinition robotDefinition, int indent)
+   {
+      String namePrefix = robotDefinition.getName() + "_";
+      String pad = "  ".repeat(indent);
+      Set<String> ignoredJointNames = new HashSet<>(robotDefinition.getNameOfJointsToIgnore());
+
+      for (JointDefinition joint : robotDefinition.getAllJoints())
+      {
+         if (isWeldedToParent(joint, ignoredJointNames))
+            continue;
+
+         String equalityName = namePrefix + joint.getName() + PIN_EQUALITY_SUFFIX;
+         if (joint instanceof SixDoFJointDefinition && joint.getParentJoint() == null)
+         {
+            RigidBodyDefinition rootBody = joint.getSuccessor();
+            if (rootBody == null)
+               continue;
+            // body2 defaults to the world, so this welds the root body to a world-frame pose.
+            sb.append(pad).append("<weld name=\"").append(equalityName)
+              .append("\" body1=\"").append(namePrefix).append(rootBody.getName())
+              .append("\" active=\"false\"").append(PIN_EQUALITY_SOLVER_ATTRIBUTES).append("/>\n");
+         }
+         else if (joint instanceof OneDoFJointDefinition)
+         {
+            sb.append(pad).append("<joint name=\"").append(equalityName)
+              .append("\" joint1=\"").append(namePrefix).append(joint.getName())
+              .append("\" active=\"false\"").append(PIN_EQUALITY_SOLVER_ATTRIBUTES).append("/>\n");
+         }
+      }
+   }
+
+   /**
+    * Emit the three actuators per 1-DoF joint that make up
+    * {@link MujocoActuationMode#JOINT_SERVO}, in a fixed order so a joint's actuators are always
+    * {@code base + 0, 1, 2}.
+    *
+    * <p>With {@code mjBIAS_AFFINE} an actuator's force is
+    * {@code gainprm[0] * ctrl + biasprm[0] + biasprm[1] * q + biasprm[2] * qdot}, so the three
+    * together reproduce {@code tau_ff + kp * (q_d - q) + kd * (qd_d - qd)} once
+    * {@code MujocoRobot.pushActuationToMujoco} fills in the gains and setpoints:
+    *
+    * <pre>
+    *   ControllerTau  ctrl = tau_ff  gainprm[0] = 1   biasprm = 0, 0,   0
+    *   PositionTau    ctrl = q_d     gainprm[0] = kp  biasprm = 0, -kp, 0
+    *   VelocityTau    ctrl = qd_d    gainprm[0] = kd  biasprm = 0, 0,   -kd
+    * </pre>
+    *
+    * <p>Splitting the law across three actuators rather than folding it into one is what keeps the
+    * controller/position/velocity decomposition that {@code SCS2OutputWriter} publishes: MuJoCo
+    * reports each actuator's force separately in {@code mjData.actuator_force}.
+    *
+    * <p>{@code <general>} is used rather than the {@code <position>}/{@code <velocity>} shortcuts
+    * because those bake their gains into the compiled model and set a {@code ctrlrange}; the gains
+    * here have to be writable every tick, since the controller re-sends them every tick.
+    */
+   private static void appendJointServoActuators(StringBuilder sb, RobotDefinition robotDefinition, int indent)
+   {
+      String namePrefix = robotDefinition.getName() + "_";
+      String pad = "  ".repeat(indent);
+      Set<String> ignoredJointNames = new HashSet<>(robotDefinition.getNameOfJointsToIgnore());
+
+      for (JointDefinition joint : robotDefinition.getAllJoints())
+      {
+         if (!(joint instanceof OneDoFJointDefinition))
+            continue;
+         if (isWeldedToParent(joint, ignoredJointNames))
+            continue;
+
+         String jointName = namePrefix + joint.getName();
+         appendGeneralActuator(sb, pad, jointName + ACTUATOR_SUFFIX_CONTROLLER_TAU, jointName, "1 0 0", null);
+         appendGeneralActuator(sb, pad, jointName + ACTUATOR_SUFFIX_POSITION_TAU, jointName, "0 0 0", "0 0 0");
+         appendGeneralActuator(sb, pad, jointName + ACTUATOR_SUFFIX_VELOCITY_TAU, jointName, "0 0 0", "0 0 0");
+      }
+   }
+
+   private static void appendGeneralActuator(StringBuilder sb, String pad, String name, String jointName, String gainprm, String biasprm)
+   {
+      sb.append(pad).append("<general name=\"").append(name)
+        .append("\" joint=\"").append(jointName)
+        .append("\" ctrllimited=\"false\" gaintype=\"fixed\" gainprm=\"").append(gainprm).append('"');
+      if (biasprm == null)
+         sb.append(" biastype=\"none\"");
+      else
+         sb.append(" biastype=\"affine\" biasprm=\"").append(biasprm).append('"');
+      sb.append("/>\n");
    }
 
    private static void appendParentChildContactExcludes(StringBuilder sb, RobotDefinition robotDefinition, int indent)

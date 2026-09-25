@@ -1,8 +1,14 @@
 package us.ihmc.scs2.simulation.mujoco.physicsEngine;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
+import org.bytedeco.javacpp.BoolPointer;
 import org.bytedeco.javacpp.DoublePointer;
 
 import us.ihmc.euclid.referenceFrame.FramePoint3D;
@@ -17,7 +23,11 @@ import us.ihmc.mecano.multiBodySystem.interfaces.OneDoFJointBasics;
 import us.ihmc.mecano.multiBodySystem.interfaces.SixDoFJointBasics;
 import us.ihmc.mecano.spatial.Wrench;
 import us.ihmc.scs2.definition.robot.RigidBodyDefinition;
+import us.ihmc.scs2.simulation.mujoco.Mujoco;
+import us.ihmc.scs2.simulation.mujoco.Mujoco.mjData;
+import us.ihmc.scs2.simulation.mujoco.Mujoco.mjModel;
 import us.ihmc.scs2.simulation.mujoco.physicsEngine.MujocoMultiBodyRobot.JointAddress;
+import us.ihmc.scs2.simulation.mujoco.physicsEngine.parameters.MujocoActuationMode;
 import us.ihmc.scs2.simulation.robot.Robot;
 import us.ihmc.scs2.simulation.robot.RobotExtension;
 import us.ihmc.scs2.simulation.robot.RobotPhysicsOutput;
@@ -35,6 +45,13 @@ public class MujocoRobot extends RobotExtension
 {
    private final MujocoMultiBodyRobot mujocoMultiBodyRobot;
    private final YoRegistry yoRegistry;
+   private final MujocoActuationMode actuationMode;
+   /** Populated only under JOINT_SERVO; keyed by SCS2 joint name, iterated in registration order. */
+   private final Map<String, MujocoJointActuation> jointActuationByName = new LinkedHashMap<>();
+   private final List<MujocoJointActuation> jointActuationList = new ArrayList<>();
+   /** Parallel to {@link #jointActuationList}: the mecano joint and its DoF address, cached to keep the per-tick loop free of lookups. */
+   private final List<OneDoFJointBasics> actuatedJoints = new ArrayList<>();
+   private int[] actuatedJointDofAddresses = new int[0];
 
    private final Quaternion quaternion = new Quaternion();
    private final Vector3D linearVelocity = new Vector3D();
@@ -62,10 +79,11 @@ public class MujocoRobot extends RobotExtension
    // Scratch for cacc CoM-to-joint-origin spatial acceleration shift.
    private final Vector3D caccCoMShift = new Vector3D();
 
-   public MujocoRobot(Robot robot, YoRegistry physicsRegistry, MujocoMultiBodyRobot mujocoMultiBodyRobot)
+   public MujocoRobot(Robot robot, YoRegistry physicsRegistry, MujocoMultiBodyRobot mujocoMultiBodyRobot, MujocoActuationMode actuationMode)
    {
       super(robot, physicsRegistry);
       this.mujocoMultiBodyRobot = mujocoMultiBodyRobot;
+      this.actuationMode = actuationMode;
       this.yoRegistry = new YoRegistry(getRobotDefinition().getName() + getClass().getSimpleName());
       robot.getRegistry().addChild(yoRegistry);
 
@@ -88,7 +106,125 @@ public class MujocoRobot extends RobotExtension
          if (bodyId >= 0)
             mecanoBodyByMujocoId.put(bodyId, body);
       }
+
+      if (actuationMode == MujocoActuationMode.JOINT_SERVO)
+      {
+         for (SimJointBasics joint : getJointsToConsider())
+         {
+            if (!(joint instanceof OneDoFJointBasics))
+               continue;
+            int actuatorBaseIndex = mujocoMultiBodyRobot.getActuatorBaseIndex(joint.getName());
+            if (actuatorBaseIndex < 0)
+               continue;
+            MujocoJointActuation actuation = new MujocoJointActuation(joint.getName(), actuatorBaseIndex, yoRegistry);
+            jointActuationByName.put(joint.getName(), actuation);
+            jointActuationList.add(actuation);
+            actuatedJoints.add((OneDoFJointBasics) joint);
+         }
+
+         actuatedJointDofAddresses = new int[jointActuationList.size()];
+         for (int i = 0; i < jointActuationList.size(); i++)
+         {
+            JointAddress address = mujocoMultiBodyRobot.getJointAddress(jointActuationList.get(i).getJointName());
+            actuatedJointDofAddresses[i] = address == null ? -1 : address.qveladr;
+         }
+      }
    }
+
+   public MujocoActuationMode getActuationMode()
+   {
+      return actuationMode;
+   }
+
+   /**
+    * The low-level command block for a joint, or {@code null} when the engine is not in
+    * {@link MujocoActuationMode#JOINT_SERVO} or the joint has no actuators (the free root, welded
+    * subtrees, and any joint type the MJCF builder cannot map).
+    */
+   public MujocoJointActuation getJointActuation(String jointName)
+   {
+      return jointActuationByName.get(jointName);
+   }
+
+   /** Every joint that has a low-level command block, in model order. */
+   public List<MujocoJointActuation> getJointActuations()
+   {
+      return jointActuationList;
+   }
+
+   /**
+    * Write each joint's setpoints into {@code mjData.ctrl} and, when they have changed, its gains
+    * into {@code mjModel.actuator_gainprm} / {@code actuator_biasprm}.
+    *
+    * <p>Writing gains into {@code mjModel} between steps is supported: they take part in no derived
+    * constant and change no array size, so no recompile is needed. They live in the model rather
+    * than in {@code mjData} purely because MuJoCo treats them as actuator description.
+    */
+   public void pushActuationToMujoco(mjModel model, mjData data)
+   {
+      if (jointActuationList.isEmpty())
+         return;
+
+      DoublePointer ctrl = data.ctrl();
+      DoublePointer gainprm = model.actuator_gainprm();
+      DoublePointer biasprm = model.actuator_biasprm();
+
+      for (int i = 0; i < jointActuationList.size(); i++)
+      {
+         MujocoJointActuation actuation = jointActuationList.get(i);
+         int base = actuation.getActuatorBaseIndex();
+
+         ctrl.put(base, actuation.getFeedforwardTorque());
+         ctrl.put(base + 1, actuation.getDesiredPosition());
+         ctrl.put(base + 2, actuation.getDesiredVelocity());
+
+         if (actuation.gainsNeedWriting())
+         {
+            double kp = actuation.getStiffness();
+            double kd = actuation.getDamping();
+            // PositionTau: force = kp * ctrl - kp * q
+            gainprm.put((long) (base + 1) * MJ_NGAIN, kp);
+            biasprm.put((long) (base + 1) * MJ_NBIAS + 1, -kp);
+            // VelocityTau: force = kd * ctrl - kd * qdot
+            gainprm.put((long) (base + 2) * MJ_NGAIN, kd);
+            biasprm.put((long) (base + 2) * MJ_NBIAS + 2, -kd);
+            actuation.markGainsWritten();
+         }
+      }
+   }
+
+   /**
+    * Read each joint's three actuator forces back out of {@code mjData.actuator_force} into the
+    * YoVariables, and write the applied total onto the SCS2 joint so {@code tau} reflects what
+    * MuJoCo actually did rather than the stale value the controller wrote.
+    */
+   public void pullActuationFromMujoco(mjData data)
+   {
+      if (jointActuationList.isEmpty())
+         return;
+
+      DoublePointer actuatorForce = data.actuator_force();
+      DoublePointer qfrcActuator = data.qfrc_actuator();
+
+      for (int i = 0; i < jointActuationList.size(); i++)
+      {
+         MujocoJointActuation actuation = jointActuationList.get(i);
+         int base = actuation.getActuatorBaseIndex();
+         actuation.setRealizedTorques(actuatorForce.get(base), actuatorForce.get(base + 1), actuatorForce.get(base + 2));
+
+         int dofAddress = actuatedJointDofAddresses[i];
+         if (dofAddress >= 0)
+            actuatedJoints.get(i).setTau(qfrcActuator.get(dofAddress));
+      }
+   }
+
+   /** Joints whose pin was already engaged last tick, so the latched target must be left alone. */
+   private final Set<String> pinnedLastTick = new HashSet<>();
+   private final Quaternion pinOrientation = new Quaternion();
+   private final Vector3D pinPosition = new Vector3D();
+
+   private static final int MJ_NGAIN = Mujoco.mjNGAIN;
+   private static final int MJ_NBIAS = Mujoco.mjNBIAS;
 
    public MujocoMultiBodyRobot getMujocoMultiBodyRobot()
    {
@@ -290,7 +426,10 @@ public class MujocoRobot extends RobotExtension
                qpos.put(address.qposadr, oneDoF.getQ());
             if (Math.abs(qvel.get(address.qveladr) - oneDoF.getQd()) > STATE_EDIT_EPSILON)
                qvel.put(address.qveladr, oneDoF.getQd());
-            qfrcApplied.put(address.qveladr, oneDoF.getTau());
+            // Under JOINT_SERVO the torque arrives through the actuators instead; writing it here
+            // as well would apply the feedforward term twice.
+            if (actuationMode == MujocoActuationMode.TORQUE_PASSTHROUGH)
+               qfrcApplied.put(address.qveladr, oneDoF.getTau());
          }
       }
    }
@@ -342,6 +481,97 @@ public class MujocoRobot extends RobotExtension
          }
       }
    }
+
+   /**
+    * Mirror each joint's {@code isPinned()} flag onto its MuJoCo equality constraint, holding the
+    * joint at the state SCS2 currently has for it.
+    *
+    * <p>Pinning is an existing SCS2 concept ({@link SimJointBasics#setPinned(boolean)}), exposed as
+    * a live YoBoolean per joint, and honored by ContactPointBased and ImpulseBased. Those engines
+    * freeze the joint outside the solver; here the constraint goes through the same solver that
+    * resolves contact, so a pinned body pushes back on whatever touches it instead of being
+    * silently teleported after the step.
+    *
+    * <p>Combined with {@code pushStateToMujoco}, the usual "move it, then hold it" recipe works:
+    * set the joint state through SCS2 and set pinned, and MuJoCo holds it there.
+    */
+   public void pushPinnedJointsToMujoco(mjModel model, mjData data)
+   {
+      DoublePointer eqData = model.eq_data();
+      DoublePointer qpos0 = model.qpos0();
+      DoublePointer qpos = data.qpos();
+      BoolPointer eqActive = data.eq_active();
+
+      for (SimJointBasics joint : getJointsToConsider())
+      {
+         int equalityId = mujocoMultiBodyRobot.getPinEqualityId(joint.getName());
+         if (equalityId < 0)
+            continue;
+
+         boolean pinned = joint.isPinned();
+         eqActive.put(equalityId, pinned);
+         if (!pinned)
+         {
+            pinnedLastTick.remove(joint.getName());
+            continue;
+         }
+
+         JointAddress address = mujocoMultiBodyRobot.getJointAddress(joint.getName());
+         if (address == null)
+            continue;
+
+         // The target is latched rather than refreshed from the joint every tick. While pinned the
+         // SCS2 joint mirrors MuJoCo, so re-deriving the target from it would chase the constraint's
+         // own residual and walk the pin away from where it was set. Re-latch on two events only:
+         // the tick pinning is switched on, and any tick where the SCS2 state has been edited away
+         // from MuJoCo's (which is why this runs before pushStateToMujoco writes such an edit in).
+         boolean justPinned = pinnedLastTick.add(joint.getName());
+         if (!justPinned && !isJointStateEdited(joint, address, qpos))
+            continue;
+
+         int base = equalityId * MJ_NEQDATA;
+         if (address.isFloatingRoot && joint instanceof SixDoFJointBasics floating)
+         {
+            // Weld layout: [anchor(3), relpose position(3), relpose quaternion(4), torquescale(1)].
+            // relpose is the pose of body2 in body1, and body2 here is the world, so holding the
+            // root at a world pose means writing that pose's inverse.
+            pinOrientation.setAndConjugate(floating.getJointPose().getOrientation());
+            pinPosition.setAndNegate(floating.getJointPose().getPosition());
+            pinOrientation.transform(pinPosition);
+
+            eqData.put(base + 3, pinPosition.getX());
+            eqData.put(base + 4, pinPosition.getY());
+            eqData.put(base + 5, pinPosition.getZ());
+            eqData.put(base + 6, pinOrientation.getS());
+            eqData.put(base + 7, pinOrientation.getX());
+            eqData.put(base + 8, pinOrientation.getY());
+            eqData.put(base + 9, pinOrientation.getZ());
+         }
+         else if (joint instanceof OneDoFJointBasics oneDoF)
+         {
+            // Joint-equality layout with joint2 omitted: y = y0 + data[0], where y0 is the joint's
+            // value at the model's default pose.
+            eqData.put(base, oneDoF.getQ() - qpos0.get(address.qposadr));
+         }
+      }
+   }
+
+   /** True when the SCS2 joint has been moved away from what MuJoCo currently holds. */
+   private boolean isJointStateEdited(SimJointBasics joint, JointAddress address, DoublePointer qpos)
+   {
+      if (address.isFloatingRoot && joint instanceof SixDoFJointBasics floating)
+      {
+         pinOrientation.set(floating.getJointPose().getOrientation());
+         return isEdited(qpos, address.qposadr, floating.getJointPose().getPosition())
+                || !isSameOrientation(qpos, address.qposadr + 3, pinOrientation);
+      }
+      if (joint instanceof OneDoFJointBasics oneDoF)
+         return Math.abs(qpos.get(address.qposadr) - oneDoF.getQ()) > STATE_EDIT_EPSILON;
+      return false;
+   }
+
+   /** Size of one {@code mjModel.eq_data} row; mirrors MuJoCo's {@code mjNEQDATA}. */
+   private static final int MJ_NEQDATA = Mujoco.mjNEQDATA;
 
    /** Differences below this are floating-point noise from the pull/push round trip, not edits made through SCS2. */
    private static final double STATE_EDIT_EPSILON = 1.0e-10;
