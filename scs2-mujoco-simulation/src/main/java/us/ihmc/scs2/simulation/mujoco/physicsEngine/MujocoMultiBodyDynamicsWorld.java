@@ -134,6 +134,11 @@ public class MujocoMultiBodyDynamicsWorld
       Mujoco.mj_rnePostConstraint(model, data);
    }
 
+   private static int setBit(int flags, int bit, boolean set)
+   {
+      return set ? flags | bit : flags & ~bit;
+   }
+
    private boolean warnedShortSolrefTimeconst = false;
 
    /**
@@ -160,11 +165,24 @@ public class MujocoMultiBodyDynamicsWorld
       opt.jacobian(options.jacobian.getEnumValue().toMujocoValue());
       opt.integrator(options.integrator.getEnumValue().toMujocoValue());
 
-      // Only touch the two bits this class manages; other enable flags may be owned elsewhere.
+      // Only touch the bits this class manages; other flags may be owned elsewhere.
       int enableflags = opt.enableflags();
-      enableflags = options.enableOverride.getValue() ? enableflags | Mujoco.mjENBL_OVERRIDE : enableflags & ~Mujoco.mjENBL_OVERRIDE;
-      enableflags = options.enableEnergy.getValue() ? enableflags | Mujoco.mjENBL_ENERGY : enableflags & ~Mujoco.mjENBL_ENERGY;
+      enableflags = setBit(enableflags, Mujoco.mjENBL_OVERRIDE, options.enableOverride.getValue());
+      enableflags = setBit(enableflags, Mujoco.mjENBL_ENERGY, options.enableEnergy.getValue());
+      enableflags = setBit(enableflags, Mujoco.mjENBL_FWDINV, options.enableFwdinv.getValue());
       opt.enableflags(enableflags);
+
+      // Read-modify-write matters more here than for the enable flags: mjDSBL_FILTERPARENT is set
+      // from the MJCF at compile time and is not mirrored in the options group, so writing the word
+      // wholesale would silently turn parent-child collision filtering back on.
+      int disableflags = opt.disableflags();
+      disableflags = setBit(disableflags, Mujoco.mjDSBL_CONTACT, options.disableContact.getValue());
+      disableflags = setBit(disableflags, Mujoco.mjDSBL_GRAVITY, options.disableGravity.getValue());
+      disableflags = setBit(disableflags, Mujoco.mjDSBL_EQUALITY, options.disableEquality.getValue());
+      disableflags = setBit(disableflags, Mujoco.mjDSBL_ACTUATION, options.disableActuation.getValue());
+      disableflags = setBit(disableflags, Mujoco.mjDSBL_WARMSTART, options.disableWarmstart.getValue());
+      disableflags = setBit(disableflags, Mujoco.mjDSBL_AUTORESET, options.disableAutoReset.getValue());
+      opt.disableflags(disableflags);
 
       opt.o_margin(options.o_margin.getValue());
       opt.o_solref(0, options.o_solref_timeconst.getValue());

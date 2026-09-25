@@ -95,6 +95,12 @@ public class MujocoPhysicsEngine implements PhysicsEngine
       return options;
    }
 
+   /** Per-tick solver, contact and warning counters, mirrored as YoVariables. */
+   public MujocoStatistics getStatistics()
+   {
+      return statistics;
+   }
+
    /** The native world wrapper; the model/data are null until the first {@code simulate()} compiles the world. */
    public MujocoMultiBodyDynamicsWorld getDynamicsWorld()
    {
@@ -232,6 +238,7 @@ public class MujocoPhysicsEngine implements PhysicsEngine
 
       statistics.update();
       statistics.updateEnergy(options.enableEnergy.getValue());
+      statistics.updateSolverDiagnostics(options.enableFwdinv.getValue());
       if (contactPool != null)
          contactPool.update();
 
