@@ -1,5 +1,8 @@
 package us.ihmc.scs2.simulation.mujoco.physicsEngine.parameters;
 
+import java.util.LinkedHashMap;
+import java.util.Map;
+
 /**
  * Compile-time MuJoCo simulation seeds; see {@link MujocoSimulationParametersReadOnly}. This class
  * is the single home of the default values. Members are grouped SCS2-owned (camelCase) first, then
@@ -12,6 +15,8 @@ public class MujocoSimulationParameters implements MujocoSimulationParametersBas
    private boolean filterParentCollisions = true;
    private boolean enforceJointLimits = true;
    private MujocoActuationMode actuationMode = MujocoActuationMode.TORQUE_PASSTHROUGH;
+   private final Map<String, MujocoContactProperties> contactClasses = new LinkedHashMap<>();
+   private final Map<String, String> contactClassByBodyName = new LinkedHashMap<>();
    private int perContactDiagnosticsCapacity = 16;
 
    private double solref_timeconst = 0.02;
@@ -84,6 +89,32 @@ public class MujocoSimulationParameters implements MujocoSimulationParametersBas
    public MujocoActuationMode getActuationMode()
    {
       return actuationMode;
+   }
+
+   @Override
+   public Map<String, MujocoContactProperties> getContactClasses()
+   {
+      return contactClasses;
+   }
+
+   @Override
+   public Map<String, String> getContactClassByBodyName()
+   {
+      return contactClassByBodyName;
+   }
+
+   @Override
+   public void addContactClass(String contactClassName, MujocoContactProperties properties)
+   {
+      if (RESERVED_CONTACT_CLASS_NAMES.contains(contactClassName))
+         throw new IllegalArgumentException("'" + contactClassName + "' is reserved by the MJCF builder; pick another contact class name.");
+      contactClasses.put(contactClassName, new MujocoContactProperties(properties));
+   }
+
+   @Override
+   public void assignContactClass(String bodyName, String contactClassName)
+   {
+      contactClassByBodyName.put(bodyName, contactClassName);
    }
 
    @Override

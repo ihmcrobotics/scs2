@@ -14,6 +14,8 @@ public interface MujocoSimulationParametersBasics extends MujocoSimulationParame
       setFilterParentCollisions(other.getFilterParentCollisions());
       setEnforceJointLimits(other.getEnforceJointLimits());
       setActuationMode(other.getActuationMode());
+      other.getContactClasses().forEach(this::addContactClass);
+      other.getContactClassByBodyName().forEach(this::assignContactClass);
       setPerContactDiagnosticsCapacity(other.getPerContactDiagnosticsCapacity());
 
       set_solref_timeconst(other.get_solref_timeconst());
@@ -41,6 +43,20 @@ public interface MujocoSimulationParametersBasics extends MujocoSimulationParame
 
    /** @see MujocoSimulationParametersReadOnly#getActuationMode() */
    void setActuationMode(MujocoActuationMode actuationMode);
+
+   /**
+    * Defines a named contact class. The properties are copied, so the caller may reuse the instance.
+    *
+    * @throws IllegalArgumentException if the name is one the MJCF builder reserves.
+    * @see MujocoContactProperties
+    */
+   void addContactClass(String contactClassName, MujocoContactProperties properties);
+
+   /**
+    * Puts every collision shape on {@code bodyName} into a class previously defined with
+    * {@link #addContactClass(String, MujocoContactProperties)}.
+    */
+   void assignContactClass(String bodyName, String contactClassName);
 
    /**
     * @deprecated Never read: the effective MuJoCo timestep is the session dt divided by

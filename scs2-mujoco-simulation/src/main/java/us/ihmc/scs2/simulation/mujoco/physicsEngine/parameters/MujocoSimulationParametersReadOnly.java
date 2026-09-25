@@ -1,5 +1,8 @@
 package us.ihmc.scs2.simulation.mujoco.physicsEngine.parameters;
 
+import java.util.Map;
+import java.util.Set;
+
 /**
  * Compile-time seeds, consumed once when the composite MJCF is generated on the first
  * {@code simulate()} — except {@link #getSubSteps()}, which the engine mirrors live in
@@ -65,6 +68,19 @@ public interface MujocoSimulationParametersReadOnly
     * loop itself. Compile-time: it decides whether the MJCF carries an {@code <actuator>} block.
     */
    MujocoActuationMode getActuationMode();
+
+   /** Contact class names the MJCF builder uses itself, which a user-defined class may not take. */
+   Set<String> RESERVED_CONTACT_CLASS_NAMES = Set.of("robot", "terrain");
+
+   /**
+    * Named groups of contact properties, emitted as MuJoCo {@code <default class="...">} blocks
+    * nested inside the robot class. Bodies are attached to a class through
+    * {@link #getContactClassByBodyName()}; anything unassigned keeps the model-wide values.
+    */
+   Map<String, MujocoContactProperties> getContactClasses();
+
+   /** Maps an SCS2 rigid body name to one of {@link #getContactClasses()}. */
+   Map<String, String> getContactClassByBodyName();
 
    /**
     * Number of pre-allocated per-contact YoVariable slots (penetration, forces, slip flag);

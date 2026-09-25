@@ -3,6 +3,7 @@ package us.ihmc.scs2.simulation.mujoco.physicsEngine;
 import java.io.File;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import us.ihmc.euclid.transform.RigidBodyTransform;
@@ -24,6 +25,7 @@ import us.ihmc.scs2.simulation.mujoco.Mujoco.mjData;
 import us.ihmc.scs2.simulation.mujoco.Mujoco.mjModel;
 import us.ihmc.scs2.simulation.mujoco.physicsEngine.MujocoMultiBodyRobot.JointAddress;
 import us.ihmc.scs2.simulation.mujoco.physicsEngine.parameters.MujocoActuationMode;
+import us.ihmc.scs2.simulation.mujoco.physicsEngine.parameters.MujocoContactProperties;
 import us.ihmc.scs2.simulation.mujoco.physicsEngine.parameters.MujocoSimulationParametersReadOnly;
 import us.ihmc.scs2.simulation.robot.Robot;
 
@@ -117,6 +119,17 @@ public final class MujocoMultiBodyRobotFactory
       mjcf.append("    <joint armature=\"").append(parameters.get_armature()).append("\"/>\n");
       mjcf.append("    <default class=\"robot\">\n");
       mjcf.append("      <geom contype=\"").append(ROBOT_CONTYPE).append("\" conaffinity=\"").append(ROBOT_CONAFFINITY).append("\"/>\n");
+      // Contact classes nest inside the robot class, so a foot or hand class inherits the robot's
+      // contype/conaffinity and overrides only the contact properties it sets.
+      for (Map.Entry<String, MujocoContactProperties> contactClass : parameters.getContactClasses().entrySet())
+      {
+         StringBuilder attributes = new StringBuilder();
+         if (!contactClass.getValue().appendGeomAttributes(attributes))
+            continue;
+         mjcf.append("      <default class=\"").append(contactClass.getKey()).append("\">\n");
+         mjcf.append("        <geom").append(attributes).append("/>\n");
+         mjcf.append("      </default>\n");
+      }
       mjcf.append("    </default>\n");
       mjcf.append("    <default class=\"terrain\">\n");
       mjcf.append("      <geom contype=\"").append(TERRAIN_CONTYPE).append("\" conaffinity=\"").append(TERRAIN_CONAFFINITY).append("\"/>\n");
@@ -299,10 +312,13 @@ public final class MujocoMultiBodyRobotFactory
          MujocoTools.appendJoint(sb, joint, namePrefix, parameters, indent + 1);
       MujocoTools.appendInertial(sb, body, indent + 1);
 
+      // A body assigned a contact class uses it in place of the plain robot class; the class is
+      // nested inside "robot", so the collision filtering is inherited either way.
+      String geomClass = parameters.getContactClassByBodyName().getOrDefault(body.getName(), "robot");
       int geomIndex = 0;
       for (CollisionShapeDefinition shape : body.getCollisionShapeDefinitions())
       {
-         MujocoTools.appendGeom(sb, "robot", namePrefix + body.getName() + "_geom_" + geomIndex, shape, indent + 1);
+         MujocoTools.appendGeom(sb, geomClass, namePrefix + body.getName() + "_geom_" + geomIndex, shape, indent + 1);
          geomIndex++;
       }
 
