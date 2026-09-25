@@ -72,7 +72,9 @@ public class MujocoRobot extends RobotExtension
       // doVelocityTerms=true: include Coriolis and centripetal acceleration so IMU linear-acc
       // readings include the v x w term. Matches BulletRobotPhysics.
       accelerationCalculator = new SpatialAccelerationCalculator(robot.getRootBody(), robot.getInertialFrame(), true);
-      accelerationCalculator.setGravitionalAcceleration(-9.81);
+      // Seeded with standard gravity only so the calculator is usable before the first step;
+      // pullStateFromMujoco overwrites it with the session's gravity on every tick.
+      accelerationCalculator.setGravitionalAcceleration(0.0, 0.0, -9.81);
       physicsOutput = new RobotPhysicsOutput(accelerationCalculator, null, wrenchRegistry, null);
 
       // Cache the mecano body for each MuJoCo body id once so per-tick cfrc_ext readout is an
@@ -328,6 +330,10 @@ public class MujocoRobot extends RobotExtension
                                    DoublePointer qacc,
                                    DoublePointer cacc)
    {
+      // The session owns gravity and can change it between ticks, so the IMU's acceleration
+      // calculator has to track it rather than assume standard gravity.
+      accelerationCalculator.setGravitionalAcceleration(gravity);
+
       for (JointBasics joint : getJointsToConsider())
       {
          JointAddress address = mujocoMultiBodyRobot.getJointAddress(joint.getName());

@@ -11,6 +11,7 @@ import org.bytedeco.javacpp.BytePointer;
 import org.bytedeco.javacpp.DoublePointer;
 import org.bytedeco.javacpp.IntPointer;
 
+import us.ihmc.euclid.matrix.Matrix3D;
 import us.ihmc.euclid.orientation.interfaces.Orientation3DReadOnly;
 import us.ihmc.euclid.shape.convexPolytope.interfaces.Vertex3DReadOnly;
 import us.ihmc.euclid.transform.interfaces.RigidBodyTransformReadOnly;
@@ -285,12 +286,25 @@ public final class MujocoTools
       sb.append(x).append(' ').append(y).append(' ').append(z);
    }
 
-   /** Emit a body's {@code <inertial>} element (CoM offset, mass, and full inertia tensor). */
+   /**
+    * Emit a body's {@code <inertial>} element (CoM offset, mass, and full inertia tensor).
+    *
+    * <p>SCS2 expresses the moment of inertia in the frame given by
+    * {@link RigidBodyDefinition#getInertiaPose()}, whose translation is the CoM offset and whose
+    * rotation is the inertia frame's orientation relative to the body frame. MuJoCo's
+    * {@code fullinertia} is read in the body frame (the compiler eigen-decomposes it and derives
+    * the inertial frame orientation itself), so a rotated inertia frame has to be folded in first
+    * as {@code R * I * R^T}. Most URDFs, Alex included, give zero rpy on every inertial, in which
+    * case this is a no-op.
+    */
    static void appendInertial(StringBuilder sb, RigidBodyDefinition body, int indent)
    {
       String pad = "  ".repeat(indent);
       Tuple3DReadOnly comOffset = body.getCenterOfMassOffset();
-      var inertia = body.getMomentOfInertia();
+      Matrix3D inertia = new Matrix3D(body.getMomentOfInertia());
+      Orientation3DReadOnly inertiaFrameRotation = body.getInertiaPose().getRotation();
+      if (!inertiaFrameRotation.isZeroOrientation())
+         inertiaFrameRotation.transform(inertia);
 
       sb.append(pad).append("<inertial")
         .append(" pos=\"").append(comOffset.getX()).append(' ').append(comOffset.getY()).append(' ').append(comOffset.getZ()).append('"')
