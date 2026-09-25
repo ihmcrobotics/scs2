@@ -50,6 +50,17 @@ public interface MujocoSimulationParametersReadOnly
    boolean getFilterParentCollisions();
 
    /**
+    * When true, each 1-DoF joint's position limits are emitted as MJCF {@code range} so MuJoCo's
+    * constraint solver enforces them. MuJoCo emitted no limits at all before this existed, which
+    * let a diverging controller wind a joint far past its range instead of hitting a stop.
+    * <p>
+    * ContactPointBased applies a soft limit stop instead (see {@code RobotOneDoFJointSoftLimitCalculator});
+    * the MJCF uses MuJoCo's default {@code solreflimit}, so the stop is comparably soft but not
+    * gain-matched. Set false to restore the old unlimited behavior.
+    */
+   boolean getEnforceJointLimits();
+
+   /**
     * Number of pre-allocated per-contact YoVariable slots (penetration, forces, slip flag);
     * 0 disables per-contact readback. Compile-time by nature: the variables must exist before the
     * session buffer is set up.

@@ -130,7 +130,7 @@ public final class MujocoMultiBodyRobotFactory
       {
          RobotDefinition robotDefinition = robot.getRobotDefinition();
          Set<String> ignoredJointNames = new HashSet<>(robotDefinition.getNameOfJointsToIgnore());
-         appendRobotBodies(mjcf, robotDefinition, ignoredJointNames, 2);
+         appendRobotBodies(mjcf, robotDefinition, ignoredJointNames, parameters, 2);
       }
       mjcf.append("  </worldbody>\n");
       if (parameters.getFilterParentCollisions())
@@ -208,13 +208,17 @@ public final class MujocoMultiBodyRobotFactory
       }
    }
 
-   private static void appendRobotBodies(StringBuilder sb, RobotDefinition robotDefinition, Set<String> ignoredJointNames, int indentLevel)
+   private static void appendRobotBodies(StringBuilder sb,
+                                         RobotDefinition robotDefinition,
+                                         Set<String> ignoredJointNames,
+                                         MujocoSimulationParametersReadOnly parameters,
+                                         int indentLevel)
    {
       String namePrefix = robotDefinition.getName() + "_";
       List<JointDefinition> rootJoints = robotDefinition.getRootJointDefinitions();
       for (JointDefinition rootJoint : rootJoints)
       {
-         appendBody(sb, rootJoint, rootJoint.getSuccessor(), namePrefix, ignoredJointNames, false, indentLevel);
+         appendBody(sb, rootJoint, rootJoint.getSuccessor(), namePrefix, ignoredJointNames, parameters, false, indentLevel);
       }
    }
 
@@ -234,6 +238,7 @@ public final class MujocoMultiBodyRobotFactory
                                   RigidBodyDefinition body,
                                   String namePrefix,
                                   Set<String> ignoredJointNames,
+                                  MujocoSimulationParametersReadOnly parameters,
                                   boolean weldToParent,
                                   int indent)
    {
@@ -252,7 +257,7 @@ public final class MujocoMultiBodyRobotFactory
       sb.append(">\n");
 
       if (!weldToParent)
-         MujocoTools.appendJoint(sb, joint, namePrefix, indent + 1);
+         MujocoTools.appendJoint(sb, joint, namePrefix, parameters, indent + 1);
       MujocoTools.appendInertial(sb, body, indent + 1);
 
       int geomIndex = 0;
@@ -267,7 +272,7 @@ public final class MujocoMultiBodyRobotFactory
          if (childJoint.getSuccessor() == null)
             continue;
          boolean childWelded = weldToParent || ignoredJointNames.contains(childJoint.getName());
-         appendBody(sb, childJoint, childJoint.getSuccessor(), namePrefix, ignoredJointNames, childWelded, indent + 1);
+         appendBody(sb, childJoint, childJoint.getSuccessor(), namePrefix, ignoredJointNames, parameters, childWelded, indent + 1);
       }
 
       sb.append(pad).append("</body>\n");

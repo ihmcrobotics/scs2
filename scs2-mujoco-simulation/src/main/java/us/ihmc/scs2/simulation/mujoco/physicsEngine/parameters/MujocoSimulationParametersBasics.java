@@ -12,6 +12,7 @@ public interface MujocoSimulationParametersBasics extends MujocoSimulationParame
       setSubSteps(other.getSubSteps());
       setTimestep(other.getTimestep());
       setFilterParentCollisions(other.getFilterParentCollisions());
+      setEnforceJointLimits(other.getEnforceJointLimits());
       setPerContactDiagnosticsCapacity(other.getPerContactDiagnosticsCapacity());
 
       set_solref_timeconst(other.get_solref_timeconst());
@@ -33,6 +34,9 @@ public interface MujocoSimulationParametersBasics extends MujocoSimulationParame
    // ---------- SCS2-owned ----------
 
    void setSubSteps(int subSteps);
+
+   /** @see MujocoSimulationParametersReadOnly#getEnforceJointLimits() */
+   void setEnforceJointLimits(boolean enforceJointLimits);
 
    /**
     * @deprecated Never read: the effective MuJoCo timestep is the session dt divided by
