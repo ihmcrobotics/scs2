@@ -240,6 +240,10 @@ public final class MujocoTools
          URL sourceURL = DefinitionIOTools.resolveModelFileURL(modelFile);
          String lower = sourceFileName.toLowerCase();
          String extension = lower.substring(lower.lastIndexOf('.'));
+         // Created here rather than up front: a world whose collision shapes are all primitives, or
+         // whose meshes are inline vertex clouds, never needs a directory on disk at all.
+         if (!workingDirectory.exists() && !workingDirectory.mkdirs())
+            throw new IOException("Could not create MuJoCo working directory: " + workingDirectory);
          File meshFile = new File(workingDirectory, meshName(name) + extension);
          try (InputStream in = sourceURL.openStream())
          {

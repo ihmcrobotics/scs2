@@ -92,9 +92,6 @@ public final class MujocoMultiBodyRobotFactory
                                        File workingDirectory,
                                        MujocoSimulationParametersReadOnly parameters)
    {
-      if (!workingDirectory.exists() && !workingDirectory.mkdirs())
-         throw new RuntimeException("Could not create MuJoCo working directory: " + workingDirectory);
-
       StringBuilder mjcf = new StringBuilder();
       mjcf.append("<mujoco>\n");
       // mjOption values (solver, integrator, tolerances, ...) are deliberately not emitted: the
@@ -103,7 +100,10 @@ public final class MujocoMultiBodyRobotFactory
       mjcf.append("  <option>\n");
       mjcf.append("    <flag filterparent=\"").append(parameters.getFilterParentCollisions() ? "enable" : "disable").append("\"/>\n");
       mjcf.append("  </option>\n");
-      mjcf.append("  <compiler angle=\"radian\"/>\n");
+      // meshdir is absolute because the MJCF is compiled out of a virtual file system and so has no
+      // directory of its own for MuJoCo to resolve mesh filenames against. Harmless when the world
+      // has no file-backed meshes, in which case the directory is never even created.
+      mjcf.append("  <compiler angle=\"radian\" meshdir=\"").append(workingDirectory.getAbsolutePath()).append("\"/>\n");
       // Compile-time seeds; live-tunable after compile via the MujocoOptions o_* contact override.
       mjcf.append("  <default>\n");
       mjcf.append("    <geom friction=\"").append(parameters.get_friction_slide())

@@ -269,30 +269,26 @@ public class MujocoPhysicsEngine implements PhysicsEngine
       if (modelCompiled)
          return;
 
+      // Only a path at this point: nothing is created here. A world of primitive collision shapes
+      // never needs it, since the MJCF is compiled from memory and inline meshes carry their own
+      // vertices; it only comes into existence if a file-backed mesh has to be staged.
       String workingDirectoryProperty = System.getProperty("scs2.mujoco.workingDirectory");
-      if (workingDirectoryProperty != null)
-      {
-         workingDirectory = new File(workingDirectoryProperty);
-      }
-      else
-      {
-         try
-         {
-            workingDirectory = Files.createTempDirectory("scs2-mujoco-").toFile();
-         }
-         catch (java.io.IOException e)
-         {
-            throw new RuntimeException("Could not create MuJoCo working directory", e);
-         }
-      }
+      boolean workingDirectoryWasRequested = workingDirectoryProperty != null;
+      workingDirectory = workingDirectoryWasRequested ? new File(workingDirectoryProperty)
+                                                      : new File(System.getProperty("java.io.tmpdir"), "scs2-mujoco-" + System.nanoTime());
 
       String mjcf = MujocoMultiBodyRobotFactory.buildWorldMjcf(pendingRobots,
                                                                pendingTerrain,
                                                                workingDirectory,
                                                                seedParameters);
-      File mjcfFile = new File(workingDirectory, "world.xml");
+      // Written out only when a directory was asked for; otherwise the compile reads it from memory
+      // and nothing is left behind.
+      File mjcfFile = workingDirectoryWasRequested ? new File(workingDirectory, "world.xml") : null;
       dynamicsWorld.compile(mjcf, mjcfFile);
-      LogTools.info("MuJoCo world MJCF written to {}", mjcfFile.getAbsolutePath());
+      if (mjcfFile != null)
+         LogTools.info("MuJoCo world MJCF written to {}", mjcfFile.getAbsolutePath());
+      else
+         LogTools.info("MuJoCo world compiled from memory; set -Dscs2.mujoco.workingDirectory to write the MJCF out");
 
       for (Robot robot : pendingRobots)
       {

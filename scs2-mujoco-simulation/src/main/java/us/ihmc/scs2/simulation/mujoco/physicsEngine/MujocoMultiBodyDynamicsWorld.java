@@ -40,22 +40,56 @@ public class MujocoMultiBodyDynamicsWorld
     * first (which {@link MujocoMultiBodyRobotFactory} typically places in a per-session working
     * directory next to the per-robot URDF includes).
     */
-   public void compile(String mjcfXml, java.io.File mjcfFile)
+   private static final String VIRTUAL_MJCF_NAME = "world.xml";
+
+   /**
+    * Compiles the supplied MJCF text into {@code mjModel} + {@code mjData}.
+    *
+    * <p>The XML is handed to MuJoCo through a virtual file system rather than written to disk, so a
+    * world whose collision shapes are all primitives touches the filesystem not at all. File-backed
+    * meshes are still staged into the working directory, which the MJCF points at with an absolute
+    * {@code meshdir} precisely because a VFS entry has no directory of its own.
+    *
+    * @param mjcfFileOrNull when non-null, the MJCF is also written here for inspection. The
+    *       compile reads the in-memory copy either way.
+    */
+   public void compile(String mjcfXml, java.io.File mjcfFileOrNull)
    {
       if (model != null || data != null)
          throw new IllegalStateException("MuJoCo model already compiled. Multiple compiles per world are not supported in v1.");
 
-      try
+      if (mjcfFileOrNull != null)
       {
-         java.nio.file.Files.writeString(mjcfFile.toPath(), mjcfXml);
-      }
-      catch (java.io.IOException e)
-      {
-         throw new RuntimeException("Could not write MJCF to " + mjcfFile, e);
+         try
+         {
+            java.io.File parent = mjcfFileOrNull.getParentFile();
+            if (parent != null && !parent.exists() && !parent.mkdirs())
+               throw new java.io.IOException("Could not create " + parent);
+            java.nio.file.Files.writeString(mjcfFileOrNull.toPath(), mjcfXml);
+         }
+         catch (java.io.IOException e)
+         {
+            throw new RuntimeException("Could not write MJCF to " + mjcfFileOrNull, e);
+         }
       }
 
       BytePointer errorBuffer = new BytePointer(1000);
-      model = Mujoco.mj_loadXML(mjcfFile.getAbsolutePath(), null, errorBuffer, 1000);
+      byte[] mjcfBytes = mjcfXml.getBytes(java.nio.charset.StandardCharsets.UTF_8);
+      Mujoco.mjVFS vfs = new Mujoco.mjVFS();
+      try (BytePointer mjcfBuffer = new BytePointer(mjcfBytes.length))
+      {
+         Mujoco.mj_defaultVFS(vfs);
+         mjcfBuffer.put(mjcfBytes);
+         if (Mujoco.mj_addBufferVFS(vfs, VIRTUAL_MJCF_NAME, mjcfBuffer, mjcfBytes.length) != 0)
+            throw new RuntimeException("Could not add the MJCF to MuJoCo's virtual file system");
+
+         model = Mujoco.mj_loadXML(VIRTUAL_MJCF_NAME, vfs, errorBuffer, 1000);
+      }
+      finally
+      {
+         Mujoco.mj_deleteVFS(vfs);
+      }
+
       if (model == null || model.isNull())
       {
          throw new RuntimeException("mj_loadXML failed: " + errorBuffer.getString());
