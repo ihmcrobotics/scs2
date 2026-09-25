@@ -62,6 +62,9 @@ public final class MujocoMultiBodyRobotFactory
    private static final int TERRAIN_CONTYPE = 2;
    private static final int TERRAIN_CONAFFINITY = 1;
 
+   /** Name of the keyframe holding the world's initial state; index 0, the only keyframe emitted. */
+   public static final String INITIAL_KEYFRAME_NAME = "initial";
+
    /** Appended to a joint name to form the name of its pin equality constraint in the MJCF. */
    public static final String PIN_EQUALITY_SUFFIX = "_pin";
    /**
@@ -190,6 +193,10 @@ public final class MujocoMultiBodyRobotFactory
             mjcf.append("  <actuator>\n").append(actuators).append("  </actuator>\n");
          }
       }
+      // One empty keyframe, which MuJoCo fills with qpos0. The engine overwrites it with the seeded
+      // initial state once the model has compiled -- writing the vector into the XML here is not
+      // possible, since the qpos layout is only known after compile.
+      mjcf.append("  <keyframe>\n    <key name=\"").append(INITIAL_KEYFRAME_NAME).append("\"/>\n  </keyframe>\n");
       mjcf.append("</mujoco>\n");
       return mjcf.toString();
    }

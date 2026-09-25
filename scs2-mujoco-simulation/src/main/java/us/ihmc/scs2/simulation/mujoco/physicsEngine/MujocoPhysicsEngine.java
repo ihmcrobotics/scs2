@@ -13,6 +13,9 @@ import us.ihmc.mecano.tools.JointStateType;
 import us.ihmc.scs2.definition.robot.RobotDefinition;
 import us.ihmc.scs2.definition.robot.RobotStateDefinition;
 import us.ihmc.scs2.definition.terrain.TerrainObjectDefinition;
+
+import us.ihmc.scs2.simulation.mujoco.Mujoco;
+import us.ihmc.scs2.simulation.mujoco.Mujoco.mjModel;
 import us.ihmc.scs2.simulation.mujoco.MujocoNativeLibrary;
 import us.ihmc.scs2.simulation.mujoco.physicsEngine.parameters.MujocoActuationMode;
 import us.ihmc.scs2.simulation.mujoco.physicsEngine.parameters.MujocoSimulationParameters;
@@ -255,13 +258,10 @@ public class MujocoPhysicsEngine implements PhysicsEngine
 
    private void resetNativeState()
    {
-      dynamicsWorld.resetData();
-      for (MujocoRobot robot : robotList)
-      {
-         MujocoMultiBodyRobotFactory.seedInitialJointState(robot.getRobotDefinition(),
-                                                           robot.getMujocoMultiBodyRobot(),
-                                                           dynamicsWorld.getData());
-      }
+      // The initial keyframe was filled from the seeded state at compile, so this restores the pose
+      // the robots actually spawn in rather than qpos0, and clears velocities, warm-start
+      // accelerations and contact state along with it.
+      dynamicsWorld.resetToInitialKeyframe();
    }
 
    private void compileIfNeeded()
@@ -313,6 +313,10 @@ public class MujocoPhysicsEngine implements PhysicsEngine
          if (contactPool != null)
             mujocoRobot.createContactAggregates(inertialFrame).forEach(contactPool::addBodyAggregate);
       }
+      // Every robot has now been seeded, so the world's initial state is complete: store it in the
+      // keyframe the MJCF declared, which is what resetNativeState restores.
+      dynamicsWorld.captureInitialKeyframe();
+
       for (TerrainObjectDefinition terrain : pendingTerrain)
       {
          MujocoTerrainObject terrainObject = new MujocoTerrainObject(terrain);

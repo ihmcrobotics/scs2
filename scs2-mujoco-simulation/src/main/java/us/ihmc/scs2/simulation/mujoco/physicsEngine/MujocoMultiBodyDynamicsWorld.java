@@ -118,6 +118,42 @@ public class MujocoMultiBodyDynamicsWorld
       Mujoco.mj_resetData(model, data);
    }
 
+   /**
+    * Copy the current {@code qpos}/{@code qvel} into keyframe 0, the empty {@code <key>} the MJCF
+    * declares. Called once after the robots' initial joint state has been seeded, so that the
+    * keyframe holds the pose the robots actually spawn in rather than the model's {@code qpos0}.
+    */
+   public void captureInitialKeyframe()
+   {
+      if (model == null || data == null || model.nkey() < 1)
+         return;
+
+      DoublePointer keyQpos = model.key_qpos();
+      DoublePointer qpos = data.qpos();
+      for (int i = 0; i < model.nq(); i++)
+         keyQpos.put(i, qpos.get(i));
+
+      DoublePointer keyQvel = model.key_qvel();
+      DoublePointer qvel = data.qvel();
+      for (int i = 0; i < model.nv(); i++)
+         keyQvel.put(i, qvel.get(i));
+   }
+
+   /**
+    * Reset to keyframe 0, i.e. the seeded initial state. Unlike a bare {@code mj_resetData} this
+    * restores the spawn pose rather than {@code qpos0}, and it clears velocities, warm-start
+    * accelerations and contact state at the same time.
+    */
+   public void resetToInitialKeyframe()
+   {
+      if (model == null || data == null)
+         return;
+      if (model.nkey() < 1)
+         Mujoco.mj_resetData(model, data);
+      else
+         Mujoco.mj_resetDataKeyframe(model, data, 0);
+   }
+
    public void step()
    {
       Mujoco.mj_step(model, data);
