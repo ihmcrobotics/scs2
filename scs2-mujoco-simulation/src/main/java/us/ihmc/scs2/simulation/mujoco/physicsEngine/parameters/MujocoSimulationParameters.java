@@ -17,6 +17,9 @@ public class MujocoSimulationParameters implements MujocoSimulationParametersBas
    private MujocoActuationMode actuationMode = MujocoActuationMode.TORQUE_PASSTHROUGH;
    private final Map<String, MujocoContactProperties> contactClasses = new LinkedHashMap<>();
    private final Map<String, String> contactClassByBodyName = new LinkedHashMap<>();
+   private double actuatorDelay = 0.0;
+   private int actuatorDelaySamples = 16;
+   private final Map<String, Double> actuatorDelayByJointName = new LinkedHashMap<>();
    private int perContactDiagnosticsCapacity = 16;
 
    private double solref_timeconst = 0.02;
@@ -115,6 +118,44 @@ public class MujocoSimulationParameters implements MujocoSimulationParametersBas
    public void assignContactClass(String bodyName, String contactClassName)
    {
       contactClassByBodyName.put(bodyName, contactClassName);
+   }
+
+   @Override
+   public double getActuatorDelay()
+   {
+      return actuatorDelay;
+   }
+
+   @Override
+   public void setActuatorDelay(double actuatorDelay)
+   {
+      this.actuatorDelay = actuatorDelay;
+   }
+
+   @Override
+   public int getActuatorDelaySamples()
+   {
+      return actuatorDelaySamples;
+   }
+
+   @Override
+   public void setActuatorDelaySamples(int actuatorDelaySamples)
+   {
+      if (actuatorDelaySamples < 2)
+         throw new IllegalArgumentException("MuJoCo needs at least 2 history samples to interpolate a delay; got " + actuatorDelaySamples);
+      this.actuatorDelaySamples = actuatorDelaySamples;
+   }
+
+   @Override
+   public Map<String, Double> getActuatorDelayByJointName()
+   {
+      return actuatorDelayByJointName;
+   }
+
+   @Override
+   public void setActuatorDelay(String jointName, double actuatorDelay)
+   {
+      actuatorDelayByJointName.put(jointName, actuatorDelay);
    }
 
    @Override

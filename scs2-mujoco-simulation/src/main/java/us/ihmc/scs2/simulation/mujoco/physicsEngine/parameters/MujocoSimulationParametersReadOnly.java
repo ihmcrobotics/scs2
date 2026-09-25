@@ -83,6 +83,38 @@ public interface MujocoSimulationParametersReadOnly
    Map<String, String> getContactClassByBodyName();
 
    /**
+    * Command latency in seconds between the controller writing a joint's low-level command and
+    * MuJoCo applying it, modelling the lag a real drive has between receiving a setpoint and
+    * producing torque. 0 means no delay.
+    * <p>
+    * Only has an effect under {@link MujocoActuationMode#JOINT_SERVO}: the delay lives on the
+    * actuators, and TORQUE_PASSTHROUGH emits none, so there is nothing to delay there. This is
+    * command latency, not measurement latency -- MuJoCo's matching {@code sensor_delay} needs
+    * {@code <sensor>} elements, which the MJCF builder does not emit yet.
+    * <p>
+    * Compile-time: MuJoCo sizes the history buffer that holds the delayed samples when the model
+    * compiles, so this cannot be changed on a running simulation.
+    */
+   double getActuatorDelay();
+
+   /**
+    * Number of samples MuJoCo keeps in the history buffer backing the delay, at least 2. MuJoCo
+    * rejects a model that sets a delay without one, so this is not optional when the delay is
+    * non-zero.
+    * <p>
+    * It controls how faithful the delay is, and the minimum of 2 is a trap worth knowing about:
+    * the samples span the whole delay window, so with 2 of them linear interpolation ramps the
+    * command across the entire delay instead of transporting it, and the joint starts responding
+    * immediately. Sample spacing is {@code delay / (samples - 1)}, so for a delay that behaves like
+    * real transport lag set this to roughly {@code delay / timestep}. The default of 16 covers the
+    * usual case of a few milliseconds of latency at a sub-millisecond timestep.
+    */
+   int getActuatorDelaySamples();
+
+   /** Per-joint overrides of {@link #getActuatorDelay()}, keyed by SCS2 joint name. */
+   Map<String, Double> getActuatorDelayByJointName();
+
+   /**
     * Number of pre-allocated per-contact YoVariable slots (penetration, forces, slip flag);
     * 0 disables per-contact readback. Compile-time by nature: the variables must exist before the
     * session buffer is set up.

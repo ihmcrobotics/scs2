@@ -16,6 +16,9 @@ public interface MujocoSimulationParametersBasics extends MujocoSimulationParame
       setActuationMode(other.getActuationMode());
       other.getContactClasses().forEach(this::addContactClass);
       other.getContactClassByBodyName().forEach(this::assignContactClass);
+      setActuatorDelay(other.getActuatorDelay());
+      setActuatorDelaySamples(other.getActuatorDelaySamples());
+      other.getActuatorDelayByJointName().forEach(this::setActuatorDelay);
       setPerContactDiagnosticsCapacity(other.getPerContactDiagnosticsCapacity());
 
       set_solref_timeconst(other.get_solref_timeconst());
@@ -57,6 +60,15 @@ public interface MujocoSimulationParametersBasics extends MujocoSimulationParame
     * {@link #addContactClass(String, MujocoContactProperties)}.
     */
    void assignContactClass(String bodyName, String contactClassName);
+
+   /** @see MujocoSimulationParametersReadOnly#getActuatorDelay() */
+   void setActuatorDelay(double actuatorDelay);
+
+   /** @see MujocoSimulationParametersReadOnly#getActuatorDelaySamples() */
+   void setActuatorDelaySamples(int actuatorDelaySamples);
+
+   /** Overrides {@link #setActuatorDelay(double)} for one joint. */
+   void setActuatorDelay(String jointName, double actuatorDelay);
 
    /**
     * @deprecated Never read: the effective MuJoCo timestep is the session dt divided by

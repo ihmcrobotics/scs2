@@ -186,7 +186,7 @@ public final class MujocoMultiBodyRobotFactory
          StringBuilder actuators = new StringBuilder();
          for (Robot robot : robots)
          {
-            appendJointServoActuators(actuators, robot.getRobotDefinition(), 2);
+            appendJointServoActuators(actuators, robot.getRobotDefinition(), parameters, 2);
          }
          if (actuators.length() > 0)
          {
@@ -458,7 +458,10 @@ public final class MujocoMultiBodyRobotFactory
     * because those bake their gains into the compiled model and set a {@code ctrlrange}; the gains
     * here have to be writable every tick, since the controller re-sends them every tick.
     */
-   private static void appendJointServoActuators(StringBuilder sb, RobotDefinition robotDefinition, int indent)
+   private static void appendJointServoActuators(StringBuilder sb,
+                                                RobotDefinition robotDefinition,
+                                                MujocoSimulationParametersReadOnly parameters,
+                                                int indent)
    {
       String namePrefix = robotDefinition.getName() + "_";
       String pad = "  ".repeat(indent);
@@ -472,13 +475,25 @@ public final class MujocoMultiBodyRobotFactory
             continue;
 
          String jointName = namePrefix + joint.getName();
-         appendGeneralActuator(sb, pad, jointName + ACTUATOR_SUFFIX_CONTROLLER_TAU, jointName, "1 0 0", null);
-         appendGeneralActuator(sb, pad, jointName + ACTUATOR_SUFFIX_POSITION_TAU, jointName, "0 0 0", "0 0 0");
-         appendGeneralActuator(sb, pad, jointName + ACTUATOR_SUFFIX_VELOCITY_TAU, jointName, "0 0 0", "0 0 0");
+         // The delay goes on all three actuators: they are three halves of one drive's command, so
+         // the whole command has to arrive late together. MuJoCo rejects a delay without nsample,
+         // and linear interpolation avoids the staircase a nearest-sample lookup would produce.
+         double delay = parameters.getActuatorDelayByJointName().getOrDefault(joint.getName(), parameters.getActuatorDelay());
+         String delayAttributes = delay > 0.0 ? " delay=\"" + delay + "\" nsample=\"" + parameters.getActuatorDelaySamples() + "\" interp=\"linear\"" : "";
+
+         appendGeneralActuator(sb, pad, jointName + ACTUATOR_SUFFIX_CONTROLLER_TAU, jointName, "1 0 0", null, delayAttributes);
+         appendGeneralActuator(sb, pad, jointName + ACTUATOR_SUFFIX_POSITION_TAU, jointName, "0 0 0", "0 0 0", delayAttributes);
+         appendGeneralActuator(sb, pad, jointName + ACTUATOR_SUFFIX_VELOCITY_TAU, jointName, "0 0 0", "0 0 0", delayAttributes);
       }
    }
 
-   private static void appendGeneralActuator(StringBuilder sb, String pad, String name, String jointName, String gainprm, String biasprm)
+   private static void appendGeneralActuator(StringBuilder sb,
+                                            String pad,
+                                            String name,
+                                            String jointName,
+                                            String gainprm,
+                                            String biasprm,
+                                            String extraAttributes)
    {
       sb.append(pad).append("<general name=\"").append(name)
         .append("\" joint=\"").append(jointName)
@@ -487,6 +502,7 @@ public final class MujocoMultiBodyRobotFactory
          sb.append(" biastype=\"none\"");
       else
          sb.append(" biastype=\"affine\" biasprm=\"").append(biasprm).append('"');
+      sb.append(extraAttributes);
       sb.append("/>\n");
    }
 
