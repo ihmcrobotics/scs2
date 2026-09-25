@@ -23,6 +23,7 @@ public class MujocoMultiBodyRobot
    private final mjModel model;
    private final Map<String, JointAddress> jointAddressByName = new LinkedHashMap<>();
    private final Map<String, Integer> bodyIdByName = new LinkedHashMap<>();
+   private final Map<String, Integer> pinEqualityIdByJointName = new LinkedHashMap<>();
    private JointAddress rootJointAddress;  // null if robot has no floating joint
 
    public MujocoMultiBodyRobot(String robotName, mjModel model)
@@ -88,6 +89,30 @@ public class MujocoMultiBodyRobot
    public JointAddress getJointAddress(String scs2JointName)
    {
       return jointAddressByName.get(scs2JointName);
+   }
+
+   /**
+    * Resolve and cache the id of the joint's pin equality constraint, emitted inactive by
+    * {@link MujocoMultiBodyRobotFactory#appendPinEqualities}. Joint types that get no equality
+    * (anything other than the free root and 1-DoF joints) are simply not registered, and
+    * {@link #getPinEqualityId(String)} then reports -1 for them.
+    */
+   public void registerPinEquality(String scs2JointName)
+   {
+      int equalityId;
+      try (BytePointer name = new BytePointer(namePrefix + scs2JointName + MujocoMultiBodyRobotFactory.PIN_EQUALITY_SUFFIX))
+      {
+         equalityId = Mujoco.mj_name2id(model, Mujoco.mjOBJ_EQUALITY, name);
+      }
+      if (equalityId >= 0)
+         pinEqualityIdByJointName.put(scs2JointName, equalityId);
+   }
+
+   /** The joint's pin equality constraint id, or -1 when the joint has none. */
+   public int getPinEqualityId(String scs2JointName)
+   {
+      Integer id = pinEqualityIdByJointName.get(scs2JointName);
+      return id == null ? -1 : id;
    }
 
    public JointAddress getRootJointAddress()

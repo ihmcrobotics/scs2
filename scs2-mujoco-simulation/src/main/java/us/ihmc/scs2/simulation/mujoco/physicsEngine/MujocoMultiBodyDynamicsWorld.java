@@ -106,6 +106,18 @@ public class MujocoMultiBodyDynamicsWorld
       gravityPointer.put(2, gravity.getZ());
    }
 
+   /**
+    * Reset {@code mjData} to the compiled model's default state (qpos0, zero velocities, no
+    * warm-start or contact carry-over). Used when the session re-initializes an already compiled
+    * world; the per-robot initial joint state is re-seeded on top by the caller.
+    */
+   public void resetData()
+   {
+      if (model == null || data == null)
+         return;
+      Mujoco.mj_resetData(model, data);
+   }
+
    public void step()
    {
       Mujoco.mj_step(model, data);

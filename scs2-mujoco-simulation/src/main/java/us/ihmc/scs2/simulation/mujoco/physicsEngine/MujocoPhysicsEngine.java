@@ -103,7 +103,13 @@ public class MujocoPhysicsEngine implements PhysicsEngine
    @Override
    public void initialize(Vector3DReadOnly gravity)
    {
+      boolean wasAlreadyCompiled = modelCompiled;
       compileIfNeeded();
+      // Re-initializing an already compiled world (SimulationSession.resetToInitialState) used to
+      // reset only the SCS2 side while mjData carried on from wherever the simulation had got to.
+      // MuJoCo owns velocities, warm-start and contact state, so it has to be reset too.
+      if (wasAlreadyCompiled)
+         resetNativeState();
       dynamicsWorld.setGravity(gravity);
 
       for (MujocoRobot robot : robotList)
@@ -171,6 +177,9 @@ public class MujocoPhysicsEngine implements PhysicsEngine
          robot.pushStateToMujoco(dynamicsWorld.getData().qfrc_applied(),
                                  dynamicsWorld.getData().qpos(),
                                  dynamicsWorld.getData().qvel());
+         // Joints flagged through SimJointBasics.setPinned are held by an equality constraint, so
+         // the solver resolves them together with contact instead of them being frozen afterwards.
+         robot.pushPinnedJointsToMujoco(dynamicsWorld.getModel(), dynamicsWorld.getData());
          // External wrench points (e.g. from PushRobotController-style controllers) route to
          // MuJoCo's per-body xfrc_applied. Unlike qfrc_applied, xfrc_applied is NOT zeroed by
          // mj_step, so the push helper rezeros the slots it manages on each tick.
@@ -192,6 +201,17 @@ public class MujocoPhysicsEngine implements PhysicsEngine
                                    dynamicsWorld.getData().qvel(),
                                    dynamicsWorld.getData().qacc(),
                                    dynamicsWorld.getData().cacc());
+   }
+
+   private void resetNativeState()
+   {
+      dynamicsWorld.resetData();
+      for (MujocoRobot robot : robotList)
+      {
+         MujocoMultiBodyRobotFactory.seedInitialJointState(robot.getRobotDefinition(),
+                                                           robot.getMujocoMultiBodyRobot(),
+                                                           dynamicsWorld.getData());
+      }
    }
 
    private void compileIfNeeded()

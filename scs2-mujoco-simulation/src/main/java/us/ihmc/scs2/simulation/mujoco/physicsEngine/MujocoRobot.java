@@ -3,6 +3,7 @@ package us.ihmc.scs2.simulation.mujoco.physicsEngine;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.bytedeco.javacpp.BoolPointer;
 import org.bytedeco.javacpp.DoublePointer;
 
 import us.ihmc.euclid.referenceFrame.FramePoint3D;
@@ -17,6 +18,9 @@ import us.ihmc.mecano.multiBodySystem.interfaces.OneDoFJointBasics;
 import us.ihmc.mecano.multiBodySystem.interfaces.SixDoFJointBasics;
 import us.ihmc.mecano.spatial.Wrench;
 import us.ihmc.scs2.definition.robot.RigidBodyDefinition;
+import us.ihmc.scs2.simulation.mujoco.Mujoco;
+import us.ihmc.scs2.simulation.mujoco.Mujoco.mjData;
+import us.ihmc.scs2.simulation.mujoco.Mujoco.mjModel;
 import us.ihmc.scs2.simulation.mujoco.physicsEngine.MujocoMultiBodyRobot.JointAddress;
 import us.ihmc.scs2.simulation.robot.Robot;
 import us.ihmc.scs2.simulation.robot.RobotExtension;
@@ -294,6 +298,66 @@ public class MujocoRobot extends RobotExtension
          }
       }
    }
+
+   /**
+    * Mirror each joint's {@code isPinned()} flag onto its MuJoCo equality constraint, holding the
+    * joint at the state SCS2 currently has for it.
+    *
+    * <p>Pinning is an existing SCS2 concept ({@link SimJointBasics#setPinned(boolean)}), exposed as
+    * a live YoBoolean per joint, and honored by ContactPointBased and ImpulseBased. Those engines
+    * freeze the joint outside the solver; here the constraint goes through the same solver that
+    * resolves contact, so a pinned body pushes back on whatever touches it instead of being
+    * silently teleported after the step.
+    *
+    * <p>Combined with {@code pushStateToMujoco}, the usual "move it, then hold it" recipe works:
+    * set the joint state through SCS2 and set pinned, and MuJoCo holds it there.
+    */
+   public void pushPinnedJointsToMujoco(mjModel model, mjData data)
+   {
+      DoublePointer eqData = model.eq_data();
+      DoublePointer qpos0 = model.qpos0();
+      BoolPointer eqActive = data.eq_active();
+
+      for (SimJointBasics joint : getJointsToConsider())
+      {
+         int equalityId = mujocoMultiBodyRobot.getPinEqualityId(joint.getName());
+         if (equalityId < 0)
+            continue;
+
+         boolean pinned = joint.isPinned();
+         eqActive.put(equalityId, pinned);
+         if (!pinned)
+            continue;
+
+         JointAddress address = mujocoMultiBodyRobot.getJointAddress(joint.getName());
+         if (address == null)
+            continue;
+
+         int base = equalityId * MJ_NEQDATA;
+         if (address.isFloatingRoot && joint instanceof SixDoFJointBasics floating)
+         {
+            // Weld layout: [anchor(3), relpose position(3), relpose quaternion(4), torquescale(1)].
+            // body2 is the world, so relpose is simply the pose to hold the root body at.
+            quaternion.set(floating.getJointPose().getOrientation());
+            eqData.put(base + 3, floating.getJointPose().getX());
+            eqData.put(base + 4, floating.getJointPose().getY());
+            eqData.put(base + 5, floating.getJointPose().getZ());
+            eqData.put(base + 6, quaternion.getS());
+            eqData.put(base + 7, quaternion.getX());
+            eqData.put(base + 8, quaternion.getY());
+            eqData.put(base + 9, quaternion.getZ());
+         }
+         else if (joint instanceof OneDoFJointBasics oneDoF)
+         {
+            // Joint-equality layout with joint2 omitted: y = y0 + data[0], where y0 is the joint's
+            // value at the model's default pose.
+            eqData.put(base, oneDoF.getQ() - qpos0.get(address.qposadr));
+         }
+      }
+   }
+
+   /** Size of one {@code mjModel.eq_data} row; mirrors MuJoCo's {@code mjNEQDATA}. */
+   private static final int MJ_NEQDATA = Mujoco.mjNEQDATA;
 
    /** Differences below this are floating-point noise from the pull/push round trip, not edits made through SCS2. */
    private static final double STATE_EDIT_EPSILON = 1.0e-10;
