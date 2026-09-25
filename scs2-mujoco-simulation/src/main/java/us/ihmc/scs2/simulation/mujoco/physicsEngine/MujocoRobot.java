@@ -2,9 +2,11 @@ package us.ihmc.scs2.simulation.mujoco.physicsEngine;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.bytedeco.javacpp.BoolPointer;
 import org.bytedeco.javacpp.DoublePointer;
@@ -207,6 +209,11 @@ public class MujocoRobot extends RobotExtension
             oneDoF.setTau(qfrcActuator.get(address.qveladr));
       }
    }
+
+   /** Joints whose pin was already engaged last tick, so the latched target must be left alone. */
+   private final Set<String> pinnedLastTick = new HashSet<>();
+   private final Quaternion pinOrientation = new Quaternion();
+   private final Vector3D pinPosition = new Vector3D();
 
    private static final int MJ_NGAIN = Mujoco.mjNGAIN;
    private static final int MJ_NBIAS = Mujoco.mjNBIAS;
@@ -436,6 +443,7 @@ public class MujocoRobot extends RobotExtension
    {
       DoublePointer eqData = model.eq_data();
       DoublePointer qpos0 = model.qpos0();
+      DoublePointer qpos = data.qpos();
       BoolPointer eqActive = data.eq_active();
 
       for (SimJointBasics joint : getJointsToConsider())
@@ -447,25 +455,41 @@ public class MujocoRobot extends RobotExtension
          boolean pinned = joint.isPinned();
          eqActive.put(equalityId, pinned);
          if (!pinned)
+         {
+            pinnedLastTick.remove(joint.getName());
             continue;
+         }
 
          JointAddress address = mujocoMultiBodyRobot.getJointAddress(joint.getName());
          if (address == null)
+            continue;
+
+         // The target is latched rather than refreshed from the joint every tick. While pinned the
+         // SCS2 joint mirrors MuJoCo, so re-deriving the target from it would chase the constraint's
+         // own residual and walk the pin away from where it was set. Re-latch on two events only:
+         // the tick pinning is switched on, and any tick where the SCS2 state has been edited away
+         // from MuJoCo's (which is why this runs before pushStateToMujoco writes such an edit in).
+         boolean justPinned = pinnedLastTick.add(joint.getName());
+         if (!justPinned && !isJointStateEdited(joint, address, qpos))
             continue;
 
          int base = equalityId * MJ_NEQDATA;
          if (address.isFloatingRoot && joint instanceof SixDoFJointBasics floating)
          {
             // Weld layout: [anchor(3), relpose position(3), relpose quaternion(4), torquescale(1)].
-            // body2 is the world, so relpose is simply the pose to hold the root body at.
-            quaternion.set(floating.getJointPose().getOrientation());
-            eqData.put(base + 3, floating.getJointPose().getX());
-            eqData.put(base + 4, floating.getJointPose().getY());
-            eqData.put(base + 5, floating.getJointPose().getZ());
-            eqData.put(base + 6, quaternion.getS());
-            eqData.put(base + 7, quaternion.getX());
-            eqData.put(base + 8, quaternion.getY());
-            eqData.put(base + 9, quaternion.getZ());
+            // relpose is the pose of body2 in body1, and body2 here is the world, so holding the
+            // root at a world pose means writing that pose's inverse.
+            pinOrientation.setAndConjugate(floating.getJointPose().getOrientation());
+            pinPosition.setAndNegate(floating.getJointPose().getPosition());
+            pinOrientation.transform(pinPosition);
+
+            eqData.put(base + 3, pinPosition.getX());
+            eqData.put(base + 4, pinPosition.getY());
+            eqData.put(base + 5, pinPosition.getZ());
+            eqData.put(base + 6, pinOrientation.getS());
+            eqData.put(base + 7, pinOrientation.getX());
+            eqData.put(base + 8, pinOrientation.getY());
+            eqData.put(base + 9, pinOrientation.getZ());
          }
          else if (joint instanceof OneDoFJointBasics oneDoF)
          {
@@ -474,6 +498,20 @@ public class MujocoRobot extends RobotExtension
             eqData.put(base, oneDoF.getQ() - qpos0.get(address.qposadr));
          }
       }
+   }
+
+   /** True when the SCS2 joint has been moved away from what MuJoCo currently holds. */
+   private boolean isJointStateEdited(SimJointBasics joint, JointAddress address, DoublePointer qpos)
+   {
+      if (address.isFloatingRoot && joint instanceof SixDoFJointBasics floating)
+      {
+         pinOrientation.set(floating.getJointPose().getOrientation());
+         return isEdited(qpos, address.qposadr, floating.getJointPose().getPosition())
+                || !isSameOrientation(qpos, address.qposadr + 3, pinOrientation);
+      }
+      if (joint instanceof OneDoFJointBasics oneDoF)
+         return Math.abs(qpos.get(address.qposadr) - oneDoF.getQ()) > STATE_EDIT_EPSILON;
+      return false;
    }
 
    /** Size of one {@code mjModel.eq_data} row; mirrors MuJoCo's {@code mjNEQDATA}. */
