@@ -113,10 +113,10 @@ public class MujocoRobot extends RobotExtension
          {
             if (!(joint instanceof OneDoFJointBasics))
                continue;
-            int actuatorBaseIndex = mujocoMultiBodyRobot.getActuatorBaseIndex(joint.getName());
-            if (actuatorBaseIndex < 0)
+            int actuatorIndex = mujocoMultiBodyRobot.getActuatorIndex(joint.getName());
+            if (actuatorIndex < 0)
                continue;
-            MujocoJointActuation actuation = new MujocoJointActuation(joint.getName(), actuatorBaseIndex, yoRegistry);
+            MujocoJointActuation actuation = new MujocoJointActuation(joint.getName(), actuatorIndex, yoRegistry);
             jointActuationByName.put(joint.getName(), actuation);
             jointActuationList.add(actuation);
             actuatedJoints.add((OneDoFJointBasics) joint);
@@ -153,12 +153,19 @@ public class MujocoRobot extends RobotExtension
    }
 
    /**
-    * Write each joint's setpoints into {@code mjData.ctrl} and, when they have changed, its gains
-    * into {@code mjModel.actuator_gainprm} / {@code actuator_biasprm}.
+    * Write each joint's combined setpoint into {@code mjData.ctrl} and, when they have changed, its
+    * gains into {@code mjModel.actuator_biasprm}.
     *
-    * <p>Writing gains into {@code mjModel} between steps is supported: they take part in no derived
-    * constant and change no array size, so no recompile is needed. They live in the model rather
-    * than in {@code mjData} purely because MuJoCo treats them as actuator description.
+    * <p>A single affine actuator carries the whole law: {@code gainprm[0]} stays at the 1 the MJCF
+    * gave it, {@code biasprm} holds {@code 0, -kp, -kd}, and {@code ctrl} carries
+    * {@code tau_ff + kp * q_d + kd * qd_d}. Writing gains into {@code mjModel} between steps is
+    * supported -- they take part in no derived constant and change no array size, so no recompile is
+    * needed; they live in the model rather than in {@code mjData} purely because MuJoCo treats them
+    * as actuator description.
+    *
+    * <p>The joint state is captured here too. This runs after the state push, so the mecano joints
+    * and {@code mjData} agree, and it is exactly the state MuJoCo will evaluate the actuator at --
+    * which is what lets the torque decomposition be computed rather than guessed.
     */
    public void pushActuationToMujoco(mjModel model, mjData data)
    {
@@ -166,37 +173,30 @@ public class MujocoRobot extends RobotExtension
          return;
 
       DoublePointer ctrl = data.ctrl();
-      DoublePointer gainprm = model.actuator_gainprm();
       DoublePointer biasprm = model.actuator_biasprm();
 
       for (int i = 0; i < jointActuationList.size(); i++)
       {
          MujocoJointActuation actuation = jointActuationList.get(i);
-         int base = actuation.getActuatorBaseIndex();
+         int index = actuation.getActuatorIndex();
 
-         ctrl.put(base, actuation.getFeedforwardTorque());
-         ctrl.put(base + 1, actuation.getDesiredPosition());
-         ctrl.put(base + 2, actuation.getDesiredVelocity());
+         OneDoFJointBasics joint = actuatedJoints.get(i);
+         actuation.setStateAtCommand(joint.getQ(), joint.getQd());
+
+         ctrl.put(index, actuation.getCombinedControl());
 
          if (actuation.gainsNeedWriting())
          {
-            double kp = actuation.getStiffness();
-            double kd = actuation.getDamping();
-            // PositionTau: force = kp * ctrl - kp * q
-            gainprm.put((long) (base + 1) * MJ_NGAIN, kp);
-            biasprm.put((long) (base + 1) * MJ_NBIAS + 1, -kp);
-            // VelocityTau: force = kd * ctrl - kd * qdot
-            gainprm.put((long) (base + 2) * MJ_NGAIN, kd);
-            biasprm.put((long) (base + 2) * MJ_NBIAS + 2, -kd);
+            biasprm.put((long) index * MJ_NBIAS + 1, -actuation.getStiffness());
+            biasprm.put((long) index * MJ_NBIAS + 2, -actuation.getDamping());
             actuation.markGainsWritten();
          }
       }
    }
 
    /**
-    * Read each joint's three actuator forces back out of {@code mjData.actuator_force} into the
-    * YoVariables, and write the applied total onto the SCS2 joint so {@code tau} reflects what
-    * MuJoCo actually did rather than the stale value the controller wrote.
+    * Split each joint's applied torque into its three terms and write the total onto the SCS2 joint,
+    * so {@code tau} reflects what MuJoCo did rather than the stale value the controller wrote.
     */
    public void pullActuationFromMujoco(mjData data)
    {
@@ -209,8 +209,7 @@ public class MujocoRobot extends RobotExtension
       for (int i = 0; i < jointActuationList.size(); i++)
       {
          MujocoJointActuation actuation = jointActuationList.get(i);
-         int base = actuation.getActuatorBaseIndex();
-         actuation.setRealizedTorques(actuatorForce.get(base), actuatorForce.get(base + 1), actuatorForce.get(base + 2));
+         actuation.updateTorqueDecomposition(actuatorForce.get(actuation.getActuatorIndex()));
 
          int dofAddress = actuatedJointDofAddresses[i];
          if (dofAddress >= 0)
@@ -223,7 +222,8 @@ public class MujocoRobot extends RobotExtension
    private final Quaternion pinOrientation = new Quaternion();
    private final Vector3D pinPosition = new Vector3D();
 
-   private static final int MJ_NGAIN = Mujoco.mjNGAIN;
+   // gainprm is not written at runtime: the single servo actuator keeps the gain of 1 the MJCF gave
+   // it, and the gains ride in biasprm.
    private static final int MJ_NBIAS = Mujoco.mjNBIAS;
 
    public MujocoMultiBodyRobot getMujocoMultiBodyRobot()

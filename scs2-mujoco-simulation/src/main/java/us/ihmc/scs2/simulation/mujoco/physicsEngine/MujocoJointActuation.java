@@ -6,7 +6,7 @@ import us.ihmc.yoVariables.variable.YoDouble;
 
 /**
  * One 1-DoF joint's low-level command under {@link MujocoActuationMode#JOINT_SERVO}, plus the
- * torque decomposition MuJoCo reports back for it.
+ * torque decomposition for it.
  *
  * <p>The command is what the hardware drives receive: a feedforward torque, a position and
  * velocity setpoint, and the gains to close the loop with. Whoever bridges the controller to the
@@ -15,15 +15,22 @@ import us.ihmc.yoVariables.variable.YoDouble;
  *
  * <p>The three YoDoubles carry the names {@code SCS2OutputWriter} uses for the same quantities
  * ({@code <joint>LowLevelControllerTau} and friends) so existing plots and log comparisons keep
- * working. They differ in one respect worth knowing: these are the forces MuJoCo actually applied,
- * sampled at the physics rate and after the joint's {@code actuatorfrcrange} clamp, rather than
- * the controller-rate prediction the output writer computes.
+ * working. They are computed from the state MuJoCo evaluated the actuator at -- the joint's q and
+ * qd at the top of the tick, captured when the command was pushed -- so they are the terms that
+ * actually produced the force, not a controller-rate prediction of them. {@link #getAppliedTau()}
+ * carries the force MuJoCo reports, and the three sum to it; a test pins that down rather than
+ * leaving the arithmetic trusted.
+ *
+ * <p>The sum parts company with the applied force only when the joint's {@code actuatorfrcrange}
+ * clamps it, since the decomposition is of the command rather than of the clamped result. That was
+ * equally true when each term had its own actuator: MuJoCo clamps the joint's total, so the
+ * per-actuator forces did not sum to it either.
  */
 public class MujocoJointActuation
 {
    private final String jointName;
-   /** Index of this joint's first actuator; the other two follow it. -1 when the joint has none. */
-   private final int actuatorBaseIndex;
+   /** Index of this joint's servo actuator, or -1 when the joint has none. */
+   private final int actuatorIndex;
 
    private double feedforwardTorque = 0.0;
    private double desiredPosition = 0.0;
@@ -35,19 +42,25 @@ public class MujocoJointActuation
    private double writtenStiffness = Double.NaN;
    private double writtenDamping = Double.NaN;
 
+   // The joint state MuJoCo evaluated the actuator at, captured when the command was pushed.
+   private double positionAtCommand = 0.0;
+   private double velocityAtCommand = 0.0;
+
    private final YoDouble yoControllerTau;
    private final YoDouble yoPositionTau;
    private final YoDouble yoVelocityTau;
+   private final YoDouble yoAppliedTau;
 
-   public MujocoJointActuation(String jointName, int actuatorBaseIndex, YoRegistry registry)
+   public MujocoJointActuation(String jointName, int actuatorIndex, YoRegistry registry)
    {
       this.jointName = jointName;
-      this.actuatorBaseIndex = actuatorBaseIndex;
+      this.actuatorIndex = actuatorIndex;
 
       String prefix = jointName + "LowLevel";
       yoControllerTau = new YoDouble(prefix + "ControllerTau", registry);
       yoPositionTau = new YoDouble(prefix + "PositionTau", registry);
       yoVelocityTau = new YoDouble(prefix + "VelocityTau", registry);
+      yoAppliedTau = new YoDouble(prefix + "AppliedTau", "Force MuJoCo reports for this joint's servo actuator; the three terms above sum to it", registry);
    }
 
    /**
@@ -74,9 +87,25 @@ public class MujocoJointActuation
       return jointName;
    }
 
-   public int getActuatorBaseIndex()
+   public int getActuatorIndex()
    {
-      return actuatorBaseIndex;
+      return actuatorIndex;
+   }
+
+   /**
+    * The {@code ctrl} value that makes a single affine actuator produce
+    * {@code tau_ff + kp * (q_d - q) + kd * (qd_d - qdot)}, given {@code biasprm = 0, -kp, -kd}.
+    */
+   double getCombinedControl()
+   {
+      return feedforwardTorque + stiffness * desiredPosition + damping * desiredVelocity;
+   }
+
+   /** Records the joint state MuJoCo will evaluate the actuator at, so the split can be exact. */
+   void setStateAtCommand(double position, double velocity)
+   {
+      positionAtCommand = position;
+      velocityAtCommand = velocity;
    }
 
    public double getFeedforwardTorque()
@@ -116,28 +145,39 @@ public class MujocoJointActuation
       writtenDamping = damping;
    }
 
-   void setRealizedTorques(double controllerTau, double positionTau, double velocityTau)
+   /**
+    * Splits the command into its three terms using the state the actuator was evaluated at, and
+    * records the force MuJoCo reported for comparison.
+    */
+   void updateTorqueDecomposition(double appliedTau)
    {
-      yoControllerTau.set(controllerTau);
-      yoPositionTau.set(positionTau);
-      yoVelocityTau.set(velocityTau);
+      yoControllerTau.set(feedforwardTorque);
+      yoPositionTau.set(stiffness * (desiredPosition - positionAtCommand));
+      yoVelocityTau.set(damping * (desiredVelocity - velocityAtCommand));
+      yoAppliedTau.set(appliedTau);
    }
 
-   /** The feedforward torque MuJoCo applied, as reported by {@code mjData.actuator_force}. */
-   public double getRealizedControllerTau()
+   /** The feedforward term of the applied torque. */
+   public double getControllerTau()
    {
       return yoControllerTau.getValue();
    }
 
-   /** The position-feedback torque MuJoCo applied. */
-   public double getRealizedPositionTau()
+   /** The position-feedback term of the applied torque. */
+   public double getPositionTau()
    {
       return yoPositionTau.getValue();
    }
 
-   /** The velocity-feedback torque MuJoCo applied. */
-   public double getRealizedVelocityTau()
+   /** The velocity-feedback term of the applied torque. */
+   public double getVelocityTau()
    {
       return yoVelocityTau.getValue();
+   }
+
+   /** The force MuJoCo reported for this joint's actuator, which the three terms sum to. */
+   public double getAppliedTau()
+   {
+      return yoAppliedTau.getValue();
    }
 }

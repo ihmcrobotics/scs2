@@ -75,10 +75,8 @@ public final class MujocoMultiBodyRobotFactory
     */
    private static final String PIN_EQUALITY_SOLVER_ATTRIBUTES = " solref=\"0.005 1\" solimp=\"0.95 0.9999 0.001\"";
 
-   /** Name suffixes of a joint's three JOINT_SERVO actuators, in the order they are emitted. */
-   public static final String ACTUATOR_SUFFIX_CONTROLLER_TAU = "_ControllerTau";
-   public static final String ACTUATOR_SUFFIX_POSITION_TAU = "_PositionTau";
-   public static final String ACTUATOR_SUFFIX_VELOCITY_TAU = "_VelocityTau";
+   /** Name suffix of a joint's JOINT_SERVO actuator. */
+   public static final String ACTUATOR_SUFFIX_SERVO = "_Servo";
 
    private MujocoMultiBodyRobotFactory()
    {
@@ -229,7 +227,7 @@ public final class MujocoMultiBodyRobotFactory
                System.err.println("[MujocoMultiBodyRobotFactory] SKIPPED joint '" + jointDefinition.getName() + "': " + e.getMessage());
             }
             mujocoRobot.registerPinEquality(jointDefinition.getName());
-            mujocoRobot.registerJointServoActuators(jointDefinition.getName());
+            mujocoRobot.registerJointServoActuator(jointDefinition.getName());
          }
          RigidBodyDefinition successor = jointDefinition.getSuccessor();
          if (successor != null)
@@ -435,28 +433,25 @@ public final class MujocoMultiBodyRobotFactory
    }
 
    /**
-    * Emit the three actuators per 1-DoF joint that make up
-    * {@link MujocoActuationMode#JOINT_SERVO}, in a fixed order so a joint's actuators are always
-    * {@code base + 0, 1, 2}.
+    * Emit the single actuator per 1-DoF joint that makes up
+    * {@link MujocoActuationMode#JOINT_SERVO}.
     *
     * <p>With {@code mjBIAS_AFFINE} an actuator's force is
-    * {@code gainprm[0] * ctrl + biasprm[0] + biasprm[1] * q + biasprm[2] * qdot}, so the three
-    * together reproduce {@code tau_ff + kp * (q_d - q) + kd * (qd_d - qd)} once
-    * {@code MujocoRobot.pushActuationToMujoco} fills in the gains and setpoints:
+    * {@code gainprm[0] * ctrl + biasprm[0] + biasprm[1] * q + biasprm[2] * qdot}, so one actuator
+    * carrying {@code gainprm[0] = 1}, {@code biasprm = 0, -kp, -kd} and
+    * {@code ctrl = tau_ff + kp * q_d + kd * qd_d} produces
+    * {@code tau_ff + kp * (q_d - q) + kd * (qd_d - qdot)}.
     *
-    * <pre>
-    *   ControllerTau  ctrl = tau_ff  gainprm[0] = 1   biasprm = 0, 0,   0
-    *   PositionTau    ctrl = q_d     gainprm[0] = kp  biasprm = 0, -kp, 0
-    *   VelocityTau    ctrl = qd_d    gainprm[0] = kd  biasprm = 0, 0,   -kd
-    * </pre>
-    *
-    * <p>Splitting the law across three actuators rather than folding it into one is what keeps the
-    * controller/position/velocity decomposition that {@code SCS2OutputWriter} publishes: MuJoCo
-    * reports each actuator's force separately in {@code mjData.actuator_force}.
-    *
-    * <p>{@code <general>} is used rather than the {@code <position>}/{@code <velocity>} shortcuts
-    * because those bake their gains into the compiled model and set a {@code ctrlrange}; the gains
-    * here have to be writable every tick, since the controller re-sends them every tick.
+    * <p>One rather than one-per-term, which an earlier revision used to get the torque decomposition
+    * straight out of {@code actuator_force}. The two are numerically identical -- measured at
+    * 5.6e-17 over 3000 steps, and the implicit integration of the damping term, which is the whole
+    * reason for this mode, is unaffected either way. But one actuator is the faithful model: the
+    * drive is a single device producing a single force, and the three terms are arithmetic inside
+    * the controller rather than three force sources acting on the joint. Modelling it as three makes
+    * every per-actuator MuJoCo property ambiguous -- the delay had to be replicated across all three,
+    * and {@code actuator_armature} was unusable because the reflected inertia would have been
+    * counted three times. The decomposition is instead computed in {@link MujocoJointActuation} from
+    * the same pre-step state MuJoCo evaluates from, and checked against the force it reports.
     */
    private static void appendJointServoActuators(StringBuilder sb,
                                                 RobotDefinition robotDefinition,
@@ -475,15 +470,12 @@ public final class MujocoMultiBodyRobotFactory
             continue;
 
          String jointName = namePrefix + joint.getName();
-         // The delay goes on all three actuators: they are three halves of one drive's command, so
-         // the whole command has to arrive late together. MuJoCo rejects a delay without nsample,
-         // and linear interpolation avoids the staircase a nearest-sample lookup would produce.
+         // MuJoCo rejects a delay without nsample, and linear interpolation avoids the staircase a
+         // nearest-sample lookup would produce.
          double delay = parameters.getActuatorDelayByJointName().getOrDefault(joint.getName(), parameters.getActuatorDelay());
          String delayAttributes = delay > 0.0 ? " delay=\"" + delay + "\" nsample=\"" + parameters.getActuatorDelaySamples() + "\" interp=\"linear\"" : "";
 
-         appendGeneralActuator(sb, pad, jointName + ACTUATOR_SUFFIX_CONTROLLER_TAU, jointName, "1 0 0", null, delayAttributes);
-         appendGeneralActuator(sb, pad, jointName + ACTUATOR_SUFFIX_POSITION_TAU, jointName, "0 0 0", "0 0 0", delayAttributes);
-         appendGeneralActuator(sb, pad, jointName + ACTUATOR_SUFFIX_VELOCITY_TAU, jointName, "0 0 0", "0 0 0", delayAttributes);
+         appendGeneralActuator(sb, pad, jointName + ACTUATOR_SUFFIX_SERVO, jointName, "1 0 0", "0 0 0", delayAttributes);
       }
    }
 

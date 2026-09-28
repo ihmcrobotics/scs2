@@ -239,8 +239,8 @@ public class MujocoActuationTest
       simulate(49);
 
       OneDoFJointBasics joint = (OneDoFJointBasics) robot.getJoint(JOINT);
-      // MuJoCo evaluates the actuators at the start of a step, so the forces reported after it are
-      // the ones for this state, not for the state the step lands in.
+      // MuJoCo evaluates the actuator at the start of a step, so the terms belong to this state, not
+      // to the state the step lands in. The engine captures the same values when it pushes.
       double qBeforeStep = joint.getQ();
       double qdBeforeStep = joint.getQd();
       simulate(1);
@@ -248,15 +248,17 @@ public class MujocoActuationTest
       MujocoJointActuation actuation = engine().getJointActuation(JOINT);
       assertNotNull(actuation, "No actuation block was created for the joint");
 
-      assertEquals(tauFF, actuation.getRealizedControllerTau(), 1.0e-9);
-      assertEquals(kp * (qDesired - qBeforeStep), actuation.getRealizedPositionTau(), 1.0e-9);
-      assertEquals(kd * (qdDesired - qdBeforeStep), actuation.getRealizedVelocityTau(), 1.0e-9);
+      assertEquals(tauFF, actuation.getControllerTau(), 1.0e-9);
+      assertEquals(kp * (qDesired - qBeforeStep), actuation.getPositionTau(), 1.0e-9);
+      assertEquals(kd * (qdDesired - qdBeforeStep), actuation.getVelocityTau(), 1.0e-9);
 
-      double sum = actuation.getRealizedControllerTau() + actuation.getRealizedPositionTau() + actuation.getRealizedVelocityTau();
+      // The decomposition is computed rather than read back, so pin it to the force MuJoCo reports.
+      double sum = actuation.getControllerTau() + actuation.getPositionTau() + actuation.getVelocityTau();
+      assertEquals(sum, actuation.getAppliedTau(), 1.0e-9, "The decomposition does not sum to the force MuJoCo applied");
       // pullActuationFromMujoco writes the applied total onto the SCS2 joint.
-      assertEquals(sum, joint.getTau(), 1.0e-9, "The joint's tau does not match the sum of the actuator forces");
+      assertEquals(sum, joint.getTau(), 1.0e-9, "The joint's tau does not match the applied torque");
       // Guard against all three terms being trivially zero.
-      assertTrue(Math.abs(sum) > 1.0e-3, "The actuators applied nothing; sum = " + sum);
+      assertTrue(Math.abs(sum) > 1.0e-3, "The actuator applied nothing; sum = " + sum);
    }
 
    /** TORQUE_PASSTHROUGH must stay exactly as it was: no actuators, nothing to command. */

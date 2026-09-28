@@ -18,7 +18,7 @@ public enum MujocoActuationMode
     */
    TORQUE_PASSTHROUGH,
    /**
-    * The engine emits three actuators per 1-DoF joint and hands MuJoCo the setpoints and gains
+    * The engine emits one actuator per 1-DoF joint and hands MuJoCo the setpoints and gains
     * instead of a torque, so MuJoCo evaluates
     * {@code tau_ff + kp * (q_d - q) + kd * (qd_d - qd)} itself on every physics step.
     *
