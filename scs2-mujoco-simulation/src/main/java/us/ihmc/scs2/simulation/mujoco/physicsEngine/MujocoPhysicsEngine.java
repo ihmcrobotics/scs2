@@ -214,9 +214,7 @@ public class MujocoPhysicsEngine implements PhysicsEngine
          // This runs first because it detects SCS2-side edits by comparing against MuJoCo's current
          // qpos, which pushStateToMujoco is about to overwrite.
          robot.pushPinnedJointsToMujoco(dynamicsWorld.getModel(), dynamicsWorld.getData());
-         robot.pushStateToMujoco(dynamicsWorld.getData().qfrc_applied(),
-                                 dynamicsWorld.getData().qpos(),
-                                 dynamicsWorld.getData().qvel());
+         robot.pushStateToMujoco(dynamicsWorld.getData().qpos(), dynamicsWorld.getData().qvel());
          // Under JOINT_SERVO the setpoints and gains go to MuJoCo's actuators instead of a
          // finished torque, so the low-level loop closes on every physics step rather than being
          // held constant between controller ticks.

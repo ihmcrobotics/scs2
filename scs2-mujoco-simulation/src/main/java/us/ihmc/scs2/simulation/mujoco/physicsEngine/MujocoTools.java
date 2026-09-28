@@ -351,8 +351,14 @@ public final class MujocoTools
       }
       else
       {
-         sb.append(pad).append("<!-- TODO unsupported joint type: ").append(joint.getClass().getSimpleName())
-           .append(" (name=").append(joint.getName()).append(") -->\n");
+         // Emitting nothing would weld the body to its parent and silently cost the robot a degree
+         // of freedom -- it would simulate, just not the robot that was asked for. Cross-four-bar
+         // and revolute-twins joints need <equality connect> and fixed <tendon> respectively; until
+         // the builder emits those, refuse the model.
+         throw new UnsupportedOperationException("The MuJoCo MJCF builder cannot represent joint '" + joint.getName() + "' of type "
+                                                 + joint.getClass().getSimpleName()
+                                                 + ". Supported types are SixDoFJointDefinition (as the floating root), RevoluteJointDefinition"
+                                                 + " and PrismaticJointDefinition.");
       }
    }
 

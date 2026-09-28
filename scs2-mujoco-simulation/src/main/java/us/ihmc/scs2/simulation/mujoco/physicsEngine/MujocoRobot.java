@@ -366,9 +366,9 @@ public class MujocoRobot extends RobotExtension
    }
 
    /**
-    * Write the SCS2 joint state ({@code q}, {@code qd}) into MuJoCo's {@code qpos} / {@code qvel}, and the joint
-    * efforts (torques/forces from the controller) into {@code qfrc_applied}, for each managed joint. The floating
-    * root contributes no controller torque.
+    * Write the SCS2 joint state ({@code q}, {@code qd}) into MuJoCo's {@code qpos} / {@code qvel} for each managed
+    * joint. Torque does not travel this way: every joint with a degree of freedom has an actuator, and
+    * {@code pushActuationToMujoco} drives it.
     *
     * <p>The SCS2 joints are the state of record, as with the other SCS2 engines: anything that edits them between
     * steps (a test teleporting the robot, a GUI edit, rewinding the buffer and resuming) takes effect on the next
@@ -377,7 +377,7 @@ public class MujocoRobot extends RobotExtension
     * floating-point noise, and writing that back every step would perturb an untouched simulation. No
     * {@code mj_forward} is needed: {@code mj_step} recomputes everything from {@code qpos} / {@code qvel}.
     */
-   public void pushStateToMujoco(DoublePointer qfrcApplied, DoublePointer qpos, DoublePointer qvel)
+   public void pushStateToMujoco(DoublePointer qpos, DoublePointer qvel)
    {
       for (JointBasics joint : getJointsToConsider())
       {
@@ -421,12 +421,16 @@ public class MujocoRobot extends RobotExtension
                qpos.put(address.qposadr, oneDoF.getQ());
             if (Math.abs(qvel.get(address.qveladr) - oneDoF.getQd()) > STATE_EDIT_EPSILON)
                qvel.put(address.qveladr, oneDoF.getQd());
-            // Joints MuJoCo gave an actuator are driven through it, so writing the torque here as
-            // well would apply it twice. The rest -- cross-four-bars, anything the MJCF builder
-            // cannot map -- still need this path.
-            if (jointActuationByName.containsKey(joint.getName()))
-               continue;
-            qfrcApplied.put(address.qveladr, oneDoF.getTau());
+            // Every 1-DoF joint with a degree of freedom in the model also has an actuator: the
+            // MJCF builder emits one for each, and refuses joint types it cannot represent rather
+            // than emitting a jointless body. So the torque always arrives through the actuator,
+            // and there is no second path to keep in step with it.
+            if (!jointActuationByName.containsKey(joint.getName()))
+            {
+               throw new IllegalStateException("Joint '" + joint.getName()
+                                               + "' has a degree of freedom in the MuJoCo model but no actuator to drive it, so its torque"
+                                               + " would be silently dropped. This is a bug in the MJCF builder.");
+            }
          }
       }
    }
