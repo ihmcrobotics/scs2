@@ -16,6 +16,32 @@ public interface OneDoFJointStateBasics extends JointStateBasics, OneDoFJointSta
 
    void setEffort(double tau);
 
+   /** @see OneDoFJointStateReadOnly#getStiffness() */
+   void setStiffness(double stiffness);
+
+   /** @see OneDoFJointStateReadOnly#getDamping() */
+   void setDamping(double damping);
+
+   /** @see OneDoFJointStateReadOnly#getFeedforwardEffort() */
+   void setFeedforwardEffort(double tau_ff);
+
+   /**
+    * Publishes the impedance command that produced {@code tau}, alongside the effort itself. The
+    * setpoints go in the configuration and velocity, which in a controller's output are what the
+    * controller wants rather than what it measured.
+    *
+    * @see OneDoFJointStateReadOnly#getStiffness()
+    */
+   default void setEffortAndCommand(double tau, double tau_ff, double q_d, double qd_d, double stiffness, double damping)
+   {
+      setEffort(tau);
+      setFeedforwardEffort(tau_ff);
+      setConfiguration(q_d);
+      setVelocity(qd_d);
+      setStiffness(stiffness);
+      setDamping(damping);
+   }
+
    @Override
    default void clear()
    {
@@ -23,6 +49,9 @@ public interface OneDoFJointStateBasics extends JointStateBasics, OneDoFJointSta
       setVelocity(Double.NaN);
       setAcceleration(Double.NaN);
       setEffort(Double.NaN);
+      setStiffness(Double.NaN);
+      setDamping(Double.NaN);
+      setFeedforwardEffort(Double.NaN);
    }
 
    default void addConfiguration(double q)
@@ -63,6 +92,9 @@ public interface OneDoFJointStateBasics extends JointStateBasics, OneDoFJointSta
       setVelocity(other.getVelocity());
       setAcceleration(other.getAcceleration());
       setEffort(other.getEffort());
+      setStiffness(other.getStiffness());
+      setDamping(other.getDamping());
+      setFeedforwardEffort(other.getFeedforwardEffort());
    }
 
    @Override

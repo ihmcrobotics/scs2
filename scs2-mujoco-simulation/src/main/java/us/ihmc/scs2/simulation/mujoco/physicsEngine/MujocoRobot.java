@@ -23,6 +23,7 @@ import us.ihmc.mecano.multiBodySystem.interfaces.OneDoFJointBasics;
 import us.ihmc.mecano.multiBodySystem.interfaces.SixDoFJointBasics;
 import us.ihmc.mecano.spatial.Wrench;
 import us.ihmc.scs2.definition.robot.RigidBodyDefinition;
+import us.ihmc.scs2.definition.state.interfaces.OneDoFJointStateReadOnly;
 import us.ihmc.scs2.simulation.mujoco.Mujoco;
 import us.ihmc.scs2.simulation.mujoco.Mujoco.mjData;
 import us.ihmc.scs2.simulation.mujoco.Mujoco.mjModel;
@@ -49,6 +50,8 @@ public class MujocoRobot extends RobotExtension
    private final List<MujocoJointActuation> jointActuationList = new ArrayList<>();
    /** Parallel to {@link #jointActuationList}: the mecano joint and its DoF address, cached to keep the per-tick loop free of lookups. */
    private final List<OneDoFJointBasics> actuatedJoints = new ArrayList<>();
+   /** Parallel to {@link #jointActuationList}: where the controller publishes each joint's low-level command. */
+   private final List<OneDoFJointStateReadOnly> actuatedJointOutputs = new ArrayList<>();
    private int[] actuatedJointDofAddresses = new int[0];
 
    private final Quaternion quaternion = new Quaternion();
@@ -116,6 +119,7 @@ public class MujocoRobot extends RobotExtension
             jointActuationByName.put(joint.getName(), actuation);
             jointActuationList.add(actuation);
             actuatedJoints.add((OneDoFJointBasics) joint);
+            actuatedJointOutputs.add(getControllerManager().getControllerOutput().getOneDoFJointOutput(joint.getName()));
          }
 
          actuatedJointDofAddresses = new int[jointActuationList.size()];
@@ -156,6 +160,12 @@ public class MujocoRobot extends RobotExtension
     * <p>The joint state is captured here too. This runs after the state push, so the mecano joints
     * and {@code mjData} agree, and it is exactly the state MuJoCo will evaluate the actuator at --
     * which is what lets the torque decomposition be computed rather than guessed.
+    *
+    * <p>The command comes from {@code ControllerOutput}, the same place the effort does, so a
+    * controller reaches the actuators without knowing MuJoCo exists. A controller that publishes
+    * only an effort -- which is all SCS2's engine contract has ever required -- gets it applied
+    * through the actuator with zero gains, which is the same force an applied torque would have
+    * been.
     */
    public void pushActuationToMujoco(mjModel model, mjData data)
    {
@@ -171,11 +181,26 @@ public class MujocoRobot extends RobotExtension
          int index = actuation.getActuatorIndex();
 
          OneDoFJointBasics joint = actuatedJoints.get(i);
-         // Nobody drove this joint through the actuation API this tick, so honor SCS2's own
-         // contract and use the effort the controller wrote. Zero gains make the actuator produce
-         // exactly that torque, which is what an applied force would have done.
-         if (!actuation.pollCommanded())
+         OneDoFJointStateReadOnly jointOutput = actuatedJointOutputs.get(i);
+         // Polled unconditionally so a directly staged command never carries into the next tick.
+         boolean stagedDirectly = actuation.pollCommanded();
+
+         if (jointOutput != null && jointOutput.hasCommand())
+         {
+            // In a controller's output the configuration and velocity are setpoints, not measurements.
+            actuation.setCommandFromControllerOutput(jointOutput.getFeedforwardEffort(),
+                                                     jointOutput.getConfiguration(),
+                                                     jointOutput.getVelocity(),
+                                                     jointOutput.getStiffness(),
+                                                     jointOutput.getDamping());
+         }
+         else if (!stagedDirectly)
+         {
+            // No command from the controller and nobody staged one directly, so honor SCS2's own
+            // contract and use the effort that was written. Zero gains make the actuator produce
+            // exactly that torque, which is what an applied force would have done.
             actuation.setFeedforwardOnly(joint.getTau());
+         }
          actuation.setStateAtCommand(joint.getQ(), joint.getQd());
 
          ctrl.put(index, actuation.getCombinedControl());

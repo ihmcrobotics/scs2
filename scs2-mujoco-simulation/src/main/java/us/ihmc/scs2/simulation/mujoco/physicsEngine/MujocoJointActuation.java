@@ -8,17 +8,19 @@ import us.ihmc.yoVariables.variable.YoDouble;
  * torque decomposition for it.
  *
  * <p>The command is what the hardware drives receive: a feedforward torque, a position and
- * velocity setpoint, and the gains to close the loop with. Whoever bridges the controller to the
- * engine calls {@link #setCommand} once per controller tick; MuJoCo then evaluates
- * {@code tau_ff + kp * (q_d - q) + kd * (qd_d - qd)} on every physics step in between.
+ * velocity setpoint, and the gains to close the loop with. The engine reads it off
+ * {@code ControllerOutput} once per tick, where a controller publishes it alongside the effort;
+ * {@link #setCommand} is for anything that wants to drive a joint directly instead. MuJoCo then
+ * evaluates {@code tau_ff + kp * (q_d - q) + kd * (qd_d - qd)} on every physics step in between.
  *
- * <p>The three YoDoubles carry the names {@code SCS2OutputWriter} uses for the same quantities
- * ({@code <joint>LowLevelControllerTau} and friends) so existing plots and log comparisons keep
- * working. They are computed from the state MuJoCo evaluated the actuator at -- the joint's q and
- * qd at the top of the tick, captured when the command was pushed -- so they are the terms that
- * actually produced the force, not a controller-rate prediction of them. {@link #getAppliedTau()}
- * carries the force MuJoCo reports, and the three sum to it; a test pins that down rather than
- * leaving the arithmetic trusted.
+ * <p>The three YoDoubles mirror the decomposition {@code SCS2OutputWriter} publishes under
+ * {@code <joint>LowLevel*}, under {@code <joint>Mujoco*} instead so the two can be plotted against
+ * each other: the controller's intent beside what the plant actually did with it. They are computed
+ * from the state MuJoCo evaluated the actuator at -- the joint's q and qd at the top of the tick,
+ * captured when the command was pushed -- so they are the terms that actually produced the force,
+ * not a controller-rate prediction of them. {@link #getAppliedTau()} carries the force MuJoCo
+ * reports, and the three sum to it; a test pins that down rather than leaving the arithmetic
+ * trusted.
  *
  * <p>The sum parts company with the applied force only when the joint's {@code actuatorfrcrange}
  * clamps it, since the decomposition is of the command rather than of the clamped result. That was
@@ -57,7 +59,7 @@ public class MujocoJointActuation
       this.jointName = jointName;
       this.actuatorIndex = actuatorIndex;
 
-      String prefix = jointName + "LowLevel";
+      String prefix = jointName + "Mujoco";
       yoControllerTau = new YoDouble(prefix + "ControllerTau", registry);
       yoPositionTau = new YoDouble(prefix + "PositionTau", registry);
       yoVelocityTau = new YoDouble(prefix + "VelocityTau", registry);
@@ -65,17 +67,34 @@ public class MujocoJointActuation
    }
 
    /**
-    * Set the whole low-level command for this joint. A term the controller did not provide should
-    * be passed as zero, which makes it contribute nothing.
+    * Set the whole low-level command for this joint, in place of publishing it through
+    * {@code ControllerOutput}. A term the controller did not provide should be passed as zero, which
+    * makes it contribute nothing. A command published through {@code ControllerOutput} wins over one
+    * staged here.
     */
    public void setCommand(double feedforwardTorque, double desiredPosition, double desiredVelocity, double stiffness, double damping)
+   {
+      set(feedforwardTorque, desiredPosition, desiredVelocity, stiffness, damping);
+      commandedThisTick = true;
+   }
+
+   /** As {@link #setCommand}, but does not raise the staging flag: the engine is the caller. */
+   void setCommandFromControllerOutput(double feedforwardTorque,
+                                       double desiredPosition,
+                                       double desiredVelocity,
+                                       double stiffness,
+                                       double damping)
+   {
+      set(feedforwardTorque, desiredPosition, desiredVelocity, stiffness, damping);
+   }
+
+   private void set(double feedforwardTorque, double desiredPosition, double desiredVelocity, double stiffness, double damping)
    {
       this.feedforwardTorque = feedforwardTorque;
       this.desiredPosition = desiredPosition;
       this.desiredVelocity = desiredVelocity;
       this.stiffness = stiffness;
       this.damping = damping;
-      commandedThisTick = true;
    }
 
    /**
@@ -85,11 +104,7 @@ public class MujocoJointActuation
     */
    void setFeedforwardOnly(double effort)
    {
-      feedforwardTorque = effort;
-      desiredPosition = 0.0;
-      desiredVelocity = 0.0;
-      stiffness = 0.0;
-      damping = 0.0;
+      set(effort, 0.0, 0.0, 0.0, 0.0);
    }
 
    /** Consume-and-clear the per-tick command flag. */

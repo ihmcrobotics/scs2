@@ -149,6 +149,26 @@ public class MujocoActuationTest
    }
 
    /**
+    * Publishes a joint's whole low-level command through {@code ControllerOutput}, the way
+    * {@code SCS2OutputWriter} does: the collapsed torque for an engine that only understands effort,
+    * and the command that produced it for one that can evaluate it itself.
+    */
+   private void addControllerOutputCommand(Robot robot, double tauFF, double qDesired, double qdDesired, double kp, double kd)
+   {
+      OneDoFJointBasics joint = (OneDoFJointBasics) robot.getJoint(JOINT);
+      OneDoFJointStateBasics output = robot.getControllerManager().getControllerOutput().getOneDoFJointOutput(JOINT);
+      robot.getControllerManager().addController(new Controller()
+      {
+         @Override
+         public void doControl()
+         {
+            double torque = tauFF + kp * (qDesired - joint.getQ()) + kd * (qdDesired - joint.getQd());
+            output.setEffortAndCommand(torque, tauFF, qDesired, qdDesired, kp, kd);
+         }
+      });
+   }
+
+   /**
     * With the damping term switched off and a timestep both schemes are stable at, letting MuJoCo
     * close the loop must reproduce what SCS2 computes itself and sends as effort. This is the check
     * on the gain and bias arithmetic: a swapped gainprm/biasprm slot shows up here immediately.
@@ -256,6 +276,65 @@ public class MujocoActuationTest
       assertEquals(sum, joint.getTau(), 1.0e-9, "The joint's tau does not match the applied torque");
       // Guard against all three terms being trivially zero.
       assertTrue(Math.abs(sum) > 1.0e-3, "The actuator applied nothing; sum = " + sum);
+   }
+
+   /**
+    * The command reaches MuJoCo through {@code ControllerOutput} alone, which is what lets a
+    * controller drive the actuators without knowing MuJoCo exists. Driving it that way must land in
+    * the same place as staging the command on the actuation block directly.
+    */
+   @Test
+   public void testControllerOutputCommandMatchesADirectlyStagedOne()
+   {
+      double dt = 1.0e-3;
+      double tauFF = 0.2;
+      double qDesired = 0.3;
+      double qdDesired = 0.1;
+      double kp = 4.0;
+      double kd = 0.05;
+      int ticks = 500;
+
+      Robot stagedRobot = createSession(dt, 0.0, 0.0);
+      addJointServoCommand(stagedRobot, tauFF, qDesired, qdDesired, kp, kd);
+      simulate(ticks);
+      double stagedQ = ((OneDoFJointBasics) stagedRobot.getJoint(JOINT)).getQ();
+      double stagedQd = ((OneDoFJointBasics) stagedRobot.getJoint(JOINT)).getQd();
+      shutdown();
+
+      Robot publishedRobot = createSession(dt, 0.0, 0.0);
+      addControllerOutputCommand(publishedRobot, tauFF, qDesired, qdDesired, kp, kd);
+      simulate(ticks);
+
+      assertEquals(stagedQ, ((OneDoFJointBasics) publishedRobot.getJoint(JOINT)).getQ(), 1.0e-12);
+      assertEquals(stagedQd, ((OneDoFJointBasics) publishedRobot.getJoint(JOINT)).getQd(), 1.0e-12);
+      // Lightly damped, so it swings past the setpoint rather than settling on it; all this needs to
+      // rule out is that the two runs agreed by both doing nothing.
+      assertTrue(Math.abs(stagedQ) > 0.1, "Neither run moved the joint; q = " + stagedQ);
+
+      MujocoJointActuation actuation = engine().getJointActuation(JOINT);
+      assertEquals(tauFF, actuation.getControllerTau(), 1.0e-9, "The published feedforward term did not arrive");
+   }
+
+   /**
+    * A published command carries the collapsed torque too, so this pins down which of the two the
+    * engine acts on. At this timestep the torque is only stable if the damping is integrated
+    * implicitly, which is possible only from the command: had the engine applied the effort
+    * instead, the joint would diverge exactly as it does in
+    * {@link #testDampingIsIntegratedImplicitlyUnderJointServo()}.
+    */
+   @Test
+   public void testPublishedCommandIsUsedRatherThanTheEffortBesideIt()
+   {
+      double dt = 1.0e-2;
+      double kd = 2.1;
+      double initialQd = 1.0;
+
+      Robot robot = createSession(dt, 0.0, initialQd);
+      addControllerOutputCommand(robot, 0.0, 0.0, 0.0, 0.0, kd);
+      simulate(20);
+
+      double qd = ((OneDoFJointBasics) robot.getJoint(JOINT)).getQd();
+      assertTrue(Math.abs(qd) < 0.5 * initialQd, "The effort was applied instead of the command; qd = " + qd);
    }
 
    /**
