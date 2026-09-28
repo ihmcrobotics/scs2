@@ -16,6 +16,12 @@ public class YoOneDoFJointState implements OneDoFJointStateBasics
    private final YoDouble velocity;
    private final YoDouble acceleration;
    private final YoDouble effort;
+   /**
+    * Plain doubles, unlike the four above: this class mirrors joint state read straight off a
+    * {@code JointReadOnly}, which carries no low-level command, so these are always NaN here and
+    * three more YoDoubles per joint would only enlarge the buffer.
+    */
+   private double stiffness, damping, feedforwardEffort;
 
    private final DMatrixRMaj temp = new DMatrixRMaj(1, 1);
 
@@ -144,6 +150,42 @@ public class YoOneDoFJointState implements OneDoFJointStateBasics
    public void setEffort(double tau)
    {
       effort.set(tau);
+   }
+
+   @Override
+   public double getStiffness()
+   {
+      return stiffness;
+   }
+
+   @Override
+   public double getDamping()
+   {
+      return damping;
+   }
+
+   @Override
+   public double getFeedforwardEffort()
+   {
+      return feedforwardEffort;
+   }
+
+   @Override
+   public void setStiffness(double stiffness)
+   {
+      this.stiffness = stiffness;
+   }
+
+   @Override
+   public void setDamping(double damping)
+   {
+      this.damping = damping;
+   }
+
+   @Override
+   public void setFeedforwardEffort(double tau_ff)
+   {
+      feedforwardEffort = tau_ff;
    }
 
    @Override

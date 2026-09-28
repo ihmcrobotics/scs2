@@ -16,6 +16,46 @@ public interface OneDoFJointStateBasics extends JointStateBasics, OneDoFJointSta
 
    void setEffort(double tau);
 
+   // Defaulted so an implementation predating the command still compiles. They throw rather than
+   // doing nothing: silently dropping a published command would leave a controller believing it had
+   // set gains while the joint ran on effort alone. Nothing can have been calling these before they
+   // existed, so throwing cannot change existing behaviour.
+
+   /** @see OneDoFJointStateReadOnly#getStiffness() */
+   default void setStiffness(double stiffness)
+   {
+      throw new UnsupportedOperationException(getClass().getSimpleName() + " does not support the low-level command; implement setStiffness.");
+   }
+
+   /** @see OneDoFJointStateReadOnly#getDamping() */
+   default void setDamping(double damping)
+   {
+      throw new UnsupportedOperationException(getClass().getSimpleName() + " does not support the low-level command; implement setDamping.");
+   }
+
+   /** @see OneDoFJointStateReadOnly#getFeedforwardEffort() */
+   default void setFeedforwardEffort(double tau_ff)
+   {
+      throw new UnsupportedOperationException(getClass().getSimpleName() + " does not support the low-level command; implement setFeedforwardEffort.");
+   }
+
+   /**
+    * Publishes the impedance command that produced {@code tau}, alongside the effort itself. The
+    * setpoints go in the configuration and velocity, which in a controller's output are what the
+    * controller wants rather than what it measured.
+    *
+    * @see OneDoFJointStateReadOnly#getStiffness()
+    */
+   default void setEffortAndCommand(double tau, double tau_ff, double q_d, double qd_d, double stiffness, double damping)
+   {
+      setEffort(tau);
+      setFeedforwardEffort(tau_ff);
+      setConfiguration(q_d);
+      setVelocity(qd_d);
+      setStiffness(stiffness);
+      setDamping(damping);
+   }
+
    @Override
    default void clear()
    {
@@ -23,6 +63,9 @@ public interface OneDoFJointStateBasics extends JointStateBasics, OneDoFJointSta
       setVelocity(Double.NaN);
       setAcceleration(Double.NaN);
       setEffort(Double.NaN);
+      setStiffness(Double.NaN);
+      setDamping(Double.NaN);
+      setFeedforwardEffort(Double.NaN);
    }
 
    default void addConfiguration(double q)
@@ -63,6 +106,9 @@ public interface OneDoFJointStateBasics extends JointStateBasics, OneDoFJointSta
       setVelocity(other.getVelocity());
       setAcceleration(other.getAcceleration());
       setEffort(other.getEffort());
+      setStiffness(other.getStiffness());
+      setDamping(other.getDamping());
+      setFeedforwardEffort(other.getFeedforwardEffort());
    }
 
    @Override

@@ -42,8 +42,6 @@ public interface MujocoSimulationParametersBasics extends MujocoSimulationParame
    /** @see MujocoSimulationParametersReadOnly#getEnforceJointLimits() */
    void setEnforceJointLimits(boolean enforceJointLimits);
 
-   /** @see MujocoSimulationParametersReadOnly#getActuationMode() */
-   void setActuationMode(MujocoActuationMode actuationMode);
 
    /**
     * @deprecated Never read: the effective MuJoCo timestep is the session dt divided by

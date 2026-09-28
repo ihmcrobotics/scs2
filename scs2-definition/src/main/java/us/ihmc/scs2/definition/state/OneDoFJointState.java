@@ -9,6 +9,7 @@ import us.ihmc.scs2.definition.state.interfaces.OneDoFJointStateBasics;
 import us.ihmc.scs2.definition.state.interfaces.OneDoFJointStateReadOnly;
 
 import jakarta.xml.bind.annotation.XmlAttribute;
+import jakarta.xml.bind.annotation.XmlTransient;
 import jakarta.xml.bind.annotation.XmlType;
 
 @XmlType(propOrder = {"configuration", "velocity", "acceleration", "effort"})
@@ -18,6 +19,9 @@ public class OneDoFJointState extends JointStateBase implements OneDoFJointState
    private double velocity;
    private double acceleration;
    private double effort;
+   private double stiffness;
+   private double damping;
+   private double feedforwardEffort;
 
    private final DMatrixRMaj temp = new DMatrixRMaj(1, 1);
 
@@ -115,6 +119,27 @@ public class OneDoFJointState extends JointStateBase implements OneDoFJointState
       effort = tau;
    }
 
+   @XmlTransient
+   @Override
+   public void setStiffness(double stiffness)
+   {
+      this.stiffness = stiffness;
+   }
+
+   @XmlTransient
+   @Override
+   public void setDamping(double damping)
+   {
+      this.damping = damping;
+   }
+
+   @XmlTransient
+   @Override
+   public void setFeedforwardEffort(double tau_ff)
+   {
+      feedforwardEffort = tau_ff;
+   }
+
    @Override
    public double getConfiguration()
    {
@@ -137,6 +162,24 @@ public class OneDoFJointState extends JointStateBase implements OneDoFJointState
    public double getEffort()
    {
       return effort;
+   }
+
+   @Override
+   public double getStiffness()
+   {
+      return stiffness;
+   }
+
+   @Override
+   public double getDamping()
+   {
+      return damping;
+   }
+
+   @Override
+   public double getFeedforwardEffort()
+   {
+      return feedforwardEffort;
    }
 
    @Override

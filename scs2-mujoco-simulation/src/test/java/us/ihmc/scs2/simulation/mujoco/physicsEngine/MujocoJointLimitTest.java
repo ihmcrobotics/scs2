@@ -13,6 +13,7 @@ import us.ihmc.scs2.definition.robot.MomentOfInertiaDefinition;
 import us.ihmc.scs2.definition.robot.RevoluteJointDefinition;
 import us.ihmc.scs2.definition.robot.RigidBodyDefinition;
 import us.ihmc.scs2.definition.robot.RobotDefinition;
+import us.ihmc.scs2.definition.robot.SphericalJointDefinition;
 import us.ihmc.scs2.definition.state.interfaces.OneDoFJointStateBasics;
 import us.ihmc.scs2.simulation.SimulationSession;
 import us.ihmc.scs2.simulation.mujoco.MujocoNativeLibrary;
@@ -86,6 +87,47 @@ public class MujocoJointLimitTest
    private void simulate(int ticks)
    {
       assertTrue(session.getSimulationSessionControls().simulateNow(ticks), "Simulation reported a failure");
+   }
+
+   /**
+    * A joint type the builder cannot represent must stop the model, not vanish from it. Emitting
+    * nothing would weld the body to its parent, and the simulation would run a robot with one fewer
+    * degree of freedom than the one it was handed.
+    */
+   @Test
+   public void testUnsupportedJointTypeIsRejected()
+   {
+      RobotDefinition robot = new RobotDefinition("robot");
+      RigidBodyDefinition elevator = new RigidBodyDefinition("elevator");
+      SphericalJointDefinition ballJoint = new SphericalJointDefinition("ball");
+      RigidBodyDefinition link = new RigidBodyDefinition("link");
+      link.setMass(1.0);
+      link.setMomentOfInertia(new MomentOfInertiaDefinition(0.01, 0.01, 0.01));
+      ballJoint.setSuccessor(link);
+      elevator.addChildJoint(ballJoint);
+      robot.setRootBodyDefinition(elevator);
+
+      session = new SimulationSession((inertialFrame, rootRegistry) -> new MujocoPhysicsEngine(inertialFrame,
+                                                                                                rootRegistry,
+                                                                                                new MujocoSimulationParameters()));
+      session.addRobot(robot);
+      session.setSessionDTSeconds(DT);
+      session.initializeBufferSize(100);
+
+      RuntimeException thrown = null;
+      try
+      {
+         session.getSimulationSessionControls().simulateNow(1);
+      }
+      catch (RuntimeException e)
+      {
+         thrown = e;
+      }
+
+      assertTrue(thrown != null, "Expected an unsupported joint type to stop the model being built");
+      String message = thrown.getMessage() == null ? "" : thrown.getMessage();
+      assertTrue(message.contains("ball") || message.contains("Spherical"),
+                 "Expected the failure to name the offending joint, got: " + message);
    }
 
    @Test

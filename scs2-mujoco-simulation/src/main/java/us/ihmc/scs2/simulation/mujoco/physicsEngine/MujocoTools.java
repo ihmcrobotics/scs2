@@ -351,8 +351,14 @@ public final class MujocoTools
       }
       else
       {
-         sb.append(pad).append("<!-- TODO unsupported joint type: ").append(joint.getClass().getSimpleName())
-           .append(" (name=").append(joint.getName()).append(") -->\n");
+         // Emitting nothing would weld the body to its parent and silently cost the robot a degree
+         // of freedom -- it would simulate, just not the robot that was asked for. Cross-four-bar
+         // and revolute-twins joints need <equality connect> and fixed <tendon> respectively; until
+         // the builder emits those, refuse the model.
+         throw new UnsupportedOperationException("The MuJoCo MJCF builder cannot represent joint '" + joint.getName() + "' of type "
+                                                 + joint.getClass().getSimpleName()
+                                                 + ". Supported types are SixDoFJointDefinition (as the floating root), RevoluteJointDefinition"
+                                                 + " and PrismaticJointDefinition.");
       }
    }
 
@@ -393,9 +399,9 @@ public final class MujocoTools
            .append(' ').append(jointDef.getPositionUpperLimit()).append('"');
       }
 
-      // Total actuator force limit. This clamps qfrc_actuator only, so it has no effect while the
-      // engine runs in TORQUE_PASSTHROUGH (which writes qfrc_applied); it is what reproduces
-      // SCS2OutputWriter's clamp of the summed torque once actuators drive the joint.
+      // Total actuator force limit, clamping qfrc_actuator. This is what reproduces
+      // SCS2OutputWriter's clamp of the summed torque inside the plant. It does not reach joints
+      // the builder cannot give an actuator, whose torque still arrives through qfrc_applied.
       if (hasFiniteEffortLimits(jointDef))
       {
          sb.append(" actuatorfrclimited=\"true\" actuatorfrcrange=\"").append(jointDef.getEffortLowerLimit())

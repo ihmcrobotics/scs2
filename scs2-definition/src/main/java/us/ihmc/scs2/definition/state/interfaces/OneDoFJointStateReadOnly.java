@@ -16,6 +16,34 @@ public interface OneDoFJointStateReadOnly extends JointStateReadOnly
 
    double getEffort();
 
+   // The low-level command: stiffness, damping and feedforwardEffort alongside the configuration
+   // and velocity, which in a controller's output are setpoints rather than measurements. NaN when
+   // none was published. It describes the same intent as getEffort(), which holds the whole torque
+   // for an engine that can only apply one, so an engine applies the effort or evaluates the
+   // command, never both. Defaulted to NaN so an implementation predating the command still
+   // compiles: hasCommand() then reports false and the engine falls back to the effort.
+   default double getStiffness()
+   {
+      return Double.NaN;
+   }
+
+   default double getDamping()
+   {
+      return Double.NaN;
+   }
+
+   default double getFeedforwardEffort()
+   {
+      return Double.NaN;
+   }
+
+   /** True when a complete command was published, so an engine may evaluate it instead of the effort. */
+   default boolean hasCommand()
+   {
+      return hasOutputFor(JointStateType.CONFIGURATION) && hasOutputFor(JointStateType.VELOCITY) && !Double.isNaN(getStiffness())
+             && !Double.isNaN(getDamping()) && !Double.isNaN(getFeedforwardEffort());
+   }
+
    @Override
    default boolean hasOutputFor(JointStateType query)
    {

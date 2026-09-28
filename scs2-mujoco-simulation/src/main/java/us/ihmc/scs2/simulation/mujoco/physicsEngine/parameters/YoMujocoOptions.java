@@ -73,7 +73,7 @@ public class YoMujocoOptions
    public final YoBoolean disableEquality = var("disableEquality",
          "mjDSBL_EQUALITY: drop equality constraints, which also releases any pinned joint", false);
    public final YoBoolean disableActuation = var("disableActuation",
-         "mjDSBL_ACTUATION: drop actuator forces; no effect in TORQUE_PASSTHROUGH, where torque arrives as qfrc_applied", false);
+         "mjDSBL_ACTUATION: drop actuator forces, which is every joint the builder could give an actuator", false);
    public final YoBoolean disableWarmstart = var("disableWarmstart",
          "mjDSBL_WARMSTART: stop seeding the constraint solver from the previous step's accelerations", false);
    public final YoBoolean disableAutoReset = var("disableAutoReset",
