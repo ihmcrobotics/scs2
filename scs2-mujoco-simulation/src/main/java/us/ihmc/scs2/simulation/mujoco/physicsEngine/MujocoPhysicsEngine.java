@@ -17,7 +17,6 @@ import us.ihmc.scs2.definition.terrain.TerrainObjectDefinition;
 import us.ihmc.scs2.simulation.mujoco.Mujoco;
 import us.ihmc.scs2.simulation.mujoco.Mujoco.mjModel;
 import us.ihmc.scs2.simulation.mujoco.MujocoNativeLibrary;
-import us.ihmc.scs2.simulation.mujoco.physicsEngine.parameters.MujocoActuationMode;
 import us.ihmc.scs2.simulation.mujoco.physicsEngine.parameters.MujocoSimulationParameters;
 import us.ihmc.scs2.simulation.mujoco.physicsEngine.parameters.MujocoSimulationParametersReadOnly;
 import us.ihmc.scs2.simulation.mujoco.physicsEngine.parameters.YoMujocoOptions;
@@ -110,17 +109,10 @@ public class MujocoPhysicsEngine implements PhysicsEngine
       return dynamicsWorld;
    }
 
-   /** How controller commands reach the joints; fixed at construction because the MJCF depends on it. */
-   public MujocoActuationMode getActuationMode()
-   {
-      return seedParameters.getActuationMode();
-   }
-
    /**
-    * The low-level command block for one joint under {@link MujocoActuationMode#JOINT_SERVO}.
+    * The low-level command block for one joint: feedforward torque, setpoints and gains.
     *
-    * <p>Returns {@code null} before the world is compiled, in
-    * {@link MujocoActuationMode#TORQUE_PASSTHROUGH}, and for joints with no actuators (the free
+    * <p>Returns {@code null} before the world is compiled, and for joints with no actuator (the free
     * root, welded subtrees, and joint types the MJCF builder cannot map -- a caller that gets
     * {@code null} should fall back to writing the joint's effort as it does today). With more than
     * one robot in the world the first match wins, so prefer
@@ -300,7 +292,7 @@ public class MujocoPhysicsEngine implements PhysicsEngine
          // robot spawns at q=0 (legs locked straight) and falls before the first controller tick.
          MujocoMultiBodyRobotFactory.seedInitialJointState(robot.getRobotDefinition(), mujocoMultiBodyRobot, dynamicsWorld.getData());
 
-         MujocoRobot mujocoRobot = new MujocoRobot(robot, physicsEngineRegistry, mujocoMultiBodyRobot, seedParameters.getActuationMode());
+         MujocoRobot mujocoRobot = new MujocoRobot(robot, physicsEngineRegistry, mujocoMultiBodyRobot);
          // Robot.getRegistry() was already attached to rootRegistry in addRobot. Just attach the
          // physics-engine-specific secondary registry here.
          physicsEngineRegistry.addChild(mujocoRobot.getSecondaryRegistry());

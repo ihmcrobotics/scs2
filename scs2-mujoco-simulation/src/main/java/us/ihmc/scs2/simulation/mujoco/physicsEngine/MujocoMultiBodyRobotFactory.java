@@ -24,7 +24,6 @@ import us.ihmc.scs2.simulation.mujoco.Mujoco;
 import us.ihmc.scs2.simulation.mujoco.Mujoco.mjData;
 import us.ihmc.scs2.simulation.mujoco.Mujoco.mjModel;
 import us.ihmc.scs2.simulation.mujoco.physicsEngine.MujocoMultiBodyRobot.JointAddress;
-import us.ihmc.scs2.simulation.mujoco.physicsEngine.parameters.MujocoActuationMode;
 import us.ihmc.scs2.simulation.mujoco.physicsEngine.parameters.MujocoContactProperties;
 import us.ihmc.scs2.simulation.mujoco.physicsEngine.parameters.MujocoSimulationParametersReadOnly;
 import us.ihmc.scs2.simulation.robot.Robot;
@@ -179,17 +178,14 @@ public final class MujocoMultiBodyRobotFactory
             appendParentChildContactExcludes(mjcf, robot.getRobotDefinition(), 2);
          }
       }
-      if (parameters.getActuationMode() == MujocoActuationMode.JOINT_SERVO)
+      StringBuilder actuators = new StringBuilder();
+      for (Robot robot : robots)
       {
-         StringBuilder actuators = new StringBuilder();
-         for (Robot robot : robots)
-         {
-            appendJointServoActuators(actuators, robot.getRobotDefinition(), parameters, 2);
-         }
-         if (actuators.length() > 0)
-         {
-            mjcf.append("  <actuator>\n").append(actuators).append("  </actuator>\n");
-         }
+         appendJointServoActuators(actuators, robot.getRobotDefinition(), parameters, 2);
+      }
+      if (actuators.length() > 0)
+      {
+         mjcf.append("  <actuator>\n").append(actuators).append("  </actuator>\n");
       }
       // One empty keyframe, which MuJoCo fills with qpos0. The engine overwrites it with the seeded
       // initial state once the model has compiled -- writing the vector into the XML here is not
@@ -433,8 +429,7 @@ public final class MujocoMultiBodyRobotFactory
    }
 
    /**
-    * Emit the single actuator per 1-DoF joint that makes up
-    * {@link MujocoActuationMode#JOINT_SERVO}.
+    * Emit the single actuator that drives each 1-DoF joint.
     *
     * <p>With {@code mjBIAS_AFFINE} an actuator's force is
     * {@code gainprm[0] * ctrl + biasprm[0] + biasprm[1] * q + biasprm[2] * qdot}, so one actuator

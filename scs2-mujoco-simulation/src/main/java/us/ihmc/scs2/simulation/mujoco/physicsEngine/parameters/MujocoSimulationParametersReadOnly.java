@@ -63,11 +63,6 @@ public interface MujocoSimulationParametersReadOnly
     */
    boolean getEnforceJointLimits();
 
-   /**
-    * Whether MuJoCo receives a finished torque or the setpoints and gains to close the low-level
-    * loop itself. Compile-time: it decides whether the MJCF carries an {@code <actuator>} block.
-    */
-   MujocoActuationMode getActuationMode();
 
    /** Contact class names the MJCF builder uses itself, which a user-defined class may not take. */
    Set<String> RESERVED_CONTACT_CLASS_NAMES = Set.of("robot", "terrain");
@@ -87,10 +82,9 @@ public interface MujocoSimulationParametersReadOnly
     * MuJoCo applying it, modelling the lag a real drive has between receiving a setpoint and
     * producing torque. 0 means no delay.
     * <p>
-    * Only has an effect under {@link MujocoActuationMode#JOINT_SERVO}: the delay lives on the
-    * actuators, and TORQUE_PASSTHROUGH emits none, so there is nothing to delay there. This is
-    * command latency, not measurement latency -- MuJoCo's matching {@code sensor_delay} needs
-    * {@code <sensor>} elements, which the MJCF builder does not emit yet.
+    * Applies to every joint the builder could give an actuator, which is all 1-DoF joints. This is
+    * command latency, not measurement latency -- MuJoCo's matching {@code sensor_delay} is indexed
+    * by sensor and the MJCF builder emits no {@code <sensor>} elements yet.
     * <p>
     * Compile-time: MuJoCo sizes the history buffer that holds the delayed samples when the model
     * compiles, so this cannot be changed on a running simulation.

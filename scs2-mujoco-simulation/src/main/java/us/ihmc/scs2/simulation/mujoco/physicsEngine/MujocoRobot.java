@@ -27,7 +27,6 @@ import us.ihmc.scs2.simulation.mujoco.Mujoco;
 import us.ihmc.scs2.simulation.mujoco.Mujoco.mjData;
 import us.ihmc.scs2.simulation.mujoco.Mujoco.mjModel;
 import us.ihmc.scs2.simulation.mujoco.physicsEngine.MujocoMultiBodyRobot.JointAddress;
-import us.ihmc.scs2.simulation.mujoco.physicsEngine.parameters.MujocoActuationMode;
 import us.ihmc.scs2.simulation.robot.Robot;
 import us.ihmc.scs2.simulation.robot.RobotExtension;
 import us.ihmc.scs2.simulation.robot.RobotPhysicsOutput;
@@ -45,7 +44,6 @@ public class MujocoRobot extends RobotExtension
 {
    private final MujocoMultiBodyRobot mujocoMultiBodyRobot;
    private final YoRegistry yoRegistry;
-   private final MujocoActuationMode actuationMode;
    /** Populated only under JOINT_SERVO; keyed by SCS2 joint name, iterated in registration order. */
    private final Map<String, MujocoJointActuation> jointActuationByName = new LinkedHashMap<>();
    private final List<MujocoJointActuation> jointActuationList = new ArrayList<>();
@@ -79,11 +77,10 @@ public class MujocoRobot extends RobotExtension
    // Scratch for cacc CoM-to-joint-origin spatial acceleration shift.
    private final Vector3D caccCoMShift = new Vector3D();
 
-   public MujocoRobot(Robot robot, YoRegistry physicsRegistry, MujocoMultiBodyRobot mujocoMultiBodyRobot, MujocoActuationMode actuationMode)
+   public MujocoRobot(Robot robot, YoRegistry physicsRegistry, MujocoMultiBodyRobot mujocoMultiBodyRobot)
    {
       super(robot, physicsRegistry);
       this.mujocoMultiBodyRobot = mujocoMultiBodyRobot;
-      this.actuationMode = actuationMode;
       this.yoRegistry = new YoRegistry(getRobotDefinition().getName() + getClass().getSimpleName());
       robot.getRegistry().addChild(yoRegistry);
 
@@ -107,7 +104,6 @@ public class MujocoRobot extends RobotExtension
             mecanoBodyByMujocoId.put(bodyId, body);
       }
 
-      if (actuationMode == MujocoActuationMode.JOINT_SERVO)
       {
          for (SimJointBasics joint : getJointsToConsider())
          {
@@ -131,15 +127,9 @@ public class MujocoRobot extends RobotExtension
       }
    }
 
-   public MujocoActuationMode getActuationMode()
-   {
-      return actuationMode;
-   }
-
    /**
-    * The low-level command block for a joint, or {@code null} when the engine is not in
-    * {@link MujocoActuationMode#JOINT_SERVO} or the joint has no actuators (the free root, welded
-    * subtrees, and any joint type the MJCF builder cannot map).
+    * The low-level command block for a joint, or {@code null} when the joint has no actuator (the
+    * free root, welded subtrees, and any joint type the MJCF builder cannot map).
     */
    public MujocoJointActuation getJointActuation(String jointName)
    {
@@ -181,6 +171,11 @@ public class MujocoRobot extends RobotExtension
          int index = actuation.getActuatorIndex();
 
          OneDoFJointBasics joint = actuatedJoints.get(i);
+         // Nobody drove this joint through the actuation API this tick, so honor SCS2's own
+         // contract and use the effort the controller wrote. Zero gains make the actuator produce
+         // exactly that torque, which is what an applied force would have done.
+         if (!actuation.pollCommanded())
+            actuation.setFeedforwardOnly(joint.getTau());
          actuation.setStateAtCommand(joint.getQ(), joint.getQd());
 
          ctrl.put(index, actuation.getCombinedControl());
@@ -426,10 +421,12 @@ public class MujocoRobot extends RobotExtension
                qpos.put(address.qposadr, oneDoF.getQ());
             if (Math.abs(qvel.get(address.qveladr) - oneDoF.getQd()) > STATE_EDIT_EPSILON)
                qvel.put(address.qveladr, oneDoF.getQd());
-            // Under JOINT_SERVO the torque arrives through the actuators instead; writing it here
-            // as well would apply the feedforward term twice.
-            if (actuationMode == MujocoActuationMode.TORQUE_PASSTHROUGH)
-               qfrcApplied.put(address.qveladr, oneDoF.getTau());
+            // Joints MuJoCo gave an actuator are driven through it, so writing the torque here as
+            // well would apply it twice. The rest -- cross-four-bars, anything the MJCF builder
+            // cannot map -- still need this path.
+            if (jointActuationByName.containsKey(joint.getName()))
+               continue;
+            qfrcApplied.put(address.qveladr, oneDoF.getTau());
          }
       }
    }

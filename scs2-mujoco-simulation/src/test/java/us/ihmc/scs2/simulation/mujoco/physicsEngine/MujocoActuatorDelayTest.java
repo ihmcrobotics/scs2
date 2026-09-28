@@ -17,7 +17,6 @@ import us.ihmc.scs2.definition.robot.RigidBodyDefinition;
 import us.ihmc.scs2.definition.robot.RobotDefinition;
 import us.ihmc.scs2.simulation.SimulationSession;
 import us.ihmc.scs2.simulation.mujoco.MujocoNativeLibrary;
-import us.ihmc.scs2.simulation.mujoco.physicsEngine.parameters.MujocoActuationMode;
 import us.ihmc.scs2.simulation.mujoco.physicsEngine.parameters.MujocoSimulationParameters;
 import us.ihmc.scs2.simulation.robot.Robot;
 
@@ -66,7 +65,6 @@ public class MujocoActuatorDelayTest
    private Robot createSession(double delay)
    {
       MujocoSimulationParameters parameters = new MujocoSimulationParameters();
-      parameters.setActuationMode(MujocoActuationMode.JOINT_SERVO);
       parameters.setActuatorDelay(delay);
       session = new SimulationSession((inertialFrame, rootRegistry) -> new MujocoPhysicsEngine(inertialFrame, rootRegistry, parameters));
       session.addRobot(createRobot());

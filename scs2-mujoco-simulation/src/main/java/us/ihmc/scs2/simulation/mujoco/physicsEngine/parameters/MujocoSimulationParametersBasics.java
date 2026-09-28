@@ -13,7 +13,6 @@ public interface MujocoSimulationParametersBasics extends MujocoSimulationParame
       setTimestep(other.getTimestep());
       setFilterParentCollisions(other.getFilterParentCollisions());
       setEnforceJointLimits(other.getEnforceJointLimits());
-      setActuationMode(other.getActuationMode());
       other.getContactClasses().forEach(this::addContactClass);
       other.getContactClassByBodyName().forEach(this::assignContactClass);
       setActuatorDelay(other.getActuatorDelay());
@@ -44,8 +43,6 @@ public interface MujocoSimulationParametersBasics extends MujocoSimulationParame
    /** @see MujocoSimulationParametersReadOnly#getEnforceJointLimits() */
    void setEnforceJointLimits(boolean enforceJointLimits);
 
-   /** @see MujocoSimulationParametersReadOnly#getActuationMode() */
-   void setActuationMode(MujocoActuationMode actuationMode);
 
    /**
     * Defines a named contact class. The properties are copied, so the caller may reuse the instance.

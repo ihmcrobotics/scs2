@@ -20,15 +20,14 @@ import us.ihmc.scs2.definition.state.OneDoFJointState;
 import us.ihmc.scs2.definition.state.interfaces.OneDoFJointStateBasics;
 import us.ihmc.scs2.simulation.SimulationSession;
 import us.ihmc.scs2.simulation.mujoco.MujocoNativeLibrary;
-import us.ihmc.scs2.simulation.mujoco.physicsEngine.parameters.MujocoActuationMode;
 import us.ihmc.scs2.simulation.mujoco.physicsEngine.parameters.MujocoSimulationParameters;
 import us.ihmc.scs2.simulation.robot.Robot;
 
 /**
- * Covers {@link MujocoActuationMode#JOINT_SERVO}: that the three actuators per joint reproduce the
- * control law SCS2 has always applied, that handing the damping term to MuJoCo makes it integrable
- * implicitly (which is the reason for the mode), and that MuJoCo's per-actuator readback matches
- * the total it applied.
+ * Covers the joint servo: that handing MuJoCo the setpoints and gains reproduces the control law
+ * SCS2 has always applied, that doing so makes the damping term integrable implicitly (which is the
+ * reason for it), that the torque decomposition matches the force MuJoCo reports, and that a plain
+ * effort-setting controller still drives the joint.
  */
 public class MujocoActuationTest
 {
@@ -73,10 +72,9 @@ public class MujocoActuationTest
       return robot;
    }
 
-   private Robot createSession(MujocoActuationMode actuationMode, double dt, double initialQ, double initialQd)
+   private Robot createSession(double dt, double initialQ, double initialQd)
    {
       MujocoSimulationParameters parameters = new MujocoSimulationParameters();
-      parameters.setActuationMode(actuationMode);
       session = new SimulationSession((inertialFrame, rootRegistry) -> new MujocoPhysicsEngine(inertialFrame, rootRegistry, parameters));
       session.addRobot(createRobot(initialQ, initialQd));
       session.setSessionDTSeconds(dt);
@@ -151,13 +149,12 @@ public class MujocoActuationTest
    }
 
    /**
-    * With the damping term switched off and a timestep both schemes are stable at, MuJoCo's three
-    * actuators must reproduce what SCS2 computes itself. This is the check on the gain and bias
-    * arithmetic and on the actuator index layout: a swapped gainprm/biasprm slot or an off-by-one
-    * actuator index shows up here immediately.
+    * With the damping term switched off and a timestep both schemes are stable at, letting MuJoCo
+    * close the loop must reproduce what SCS2 computes itself and sends as effort. This is the check
+    * on the gain and bias arithmetic: a swapped gainprm/biasprm slot shows up here immediately.
     */
    @Test
-   public void testJointServoReproducesTorquePassthrough()
+   public void testServoReproducesAnEquivalentJavaSidePD()
    {
       double dt = 1.0e-4;
       double tauFF = 0.3;
@@ -165,21 +162,21 @@ public class MujocoActuationTest
       double kp = 5.0;
       int ticks = 2000;
 
-      Robot passthroughRobot = createSession(MujocoActuationMode.TORQUE_PASSTHROUGH, dt, 0.0, 0.0);
-      addScs2SidePD(passthroughRobot, tauFF, qDesired, 0.0, kp, 0.0);
+      Robot javaSideRobot = createSession(dt, 0.0, 0.0);
+      addScs2SidePD(javaSideRobot, tauFF, qDesired, 0.0, kp, 0.0);
       simulate(ticks);
-      double passthroughQ = ((OneDoFJointBasics) passthroughRobot.getJoint(JOINT)).getQ();
-      double passthroughQd = ((OneDoFJointBasics) passthroughRobot.getJoint(JOINT)).getQd();
+      double javaSideQ = ((OneDoFJointBasics) javaSideRobot.getJoint(JOINT)).getQ();
+      double javaSideQd = ((OneDoFJointBasics) javaSideRobot.getJoint(JOINT)).getQd();
       shutdown();
 
-      Robot servoRobot = createSession(MujocoActuationMode.JOINT_SERVO, dt, 0.0, 0.0);
+      Robot servoRobot = createSession(dt, 0.0, 0.0);
       addJointServoCommand(servoRobot, tauFF, qDesired, 0.0, kp, 0.0);
       simulate(ticks);
       double servoQ = ((OneDoFJointBasics) servoRobot.getJoint(JOINT)).getQ();
       double servoQd = ((OneDoFJointBasics) servoRobot.getJoint(JOINT)).getQd();
 
-      assertEquals(passthroughQ, servoQ, 1.0e-6, "JOINT_SERVO did not reproduce the passthrough position");
-      assertEquals(passthroughQd, servoQd, 1.0e-4, "JOINT_SERVO did not reproduce the passthrough velocity");
+      assertEquals(javaSideQ, servoQ, 1.0e-6, "The servo did not reproduce the Java-side PD position");
+      assertEquals(javaSideQd, servoQd, 1.0e-4, "The servo did not reproduce the Java-side PD velocity");
       // Sanity: the setpoint was actually tracked, so the comparison above is not between two zeros.
       assertTrue(Math.abs(servoQ - qDesired) < 0.2, "The servo never approached the setpoint; q = " + servoQ);
    }
@@ -203,19 +200,19 @@ public class MujocoActuationTest
       double initialQd = 1.0;
       int ticks = 20;
 
-      Robot passthroughRobot = createSession(MujocoActuationMode.TORQUE_PASSTHROUGH, dt, 0.0, initialQd);
-      addScs2SidePD(passthroughRobot, 0.0, 0.0, 0.0, 0.0, kd);
+      Robot explicitRobot = createSession(dt, 0.0, initialQd);
+      addScs2SidePD(explicitRobot, 0.0, 0.0, 0.0, 0.0, kd);
       simulate(ticks);
-      double passthroughQd = ((OneDoFJointBasics) passthroughRobot.getJoint(JOINT)).getQd();
+      double explicitQd = ((OneDoFJointBasics) explicitRobot.getJoint(JOINT)).getQd();
       shutdown();
 
-      Robot servoRobot = createSession(MujocoActuationMode.JOINT_SERVO, dt, 0.0, initialQd);
+      Robot servoRobot = createSession(dt, 0.0, initialQd);
       addJointServoCommand(servoRobot, 0.0, 0.0, 0.0, 0.0, kd);
       simulate(ticks);
       double servoQd = ((OneDoFJointBasics) servoRobot.getJoint(JOINT)).getQd();
 
-      assertTrue(Math.abs(passthroughQd) > 2.0 * initialQd,
-                 "Expected the explicit damping torque to diverge at this timestep, but qd = " + passthroughQd);
+      assertTrue(Math.abs(explicitQd) > 2.0 * initialQd,
+                 "Expected the explicit damping torque to diverge at this timestep, but qd = " + explicitQd);
       assertTrue(Math.abs(servoQd) < 0.5 * initialQd,
                  "Expected the implicitly integrated damping to settle the joint, but qd = " + servoQd);
    }
@@ -234,7 +231,7 @@ public class MujocoActuationTest
       double kp = 4.0;
       double kd = 0.05;
 
-      Robot robot = createSession(MujocoActuationMode.JOINT_SERVO, dt, 0.0, 0.0);
+      Robot robot = createSession(dt, 0.0, 0.0);
       addJointServoCommand(robot, tauFF, qDesired, qdDesired, kp, kd);
       simulate(49);
 
@@ -261,17 +258,27 @@ public class MujocoActuationTest
       assertTrue(Math.abs(sum) > 1.0e-3, "The actuator applied nothing; sum = " + sum);
    }
 
-   /** TORQUE_PASSTHROUGH must stay exactly as it was: no actuators, nothing to command. */
+   /**
+    * The fallback that lets the servo be the only path. An ordinary SCS2 controller sets effort and
+    * knows nothing about actuators; the engine turns that into a pure feedforward command, so the
+    * joint sees the same torque it would have as an applied force.
+    */
    @Test
-   public void testTorquePassthroughExposesNoActuation()
+   public void testEffortOnlyControllerStillDrivesTheJoint()
    {
-      Robot robot = createSession(MujocoActuationMode.TORQUE_PASSTHROUGH, 1.0e-3, 0.0, 0.0);
-      addScs2SidePD(robot, 0.5, 0.0, 0.0, 0.0, 0.0);
-      simulate(10);
+      Robot robot = createSession(1.0e-3, 0.0, 0.0);
+      addScs2SidePD(robot, 0.5, 0.0, 0.0, 0.0, 0.0); // Effort only: no setpoints, no gains.
+      simulate(200);
 
-      assertNull(engine().getJointActuation(JOINT), "TORQUE_PASSTHROUGH should not create actuation blocks");
-      assertEquals(0, engine().getDynamicsWorld().getModel().nu(), "TORQUE_PASSTHROUGH should emit no actuators");
-      // The passthrough path still has to drive the joint.
-      assertTrue(((OneDoFJointBasics) robot.getJoint(JOINT)).getQd() > 0.0, "The passthrough torque did not move the joint");
+      OneDoFJointBasics joint = (OneDoFJointBasics) robot.getJoint(JOINT);
+      assertTrue(joint.getQd() > 0.0, "A plain effort-setting controller did not drive the joint");
+      // 0.5 N*m on 0.01 kg*m^2 for 0.2 s.
+      assertEquals(0.5 / LINK_INERTIA * 0.2, joint.getQd(), 1.0e-2, "The effort did not arrive intact");
+
+      MujocoJointActuation actuation = engine().getJointActuation(JOINT);
+      assertNotNull(actuation, "Every 1-DoF joint should have an actuator now");
+      assertEquals(0.5, actuation.getControllerTau(), 1.0e-9, "The effort should appear as the feedforward term");
+      assertEquals(0.0, actuation.getPositionTau(), 1.0e-12);
+      assertEquals(0.0, actuation.getVelocityTau(), 1.0e-12);
    }
 }

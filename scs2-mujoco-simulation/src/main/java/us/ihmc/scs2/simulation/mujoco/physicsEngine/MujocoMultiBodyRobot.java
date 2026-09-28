@@ -118,7 +118,7 @@ public class MujocoMultiBodyRobot
 
    /**
     * Resolve and cache the index of the joint's JOINT_SERVO actuator. A no-op when the model carries
-    * no actuators (TORQUE_PASSTHROUGH).
+    * no actuator, which is every joint type the MJCF builder cannot drive.
     */
    public void registerJointServoActuator(String scs2JointName)
    {

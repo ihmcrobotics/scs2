@@ -1,11 +1,10 @@
 package us.ihmc.scs2.simulation.mujoco.physicsEngine;
 
-import us.ihmc.scs2.simulation.mujoco.physicsEngine.parameters.MujocoActuationMode;
 import us.ihmc.yoVariables.registry.YoRegistry;
 import us.ihmc.yoVariables.variable.YoDouble;
 
 /**
- * One 1-DoF joint's low-level command under {@link MujocoActuationMode#JOINT_SERVO}, plus the
+ * One 1-DoF joint's low-level command under the joint servo, plus the
  * torque decomposition for it.
  *
  * <p>The command is what the hardware drives receive: a feedforward torque, a position and
@@ -41,6 +40,8 @@ public class MujocoJointActuation
    // Gains live in mjModel rather than mjData, so they are only written when they actually change.
    private double writtenStiffness = Double.NaN;
    private double writtenDamping = Double.NaN;
+   /** Cleared every tick: distinguishes "commanded zero" from "nobody commanded anything". */
+   private boolean commandedThisTick = false;
 
    // The joint state MuJoCo evaluated the actuator at, captured when the command was pushed.
    private double positionAtCommand = 0.0;
@@ -74,6 +75,29 @@ public class MujocoJointActuation
       this.desiredVelocity = desiredVelocity;
       this.stiffness = stiffness;
       this.damping = damping;
+      commandedThisTick = true;
+   }
+
+   /**
+    * Fall back to SCS2's effort contract: drive the joint with the controller's torque alone. Same
+    * force as {@code setCommand(effort, 0, 0, 0, 0)}, and the engine applies it when no command was
+    * issued this tick.
+    */
+   void setFeedforwardOnly(double effort)
+   {
+      feedforwardTorque = effort;
+      desiredPosition = 0.0;
+      desiredVelocity = 0.0;
+      stiffness = 0.0;
+      damping = 0.0;
+   }
+
+   /** Consume-and-clear the per-tick command flag. */
+   boolean pollCommanded()
+   {
+      boolean commanded = commandedThisTick;
+      commandedThisTick = false;
+      return commanded;
    }
 
    /** Zero the command, which leaves the joint free apart from its passive damping and friction. */

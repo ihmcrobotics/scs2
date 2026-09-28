@@ -14,7 +14,6 @@ public class MujocoSimulationParameters implements MujocoSimulationParametersBas
    private double timestep = 0.0;
    private boolean filterParentCollisions = true;
    private boolean enforceJointLimits = true;
-   private MujocoActuationMode actuationMode = MujocoActuationMode.TORQUE_PASSTHROUGH;
    private final Map<String, MujocoContactProperties> contactClasses = new LinkedHashMap<>();
    private final Map<String, String> contactClassByBodyName = new LinkedHashMap<>();
    private double actuatorDelay = 0.0;
@@ -88,11 +87,6 @@ public class MujocoSimulationParameters implements MujocoSimulationParametersBas
       this.enforceJointLimits = enforceJointLimits;
    }
 
-   @Override
-   public MujocoActuationMode getActuationMode()
-   {
-      return actuationMode;
-   }
 
    @Override
    public Map<String, MujocoContactProperties> getContactClasses()
@@ -158,11 +152,6 @@ public class MujocoSimulationParameters implements MujocoSimulationParametersBas
       actuatorDelayByJointName.put(jointName, actuatorDelay);
    }
 
-   @Override
-   public void setActuationMode(MujocoActuationMode actuationMode)
-   {
-      this.actuationMode = actuationMode;
-   }
 
    @Override
    public void setFilterParentCollisions(boolean filterParentCollisions)
