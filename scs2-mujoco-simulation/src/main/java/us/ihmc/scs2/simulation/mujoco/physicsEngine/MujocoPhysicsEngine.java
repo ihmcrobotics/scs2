@@ -295,9 +295,6 @@ public class MujocoPhysicsEngine implements PhysicsEngine
          // physics-engine-specific secondary registry here.
          physicsEngineRegistry.addChild(mujocoRobot.getSecondaryRegistry());
          robotList.add(mujocoRobot);
-
-         if (contactPool != null)
-            mujocoRobot.createContactAggregates(inertialFrame).forEach(contactPool::addBodyAggregate);
       }
       // Every robot has now been seeded, so the world's initial state is complete: store it in the
       // keyframe the MJCF declared, which is what resetNativeState restores.

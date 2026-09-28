@@ -44,7 +44,6 @@ import us.ihmc.yoVariables.registry.YoRegistry;
 public class MujocoRobot extends RobotExtension
 {
    private final MujocoMultiBodyRobot mujocoMultiBodyRobot;
-   private final YoRegistry yoRegistry;
    /** Populated only under JOINT_SERVO; keyed by SCS2 joint name, iterated in registration order. */
    private final Map<String, MujocoJointActuation> jointActuationByName = new LinkedHashMap<>();
    private final List<MujocoJointActuation> jointActuationList = new ArrayList<>();
@@ -84,8 +83,6 @@ public class MujocoRobot extends RobotExtension
    {
       super(robot, physicsRegistry);
       this.mujocoMultiBodyRobot = mujocoMultiBodyRobot;
-      this.yoRegistry = new YoRegistry(getRobotDefinition().getName() + getClass().getSimpleName());
-      robot.getRegistry().addChild(yoRegistry);
 
       // doVelocityTerms=true: include Coriolis and centripetal acceleration so IMU linear-acc
       // readings include the v x w term. Matches BulletRobotPhysics.
@@ -115,7 +112,7 @@ public class MujocoRobot extends RobotExtension
             int actuatorIndex = mujocoMultiBodyRobot.getActuatorIndex(joint.getName());
             if (actuatorIndex < 0)
                continue;
-            MujocoJointActuation actuation = new MujocoJointActuation(joint.getName(), actuatorIndex, yoRegistry);
+            MujocoJointActuation actuation = new MujocoJointActuation(joint.getName(), actuatorIndex);
             jointActuationByName.put(joint.getName(), actuation);
             jointActuationList.add(actuation);
             actuatedJoints.add((OneDoFJointBasics) joint);
@@ -249,24 +246,6 @@ public class MujocoRobot extends RobotExtension
    public MujocoMultiBodyRobot getMujocoMultiBodyRobot()
    {
       return mujocoMultiBodyRobot;
-   }
-
-   /**
-    * Creates a per-body contact-total group for every body with collision geometry, keyed by MuJoCo
-    * body id, in this robot's registry. Populated each tick by the engine's {@link YoMujocoContactPool}.
-    */
-   public Map<Integer, MujocoBodyContactAggregate> createContactAggregates(ReferenceFrame worldFrame)
-   {
-      Map<Integer, MujocoBodyContactAggregate> aggregates = new HashMap<>();
-      for (Map.Entry<Integer, SimRigidBodyBasics> entry : mecanoBodyByMujocoId.entrySet())
-      {
-         String bodyName = entry.getValue().getName();
-         RigidBodyDefinition bodyDefinition = getRobotDefinition().getRigidBodyDefinition(bodyName);
-         if (bodyDefinition == null || bodyDefinition.getCollisionShapeDefinitions().isEmpty())
-            continue;
-         aggregates.put(entry.getKey(), new MujocoBodyContactAggregate(bodyName, worldFrame, yoRegistry));
-      }
-      return aggregates;
    }
 
    /**
