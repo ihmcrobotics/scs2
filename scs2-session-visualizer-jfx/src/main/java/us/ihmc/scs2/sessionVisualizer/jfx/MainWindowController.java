@@ -379,7 +379,10 @@ public class MainWindowController extends ObservedAnimationTimer implements Visu
       Pane pane = new Pane(plotter2DScene);
       plotter2DScene.heightProperty().bind(pane.heightProperty());
       plotter2DScene.widthProperty().bind(pane.widthProperty());
-      plotter2D.getRoot().getChildren().add(globalToolkit.getYoGraphicFXManager().getRootNode2D());
+      Node rootNode2D = globalToolkit.getYoGraphicFXManager().getRootNode2D();
+      plotter2D.getRoot().getChildren().add(rootNode2D);
+      // 2D graphics compensate their stroke width for the zoom in render(), so zooming/panning needs a render even when the buffer hasn't moved.
+      rootNode2D.localToSceneTransformProperty().addListener((o, oldValue, newValue) -> globalToolkit.getYoGraphicFXManager().requestRender());
 
       showOverheadPlotterProperty = messager.createPropertyInput(topics.getShowOverheadPlotter(), false);
       showOverheadPlotterProperty.addListener((o, oldValue, newValue) ->
