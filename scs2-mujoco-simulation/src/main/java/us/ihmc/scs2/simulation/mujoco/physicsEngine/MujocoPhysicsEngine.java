@@ -106,6 +106,11 @@ public class MujocoPhysicsEngine implements PhysicsEngine
       compileIfNeeded();
       dynamicsWorld.setGravity(gravity);
 
+      if (hasBeenInitialized)
+      { // Re-initialization, e.g. the session is being reset: MuJoCo owns the state, so rewind it too.
+         resetMujocoState(gravity);
+      }
+
       for (MujocoRobot robot : robotList)
       {
          robot.initializeState();
@@ -113,6 +118,35 @@ public class MujocoPhysicsEngine implements PhysicsEngine
          robot.getControllerManager().initializeControllers();
       }
       hasBeenInitialized = true;
+   }
+
+   /**
+    * Rewinds the MuJoCo state to the robots' initial state. The mecano robots are only a mirror of
+    * MuJoCo's {@code qpos} / {@code qvel}, so resetting them alone gets undone by the next
+    * {@link MujocoRobot#pullStateFromMujoco}.
+    */
+   private void resetMujocoState(Vector3DReadOnly gravity)
+   {
+      dynamicsWorld.resetData();
+
+      for (MujocoRobot robot : robotList)
+      {
+         robot.initializeState();
+         robot.pushJointStateToMujoco(dynamicsWorld.getData().qpos(), dynamicsWorld.getData().qvel());
+      }
+
+      dynamicsWorld.forward();
+
+      for (MujocoRobot robot : robotList)
+         robot.pullStateFromMujoco(gravity,
+                                   dynamicsWorld.getData().qpos(),
+                                   dynamicsWorld.getData().qvel(),
+                                   dynamicsWorld.getData().qacc(),
+                                   dynamicsWorld.getData().cacc());
+
+      simulateCallStartTime = 0;
+      realtimeRateWindowStartTime = 0;
+      realtimeRateSampleCounter = 0;
    }
 
    @Override
