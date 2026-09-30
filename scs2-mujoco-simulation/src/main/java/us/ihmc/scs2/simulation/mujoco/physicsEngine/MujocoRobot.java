@@ -252,6 +252,54 @@ public class MujocoRobot extends RobotExtension
       }
    }
 
+   /**
+    * Write the mecano joint configuration and velocity into MuJoCo's {@code qpos} / {@code qvel}, the
+    * inverse of {@link #pullStateFromMujoco}. Used to re-seed MuJoCo when the simulation is reset to
+    * its initial state, since MuJoCo otherwise owns the state and would overwrite the reset on the
+    * next step.
+    */
+   public void pushJointStateToMujoco(DoublePointer qpos, DoublePointer qvel)
+   {
+      for (JointBasics joint : getJointsToConsider())
+      {
+         JointAddress address = mujocoMultiBodyRobot.getJointAddress(joint.getName());
+         if (address == null)
+            continue;
+         if (address.isFloatingRoot && joint instanceof SixDoFJointBasics floating)
+         {
+            int qp = address.qposadr;
+            position.set(floating.getJointPose().getPosition());
+            quaternion.set(floating.getJointPose().getOrientation());
+            qpos.put(qp, position.getX());
+            qpos.put(qp + 1, position.getY());
+            qpos.put(qp + 2, position.getZ());
+            // MuJoCo quaternion order is (w, x, y, z).
+            qpos.put(qp + 3, quaternion.getS());
+            qpos.put(qp + 4, quaternion.getX());
+            qpos.put(qp + 5, quaternion.getY());
+            qpos.put(qp + 6, quaternion.getZ());
+
+            // See pullStateFromMujoco: MuJoCo's freejoint linear velocity is in world frame while the
+            // angular velocity is in body frame, so only the linear part gets rotated.
+            int qv = address.qveladr;
+            linearVelocity.set(floating.getJointTwist().getLinearPart());
+            angularVelocity.set(floating.getJointTwist().getAngularPart());
+            quaternion.transform(linearVelocity);
+            qvel.put(qv, linearVelocity.getX());
+            qvel.put(qv + 1, linearVelocity.getY());
+            qvel.put(qv + 2, linearVelocity.getZ());
+            qvel.put(qv + 3, angularVelocity.getX());
+            qvel.put(qv + 4, angularVelocity.getY());
+            qvel.put(qv + 5, angularVelocity.getZ());
+         }
+         else if (joint instanceof OneDoFJointBasics oneDoF)
+         {
+            qpos.put(address.qposadr, oneDoF.getQ());
+            qvel.put(address.qveladr, oneDoF.getQd());
+         }
+      }
+   }
+
    // Scratch for pushExternalWrenchesToMujoco moment-arm correction.
    private final FramePoint3D pushBodyComPosWorld = new FramePoint3D();
 

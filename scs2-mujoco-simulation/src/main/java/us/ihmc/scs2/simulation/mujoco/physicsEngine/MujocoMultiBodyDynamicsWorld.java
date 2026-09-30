@@ -122,6 +122,25 @@ public class MujocoMultiBodyDynamicsWorld
       Mujoco.mj_rnePostConstraint(model, data);
    }
 
+   /**
+    * Resets {@code mjData} to the model defaults: clears time, velocities, activations, applied
+    * forces, and the constraint solver warm-start. The model (including options) is left untouched.
+    */
+   public void resetData()
+   {
+      Mujoco.mj_resetData(model, data);
+   }
+
+   /**
+    * Recomputes every derived quantity (kinematics, contacts, accelerations, {@code cfrc_ext}) from
+    * the current {@code qpos} / {@code qvel} without advancing time.
+    */
+   public void forward()
+   {
+      Mujoco.mj_forward(model, data);
+      Mujoco.mj_rnePostConstraint(model, data);
+   }
+
    private boolean warnedShortSolrefTimeconst = false;
 
    /**
