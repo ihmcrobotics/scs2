@@ -54,12 +54,36 @@ public class YoMujocoOptions
    public final YoInteger subSteps = var("subSteps",
          "SCS2-owned, not an mjOption field: mj_step calls per SCS2 tick; MuJoCo timestep = session dt / subSteps", 1);
    public final YoBoolean enableOverride = var("enableOverride",
-         "mjENBL_OVERRIDE: o_* values replace margin/solref/solimp/friction on EVERY contact", false);
+         "mjENBL_OVERRIDE: o_* values replace margin/solref/solimp/friction on EVERY contact; the o_* values are inert while this is off", false);
    public final YoBoolean enableEnergy = var("enableEnergy",
          "mjENBL_ENERGY: compute energy into the MujocoStatistics energy variables", false);
+   /**
+    * WARNING -- this is NOT a usable convergence diagnostic when contacts have friction. See
+    * {@code MujocoStatistics.solver_fwdinv_qfrc} for the measurement that establishes it: on a
+    * statically resting humanoid the comparison reads 42.8 with friction and 5.1e-12 with
+    * {@code condim == 1}, on the identical model and contact set.
+    */
    public final YoBoolean enableFwdinv = var("enableFwdinv",
-         "mjENBL_FWDINV: compare forward against inverse dynamics each step into MujocoStatistics solver_fwdinv_*; "
-         + "costs an extra inverse dynamics evaluation per step, so off by default", false);
+         "mjENBL_FWDINV: compare forward against inverse dynamics each step into MujocoStatistics solver_fwdinv_*. "
+         + "Costs an extra inverse dynamics evaluation per step, so off by default -- and MEANINGLESS under "
+         + "frictional contact, where it measures the unrecoverability of static friction, not solver error", false);
+
+   /**
+    * {@code mjENBL_DIAGEXACT}: compute the EXACT diagonal of the constraint-space inertia at runtime
+    * instead of the approximation MuJoCo derives once at compile time from {@code qpos0}.
+    * <p>
+    * That approximation sets the constraint impedance, and the MuJoCo documentation names three
+    * situations where it goes bad: highly anisotropic inertias, complex kinematic chains, and bodies
+    * operating far from {@code qpos0}. A humanoid standing is all three -- at {@code qpos0} the soles
+    * sit about a metre below the base. The documented symptoms are {@code badqacc} warnings,
+    * excessive penetration, unrealistic slip and poor solver convergence, and the documented
+    * diagnostic is a large {@code enableFwdinv} discrepancy.
+    * <p>
+    * Costs an exact constraint-inertia diagonal per step, hence off by default.
+    */
+   public final YoBoolean enableDiagexact = var("enableDiagexact",
+         "mjENBL_DIAGEXACT: exact constraint-inertia diagonal at runtime instead of the compile-time "
+         + "approximation taken at qpos0; try it when a model is anisotropic, deeply articulated, or far from qpos0", false);
 
    // Disable flags. All default false, i.e. nothing disabled, so the simulation is unchanged unless
    // one is deliberately flipped. These exist to answer "is it contact?" / "is it gravity?" from the
@@ -70,6 +94,17 @@ public class YoMujocoOptions
          "mjDSBL_CONTACT: drop all contact constraints; the robot falls through the terrain", false);
    public final YoBoolean disableGravity = var("disableGravity",
          "mjDSBL_GRAVITY: drop gravitational force without touching the session's gravity vector", false);
+   /**
+    * {@code mjDSBL_LIMIT}: drop joint and tendon LIMIT constraints. Worth a run because the two
+    * engines disagree here fundamentally: MuJoCo holds a joint at its limit with a hard constraint
+    * row, whereas ContactPointBased applies only a soft PD stop
+    * ({@code RobotOneDoFJointSoftLimitCalculator}) whose gains for Zulu are the framework defaults
+    * kp=100 N.m/rad, kd=20 -- so exceeding a limit by 5.7 degrees buys just 10 N.m and the joint
+    * effectively passes straight through. Disabling this is the closest MuJoCo gets to that.
+    */
+   public final YoBoolean disableLimit = var("disableLimit",
+         "mjDSBL_LIMIT: drop joint/tendon limit constraints. MuJoCo enforces limits as HARD constraints "
+         + "where ContactPointBased uses a soft PD stop with kp=100/kd=20, i.e. almost none", false);
    public final YoBoolean disableEquality = var("disableEquality",
          "mjDSBL_EQUALITY: drop equality constraints, which also releases any pinned joint", false);
    public final YoBoolean disableActuation = var("disableActuation",

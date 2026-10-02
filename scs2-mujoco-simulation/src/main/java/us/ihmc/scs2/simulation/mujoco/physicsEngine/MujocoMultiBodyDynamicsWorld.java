@@ -28,6 +28,12 @@ import us.ihmc.scs2.simulation.mujoco.physicsEngine.parameters.YoMujocoOptions;
  */
 public class MujocoMultiBodyDynamicsWorld
 {
+   /**
+    * {@code SCS2_MUJOCO_LOG_OPTIONS=1} logs {@code mjOption} read back from the native model after
+    * every option write, which is how you confirm an edit actually landed. Noisy by design.
+    */
+   private static final boolean LOG_EFFECTIVE_OPTIONS = "1".equals(System.getenv("SCS2_MUJOCO_LOG_OPTIONS"));
+
    private mjModel model;
    private mjData data;
    private final List<MujocoMultiBodyRobot> robots = new ArrayList<>();
@@ -240,6 +246,7 @@ public class MujocoMultiBodyDynamicsWorld
       enableflags = setBit(enableflags, Mujoco.mjENBL_OVERRIDE, options.enableOverride.getValue());
       enableflags = setBit(enableflags, Mujoco.mjENBL_ENERGY, options.enableEnergy.getValue());
       enableflags = setBit(enableflags, Mujoco.mjENBL_FWDINV, options.enableFwdinv.getValue());
+      enableflags = setBit(enableflags, Mujoco.mjENBL_DIAGEXACT, options.enableDiagexact.getValue());
       opt.enableflags(enableflags);
 
       // Read-modify-write matters more here than for the enable flags: mjDSBL_FILTERPARENT is set
@@ -248,6 +255,7 @@ public class MujocoMultiBodyDynamicsWorld
       int disableflags = opt.disableflags();
       disableflags = setBit(disableflags, Mujoco.mjDSBL_CONTACT, options.disableContact.getValue());
       disableflags = setBit(disableflags, Mujoco.mjDSBL_GRAVITY, options.disableGravity.getValue());
+      disableflags = setBit(disableflags, Mujoco.mjDSBL_LIMIT, options.disableLimit.getValue());
       disableflags = setBit(disableflags, Mujoco.mjDSBL_EQUALITY, options.disableEquality.getValue());
       disableflags = setBit(disableflags, Mujoco.mjDSBL_ACTUATION, options.disableActuation.getValue());
       disableflags = setBit(disableflags, Mujoco.mjDSBL_WARMSTART, options.disableWarmstart.getValue());
@@ -277,6 +285,12 @@ public class MujocoMultiBodyDynamicsWorld
                        timeconst,
                        2.0 * opt.timestep());
       }
+
+      // Read the values straight back out of the native struct and log them, so a question about
+      // whether an edit reached MuJoCo is answered by MuJoCo rather than by what we think we set.
+      // Off unless asked: this fires on every option change.
+      if (LOG_EFFECTIVE_OPTIONS)
+         MujocoTools.logEffectiveOptions(model, "after writeOptions");
    }
 
 
