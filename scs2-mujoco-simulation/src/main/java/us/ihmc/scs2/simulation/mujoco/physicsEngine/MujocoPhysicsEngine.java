@@ -14,6 +14,7 @@ import us.ihmc.scs2.definition.robot.RobotDefinition;
 import us.ihmc.scs2.definition.robot.RobotStateDefinition;
 import us.ihmc.scs2.definition.terrain.TerrainObjectDefinition;
 
+import us.ihmc.scs2.definition.yoGraphic.YoGraphicDefinition;
 import us.ihmc.scs2.simulation.mujoco.Mujoco;
 import us.ihmc.scs2.simulation.mujoco.Mujoco.mjModel;
 import us.ihmc.scs2.simulation.mujoco.MujocoNativeLibrary;
@@ -121,6 +122,21 @@ public class MujocoPhysicsEngine implements PhysicsEngine
    }
 
    /** The native world wrapper; the model/data are null until the first {@code simulate()} compiles the world. */
+   /**
+    * A sphere and a force arrow per contact slot -- the graphical form of the contact pool, showing
+    * which contacts MuJoCo holds this tick and how hard each pushes. Free slots hold NaN and are not
+    * drawn. Returns null when the pool is disabled (contact detail capacity 0).
+    * <p>
+    * {@link PhysicsEngine} has no graphics hook, so nothing publishes this automatically: pass it to
+    * {@code SimulationSession.addYoGraphicDefinition} where the session is built. Contacts beyond the
+    * pool capacity are not drawn, so check {@code contactOverflowCount} before trusting the view to
+    * be complete.
+    */
+   public YoGraphicDefinition getContactYoGraphics()
+   {
+      return contactPool == null ? null : contactPool.getSCS2YoGraphics();
+   }
+
    public MujocoMultiBodyDynamicsWorld getDynamicsWorld()
    {
       return dynamicsWorld;
