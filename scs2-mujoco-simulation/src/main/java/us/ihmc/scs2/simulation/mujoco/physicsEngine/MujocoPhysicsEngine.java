@@ -81,6 +81,23 @@ public class MujocoPhysicsEngine implements PhysicsEngine
       seedParameters.set(parameters);
       this.options = new YoMujocoOptions(physicsEngineRegistry);
       options.subSteps.set(parameters.getSubSteps());
+      // Seed the o_* override entries from the <default> geom block so that flipping enableOverride
+      // on is behavior-continuous. This has to happen HERE, at construction, not at compile time:
+      // seeding on the first tick silently discarded anything configured in between -- a value set
+      // through the test harness or a run configuration read back as the default and had no effect,
+      // while enableOverride itself appeared to work because it has no seedParameters counterpart.
+      // With the flag off these still have no effect on the dynamics.
+      options.o_margin.set(seedParameters.get_margin());
+      options.o_solref_timeconst.set(seedParameters.get_solref_timeconst());
+      options.o_solref_dampratio.set(seedParameters.get_solref_dampratio());
+      options.o_solimp_dmin.set(seedParameters.get_solimp_dmin());
+      options.o_solimp_dmax.set(seedParameters.get_solimp_dmax());
+      options.o_solimp_width.set(seedParameters.get_solimp_width());
+      options.o_solimp_midpoint.set(seedParameters.get_solimp_midpoint());
+      options.o_solimp_power.set(seedParameters.get_solimp_power());
+      options.o_friction_slide.set(seedParameters.get_friction_slide());
+      options.o_friction_spin.set(seedParameters.get_friction_spin());
+      options.o_friction_roll.set(seedParameters.get_friction_roll());
       appliedSubSteps = Math.max(1, parameters.getSubSteps());
       // Slot capacity must be fixed here: the YoVariables have to exist before the session buffer
       // is wired, well before the model compiles on the first simulate().
@@ -101,6 +118,21 @@ public class MujocoPhysicsEngine implements PhysicsEngine
    }
 
    /** The native world wrapper; the model/data are null until the first {@code simulate()} compiles the world. */
+   /**
+    * A sphere and a force arrow per contact slot -- the graphical form of the contact pool, showing
+    * which contacts MuJoCo holds this tick and how hard each pushes. Free slots hold NaN and are not
+    * drawn. Returns null when the pool is disabled (contact detail capacity 0).
+    * <p>
+    * {@link PhysicsEngine} has no graphics hook, so nothing publishes this automatically: pass it to
+    * {@code SimulationSession.addYoGraphicDefinition} where the session is built. Contacts beyond the
+    * pool capacity are not drawn, so check {@code contactOverflowCount} before trusting the view to
+    * be complete.
+    */
+   public YoGraphicDefinition getContactYoGraphics()
+   {
+      return contactPool == null ? null : contactPool.getSCS2YoGraphics();
+   }
+
    public MujocoMultiBodyDynamicsWorld getDynamicsWorld()
    {
       return dynamicsWorld;
@@ -146,7 +178,7 @@ public class MujocoPhysicsEngine implements PhysicsEngine
       for (MujocoRobot robot : robotList)
       {
          robot.initializeState();
-         robot.updateSensors(dynamicsWorld.getData().cfrc_ext());
+         robot.updateSensors(dynamicsWorld.getData().cfrc_ext(), dynamicsWorld.getData().xpos(), dynamicsWorld.getData().subtree_com());
          robot.getControllerManager().initializeControllers();
       }
       hasBeenInitialized = true;
@@ -223,7 +255,7 @@ public class MujocoPhysicsEngine implements PhysicsEngine
          // see one-tick-stale contact wrenches; same discrete-time convention as Bullet /
          // ContactPointBased. On the very first tick cfrc_ext is zero (mj_makeData default).
          // Frames are already current from pullStateFromMujoco() at the end of the previous step.
-         robot.updateSensors(dynamicsWorld.getData().cfrc_ext());
+         robot.updateSensors(dynamicsWorld.getData().cfrc_ext(), dynamicsWorld.getData().xpos(), dynamicsWorld.getData().subtree_com());
          robot.getControllerManager().updateControllers(currentTime);
          robot.getControllerManager().writeControllerOutput(JointStateType.EFFORT);
          robot.getControllerManager().writeControllerOutputForJointsToIgnore(JointStateType.values());
@@ -266,7 +298,9 @@ public class MujocoPhysicsEngine implements PhysicsEngine
                                    dynamicsWorld.getData().qpos(),
                                    dynamicsWorld.getData().qvel(),
                                    dynamicsWorld.getData().qacc(),
-                                   dynamicsWorld.getData().cacc());
+                                   dynamicsWorld.getData().cacc(),
+                                   dynamicsWorld.getData().xpos(),
+                                   dynamicsWorld.getData().subtree_com());
          robot.pullActuationFromMujoco(dynamicsWorld.getData());
       }
    }
@@ -279,7 +313,11 @@ public class MujocoPhysicsEngine implements PhysicsEngine
       // Only a path at this point: nothing is created here. A world of primitive collision shapes
       // never needs it, since the MJCF is compiled from memory and inline meshes carry their own
       // vertices; it only comes into existence if a file-backed mesh has to be staged.
-      String workingDirectoryProperty = System.getProperty("scs2.mujoco.workingDirectory");
+      // Environment variable first: a -D on a Gradle command line configures the daemon, not the
+      // forked test JVM, so a property alone cannot reach a test run.
+      String workingDirectoryProperty = System.getenv("SCS2_MUJOCO_WORKING_DIRECTORY");
+      if (workingDirectoryProperty == null)
+         workingDirectoryProperty = System.getProperty("scs2.mujoco.workingDirectory");
       boolean workingDirectoryWasRequested = workingDirectoryProperty != null;
       workingDirectory = workingDirectoryWasRequested ? new File(workingDirectoryProperty)
                                                       : new File(System.getProperty("java.io.tmpdir"), "scs2-mujoco-" + System.nanoTime());
@@ -324,24 +362,29 @@ public class MujocoPhysicsEngine implements PhysicsEngine
       pendingTerrain.clear();
 
       // The MJCF emits no mjOption values, so the options group is the sole truth: push it into the
-      // compiled model (this also applies values set before the first tick). The o_* override
-      // entries first get the <default> geom block's values so flipping enableOverride on is
-      // behavior-continuous; with the flag off they have no effect on the dynamics.
-      options.o_margin.set(seedParameters.get_margin());
-      options.o_solref_timeconst.set(seedParameters.get_solref_timeconst());
-      options.o_solref_dampratio.set(seedParameters.get_solref_dampratio());
-      options.o_solimp_dmin.set(seedParameters.get_solimp_dmin());
-      options.o_solimp_dmax.set(seedParameters.get_solimp_dmax());
-      options.o_solimp_width.set(seedParameters.get_solimp_width());
-      options.o_solimp_midpoint.set(seedParameters.get_solimp_midpoint());
-      options.o_solimp_power.set(seedParameters.get_solimp_power());
-      options.o_friction_slide.set(seedParameters.get_friction_slide());
-      options.o_friction_spin.set(seedParameters.get_friction_spin());
-      options.o_friction_roll.set(seedParameters.get_friction_roll());
+      // compiled model, which also applies values set before the first tick. The o_* override
+      // entries are seeded in the constructor rather than here, so that anything configured between
+      // construction and the first tick survives.
       dynamicsWorld.writeOptions(options);
-      options.pollUpdateRequest(); // Discard the dirty flag the seeding just tripped.
+      options.pollUpdateRequest(); // Discard the dirty flag the constructor-time seeding tripped.
+
+      // Contact override is global, so any per-body contact class configured by the caller is being
+      // silently ignored. Say so rather than letting it look applied.
+      int contactClassCount = seedParameters.getContactClasses().size();
+      if (options.enableOverride.getValue() && contactClassCount > 0)
+         LogTools.warn("enableOverride is ON, so the {} configured per-body contact class(es) have NO effect: "
+                       + "o_margin/o_solref/o_solimp/o_friction replace contact properties on every geom. "
+                       + "Set enableOverride=false to use the contact classes.",
+                       contactClassCount);
 
       MujocoTools.logEffectiveModelSummary(dynamicsWorld.getModel());
+
+      // SCS2_MUJOCO_PRINT_MODEL dumps the entire compiled model through MuJoCo's own mj_printModel.
+      // "1" sends it to the console; anything else is treated as a path, which is usually what you
+      // want -- the dump runs to tens of thousands of lines for a humanoid.
+      String printModelTarget = System.getenv("SCS2_MUJOCO_PRINT_MODEL");
+      if (printModelTarget != null && !printModelTarget.isBlank())
+         MujocoTools.printNativeModel(dynamicsWorld.getModel(), "1".equals(printModelTarget) ? "/dev/stdout" : printModelTarget);
 
       statistics.bind(dynamicsWorld.getModel(), dynamicsWorld.getData());
       if (contactPool != null)
@@ -357,7 +400,7 @@ public class MujocoPhysicsEngine implements PhysicsEngine
       for (MujocoRobot robot : robotList)
       {
          robot.updateFrames();
-         robot.updateSensors(dynamicsWorld.getData().cfrc_ext());
+         robot.updateSensors(dynamicsWorld.getData().cfrc_ext(), dynamicsWorld.getData().xpos(), dynamicsWorld.getData().subtree_com());
          robot.getControllerManager().pauseControllers();
       }
    }

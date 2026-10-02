@@ -436,6 +436,154 @@ public final class MujocoTools
    private static final int MODEL_SUMMARY_MAX_GEOMS = 8;
 
    /** Logs the compiled model's effective option and per-geom contact values — what MuJoCo actually runs vs what was requested. */
+   /**
+    * Prints {@code mjModel.opt} READ BACK FROM THE NATIVE STRUCT, so it states what MuJoCo holds
+    * rather than what SCS2 believes it set. Use it to settle whether an option edit actually landed:
+    * nothing here passes through a YoVariable on the way out.
+    * <p>
+    * Two things it is deliberately explicit about, because both have caused wasted days here:
+    * <ul>
+    * <li>{@code timestep} is whatever {@code opt} holds at this write. Since {@code writeOptions}
+    * runs at compile and the engine rewrites {@code opt.timestep} every TICK from the session DT, a
+    * compile-time readback shows the pre-tick value rather than what MuJoCo steps with. Derive the
+    * stepping timestep from the recording cadence instead.
+    * <li>The {@code o_*} entries are annotated with whether {@code mjENBL_OVERRIDE} is actually set.
+    * With the flag clear they are dead weight: contact uses the PER-GEOM solref/solimp instead, and
+    * editing {@code o_solref}/{@code o_solimp} changes nothing at all.
+    * </ul>
+    */
+   public static void logEffectiveOptions(Mujoco.mjModel model, String context)
+   {
+      Mujoco.mjOption opt = model.opt();
+      int enableflags = opt.enableflags();
+      int disableflags = opt.disableflags();
+      boolean overrideActive = (enableflags & Mujoco.mjENBL_OVERRIDE) != 0;
+
+      StringBuilder summary = new StringBuilder();
+      summary.append(String.format("MuJoCo mjOption read back from the native model (%s):%n", context));
+      // NOTE the timestep here is whatever opt holds at the moment of this write. writeOptions runs
+      // at compile and on option edits, and the engine rewrites opt.timestep every TICK from the
+      // session DT -- so a compile-time readback shows the pre-tick value, not what MuJoCo steps with.
+      // Derive the stepping timestep from the recording cadence, not from this line.
+      summary.append(String.format("  timestep=%s (as held at this write; see note) integrator=%d solver=%d cone=%d jacobian=%d%n",
+                                   opt.timestep(),
+                                   opt.integrator(),
+                                   opt.solver(),
+                                   opt.cone(),
+                                   opt.jacobian()));
+      summary.append(String.format("  impratio=%s tolerance=%s iterations=%d ls_iterations=%d noslip_iterations=%d%n",
+                                   opt.impratio(),
+                                   opt.tolerance(),
+                                   opt.iterations(),
+                                   opt.ls_iterations(),
+                                   opt.noslip_iterations()));
+      summary.append(String.format("  enableflags=0x%x [%s]  disableflags=0x%x [%s]%n",
+                                   enableflags,
+                                   describeEnableFlags(enableflags),
+                                   disableflags,
+                                   describeDisableFlags(disableflags)));
+      summary.append(String.format("  o_* contact override is %s%n",
+                                   overrideActive ? "ACTIVE: the values below replace solref/solimp/margin/friction on EVERY contact"
+                                                  : "INACTIVE (mjENBL_OVERRIDE clear): the values below are IGNORED; contact uses per-geom solref/solimp"));
+      summary.append(String.format("  o_margin=%s o_solref=(%s %s) o_solimp=(%s %s %s %s %s) o_friction=(%s %s %s %s %s)%n",
+                                   opt.o_margin(),
+                                   opt.o_solref(0),
+                                   opt.o_solref(1),
+                                   opt.o_solimp(0),
+                                   opt.o_solimp(1),
+                                   opt.o_solimp(2),
+                                   opt.o_solimp(3),
+                                   opt.o_solimp(4),
+                                   opt.o_friction(0),
+                                   opt.o_friction(1),
+                                   opt.o_friction(2),
+                                   opt.o_friction(3),
+                                   opt.o_friction(4)));
+
+      // The per-geom values are what contact actually uses when the override is off, so print the
+      // first few: they are compile-time only and cannot be changed at runtime.
+      int ngeom = (int) model.ngeom();
+      DoublePointer geomSolref = model.geom_solref();
+      DoublePointer geomSolimp = model.geom_solimp();
+      for (int geomId = 0; geomId < Math.min(ngeom, MODEL_SUMMARY_MAX_GEOMS); geomId++)
+      {
+         BytePointer namePointer = Mujoco.mj_id2name(model, Mujoco.mjOBJ_GEOM, geomId);
+         summary.append(String.format("  geom[%d] %s: solref=(%s %s) solimp=(%s %s %s %s %s)%n",
+                                      geomId,
+                                      namePointer == null || namePointer.isNull() ? "(unnamed)" : namePointer.getString(),
+                                      geomSolref.get(2L * geomId),
+                                      geomSolref.get(2L * geomId + 1),
+                                      geomSolimp.get(5L * geomId),
+                                      geomSolimp.get(5L * geomId + 1),
+                                      geomSolimp.get(5L * geomId + 2),
+                                      geomSolimp.get(5L * geomId + 3),
+                                      geomSolimp.get(5L * geomId + 4)));
+      }
+      if (ngeom > MODEL_SUMMARY_MAX_GEOMS)
+         summary.append(String.format("  ... %d more geoms elided%n", ngeom - MODEL_SUMMARY_MAX_GEOMS));
+
+      LogTools.info(summary.toString());
+   }
+
+   private static String describeEnableFlags(int enableflags)
+   {
+      StringBuilder names = new StringBuilder();
+      appendFlag(names, enableflags, Mujoco.mjENBL_OVERRIDE, "OVERRIDE");
+      appendFlag(names, enableflags, Mujoco.mjENBL_ENERGY, "ENERGY");
+      appendFlag(names, enableflags, Mujoco.mjENBL_FWDINV, "FWDINV");
+      appendFlag(names, enableflags, Mujoco.mjENBL_INVDISCRETE, "INVDISCRETE");
+      appendFlag(names, enableflags, Mujoco.mjENBL_SLEEP, "SLEEP");
+      appendFlag(names, enableflags, Mujoco.mjENBL_DIAGEXACT, "DIAGEXACT");
+      return names.length() == 0 ? "none" : names.toString();
+   }
+
+   private static String describeDisableFlags(int disableflags)
+   {
+      StringBuilder names = new StringBuilder();
+      appendFlag(names, disableflags, Mujoco.mjDSBL_CONSTRAINT, "CONSTRAINT");
+      appendFlag(names, disableflags, Mujoco.mjDSBL_EQUALITY, "EQUALITY");
+      appendFlag(names, disableflags, Mujoco.mjDSBL_FRICTIONLOSS, "FRICTIONLOSS");
+      appendFlag(names, disableflags, Mujoco.mjDSBL_LIMIT, "LIMIT");
+      appendFlag(names, disableflags, Mujoco.mjDSBL_CONTACT, "CONTACT");
+      appendFlag(names, disableflags, Mujoco.mjDSBL_SPRING, "SPRING");
+      appendFlag(names, disableflags, Mujoco.mjDSBL_DAMPER, "DAMPER");
+      appendFlag(names, disableflags, Mujoco.mjDSBL_GRAVITY, "GRAVITY");
+      appendFlag(names, disableflags, Mujoco.mjDSBL_CLAMPCTRL, "CLAMPCTRL");
+      appendFlag(names, disableflags, Mujoco.mjDSBL_WARMSTART, "WARMSTART");
+      appendFlag(names, disableflags, Mujoco.mjDSBL_FILTERPARENT, "FILTERPARENT");
+      appendFlag(names, disableflags, Mujoco.mjDSBL_ACTUATION, "ACTUATION");
+      appendFlag(names, disableflags, Mujoco.mjDSBL_REFSAFE, "REFSAFE");
+      appendFlag(names, disableflags, Mujoco.mjDSBL_SENSOR, "SENSOR");
+      appendFlag(names, disableflags, Mujoco.mjDSBL_MIDPHASE, "MIDPHASE");
+      appendFlag(names, disableflags, Mujoco.mjDSBL_EULERDAMP, "EULERDAMP");
+      appendFlag(names, disableflags, Mujoco.mjDSBL_AUTORESET, "AUTORESET");
+      appendFlag(names, disableflags, Mujoco.mjDSBL_NATIVECCD, "NATIVECCD");
+      appendFlag(names, disableflags, Mujoco.mjDSBL_ISLAND, "ISLAND");
+      appendFlag(names, disableflags, Mujoco.mjDSBL_MULTICCD, "MULTICCD");
+      return names.length() == 0 ? "none" : names.toString();
+   }
+
+   private static void appendFlag(StringBuilder names, int flags, int bit, String name)
+   {
+      if ((flags & bit) == 0)
+         return;
+      if (names.length() > 0)
+         names.append('|');
+      names.append(name);
+   }
+
+   /**
+    * Dumps the entire compiled {@code mjModel} through MuJoCo's own {@code mj_printModel}, i.e. every
+    * field MuJoCo holds, written by MuJoCo rather than reformatted by us. {@code /dev/stdout} sends it
+    * to the console; any other path writes a file, which is usually what you want since the dump is
+    * tens of thousands of lines for a humanoid.
+    */
+   public static void printNativeModel(Mujoco.mjModel model, String filename)
+   {
+      LogTools.info("Dumping the full native mjModel via mj_printModel to {}", filename);
+      Mujoco.mj_printModel(model, filename);
+   }
+
    public static void logEffectiveModelSummary(Mujoco.mjModel model)
    {
       Mujoco.mjOption opt = model.opt();

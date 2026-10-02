@@ -1,5 +1,9 @@
 package us.ihmc.scs2.simulation.mujoco.physicsEngine;
 
+import org.bytedeco.javacpp.BytePointer;
+import org.bytedeco.javacpp.IntPointer;
+
+import us.ihmc.log.LogTools;
 import us.ihmc.scs2.simulation.mujoco.Mujoco;
 import us.ihmc.scs2.simulation.mujoco.Mujoco.mjData;
 import us.ihmc.scs2.simulation.mujoco.Mujoco.mjModel;
@@ -55,9 +59,32 @@ public class MujocoStatistics
    private final YoInteger warning_badctrl;
    private final YoDouble energy_potential;
    public final YoDouble solver_fwdinv_qfrc, solver_fwdinv_efc;
+   /**
+    * Impact severity, independent of how many contact slots are configured. The touchdown transient
+    * is what the state estimator has to survive, and these are the three numbers that describe it:
+    * how deep anything is penetrating, how hard the hardest contact is pushing, and how fast that
+    * force is changing. A rigid solver delivers an impulse as one enormous tick of force, so the
+    * rate is often more diagnostic than the peak.
+    */
+   public final YoDouble maxPenetrationDepth, maxContactNormalForce, maxContactNormalForceRate;
+   public final YoInteger maxPenetrationGeomA, maxPenetrationGeomB;
+
+   /**
+    * MuJoCo reports its own trouble through {@code mjData.warning[*]} and, separately, by appending to
+    * MUJOCO_LOG.TXT in the working directory -- which during a test run is invisible. These counters
+    * are already mirrored as YoVariables below, but nothing watches them, so a NaN in qacc or a
+    * constraint-buffer overflow passes silently. This logs the first increment of each, loudly.
+    * Costs one int comparison per counter per tick.
+    */
+   private static final boolean LOG_MUJOCO_WARNINGS = !"0".equals(System.getenv("SCS2_MUJOCO_LOG_WARNINGS"));
+
+   private final int[] loggedWarningCounts = new int[8];
+   private double previousMaxContactNormalForce = 0.0;
    private final YoDouble energy_kinetic;
 
+   private mjModel model;
    private mjData data;
+   private final org.bytedeco.javacpp.DoublePointer contactForceScratch = new org.bytedeco.javacpp.DoublePointer(6);
    // Cached JavaCPP wrappers over mjData's stat arrays; the mjData arena is stable for the life of
    // the model, so binding once keeps the per-tick loop allocation-free.
    private mjWarningStat_ warningStats;
@@ -67,6 +94,19 @@ public class MujocoStatistics
    {
       parentRegistry.addChild(registry);
       realtimeRate = new YoDouble("realtimeRate", "Achieved sim-time / wall-time rate, windowed", registry);
+      maxPenetrationDepth = new YoDouble("maxPenetrationDepth",
+                                         "Deepest contact penetration this tick [m], >= 0; 0 when nothing is touching",
+                                         registry);
+      maxPenetrationGeomA = new YoInteger("maxPenetrationGeomA",
+                                          "mjModel geom id of the first geom in the deepest-penetrating contact, -1 when there is none",
+                                          registry);
+      maxPenetrationGeomB = new YoInteger("maxPenetrationGeomB",
+                                          "mjModel geom id of the second geom in the deepest-penetrating contact, -1 when there is none",
+                                          registry);
+      maxContactNormalForce = new YoDouble("maxContactNormalForce", "Largest single contact normal force this tick [N]", registry);
+      maxContactNormalForceRate = new YoDouble("maxContactNormalForceRate",
+                                               "Change in maxContactNormalForce since the previous tick [N/tick]",
+                                               registry);
       simulateTime = new YoDouble("simulateTime[ms]", "Wall time between simulate() calls", registry);
       tick = new YoLong("tick", "Engine tick counter", registry);
       stepTimer = new YoTimer("step", TimeUnit.MILLISECONDS, registry);
@@ -79,10 +119,10 @@ public class MujocoStatistics
       nefc = new YoInteger("nefc", "Total constraint rows this step (mjData.nefc)", registry);
       nisland = new YoInteger("nisland", "Constraint islands detected; solver stats below cover island 0 only", registry);
       solver_niter = new YoInteger("solver_niter", "Solver iterations used this step (island 0); pinned at the iterations cap = not converging", registry);
-      solver_improvement = new YoDouble("solver_improvement", "mjSolverStat.improvement at the last iteration: cost reduction, near zero when converged", registry);
-      solver_gradient = new YoDouble("solver_gradient", "mjSolverStat.gradient at the last iteration: gradient norm, small when converged (primal solvers)", registry);
-      solver_nactive = new YoInteger("solver_nactive", "mjSolverStat.nactive at the last iteration: active constraints", registry);
-      solver_nchange = new YoInteger("solver_nchange", "mjSolverStat.nchange at the last iteration: constraint state changes", registry);
+      solver_improvement = new YoDouble("solver_improvement", "mjSolverStat_.improvement at the last iteration: cost reduction, near zero when converged", registry);
+      solver_gradient = new YoDouble("solver_gradient", "mjSolverStat_.gradient at the last iteration: gradient norm, small when converged (primal solvers)", registry);
+      solver_nactive = new YoInteger("solver_nactive", "mjSolverStat_.nactive at the last iteration: active constraints", registry);
+      solver_nchange = new YoInteger("solver_nchange", "mjSolverStat_.nchange at the last iteration: constraint state changes", registry);
       warning_inertia = new YoInteger("warning_inertia", "Cumulative mjWARN_INERTIA count: (near) singular inertia matrix; any increase mid-run is trouble", registry);
       warning_contactfull = new YoInteger("warning_contactfull", "Cumulative mjWARN_CONTACTFULL count: too many contacts", registry);
       warning_cnstrfull = new YoInteger("warning_cnstrfull", "Cumulative mjWARN_CNSTRFULL count: too many constraints", registry);
@@ -109,14 +149,62 @@ public class MujocoStatistics
    /** Caches native pointers; call once, right after the model has compiled. */
    public void bind(mjModel model, mjData data)
    {
+      this.model = model;
       this.data = data;
       warningStats = new mjWarningStat_(data.warning(0));
       solverStats = new mjSolverStat_(data.solver(0));
    }
 
+   /** Scans mjData.contact for the tick's worst penetration and force; cheap, ncon is small. */
+   private void updateContactSeverity()
+   {
+      if (data == null)
+      {
+         maxPenetrationDepth.setToNaN();
+         maxPenetrationGeomA.set(-1);
+         maxPenetrationGeomB.set(-1);
+         maxContactNormalForce.setToNaN();
+         maxContactNormalForceRate.setToNaN();
+         return;
+      }
+
+      int ncon = data.ncon();
+      double deepest = 0.0;
+      double strongest = 0.0;
+      int deepestGeomA = -1;
+      int deepestGeomB = -1;
+      if (ncon > 0)
+      {
+         Mujoco.mjContact contact = data.contact();
+         for (int i = 0; i < ncon; i++)
+         {
+            contact.position(i);
+            double depth = -contact.dist();
+            if (depth > deepest)
+            {
+               deepest = depth;
+               // Attribute the maximum: without the geom pair this is a bare number over every
+               // contact in the world, and a deep penetration between two unrelated geoms reads
+               // exactly like a foot sinking through the floor.
+               deepestGeomA = contact.geom1();
+               deepestGeomB = contact.geom2();
+            }
+            Mujoco.mj_contactForce(model, data, i, contactForceScratch);
+            strongest = Math.max(strongest, contactForceScratch.get(0));
+         }
+      }
+      maxPenetrationDepth.set(deepest);
+      maxPenetrationGeomA.set(deepestGeomA);
+      maxPenetrationGeomB.set(deepestGeomB);
+      maxContactNormalForce.set(strongest);
+      maxContactNormalForceRate.set(strongest - previousMaxContactNormalForce);
+      previousMaxContactNormalForce = strongest;
+   }
+
    /** Reads the diagnostics of the step that just completed; call after stepping, on the physics thread. */
    public void update()
    {
+      updateContactSeverity();
       if (data == null)
          return;
 
@@ -157,16 +245,64 @@ public class MujocoStatistics
       warning_badqvel.set(warningStats.position(Mujoco.mjWARN_BADQVEL).number());
       warning_badqacc.set(warningStats.position(Mujoco.mjWARN_BADQACC).number());
       warning_badctrl.set(warningStats.position(Mujoco.mjWARN_BADCTRL).number());
+
+      if (LOG_MUJOCO_WARNINGS)
+         logNewMujocoWarnings();
+   }
+
+
+
+   /** Logs the first increment of each MuJoCo warning counter. See {@link #LOG_MUJOCO_WARNINGS}. */
+   private void logNewMujocoWarnings()
+   {
+      logIfNew(0, Mujoco.mjWARN_INERTIA, "INERTIA: (near) singular inertia matrix");
+      logIfNew(1, Mujoco.mjWARN_CONTACTFULL, "CONTACTFULL: too many contacts, some were dropped");
+      logIfNew(2, Mujoco.mjWARN_CNSTRFULL, "CNSTRFULL: constraint buffer full, constraints were dropped");
+      logIfNew(3, Mujoco.mjWARN_BADQPOS, "BADQPOS: bad number in qpos");
+      logIfNew(4, Mujoco.mjWARN_BADQVEL, "BADQVEL: bad number in qvel");
+      logIfNew(5, Mujoco.mjWARN_BADQACC, "BADQACC: bad number in qacc -- earliest sign of a bad contact-parameter set");
+      logIfNew(6, Mujoco.mjWARN_BADCTRL, "BADCTRL: bad number in ctrl");
+   }
+
+   private void logIfNew(int slot, int warningBit, String description)
+   {
+      int count = warningStats.position(warningBit).number();
+      if (count > loggedWarningCounts[slot])
+      {
+         loggedWarningCounts[slot] = count;
+         LogTools.warn(String.format("MuJoCo mjWARN_%s (count now %d, tick %d)", description, count, tick.getValue()));
+      }
    }
 
    /**
-    * Reads {@code mjData.energy} when the energy flag is enabled, NaN otherwise — MuJoCo leaves
+    * Reads {@code mjData.energy} when the energy flag is enabled, NaN otherwise -- MuJoCo leaves
     * zeros in the array when {@code mjENBL_ENERGY} is off, which would read as a plausible value.
     */
    /**
     * Reads the forward-vs-inverse dynamics comparison MuJoCo writes when {@code mjENBL_FWDINV} is
-    * set. Both numbers should sit near zero; a rising value means the constraint solver is not
-    * converging, which shows up here before it shows up as a robot falling over.
+    * set: {@code ||qfrc_constraint_forward - qfrc_constraint_inverse||} over all nv degrees of
+    * freedom, and the same comparison over the nefc constraint rows.
+    * <p>
+    * <b>Do not read this as a convergence measure when contacts have friction.</b> It was added to
+    * answer "is the constraint solver converging?" and it cannot. {@code mj_inverse} reconstructs
+    * {@code efc_force} analytically from the constraint acceleration, and for a STICKING contact the
+    * tangential constraint acceleration is zero, so it reconstructs roughly zero friction no matter
+    * what static friction force the forward solve actually chose. Static friction is
+    * inequality-constrained: it is not a function of acceleration, so the comparison is structurally
+    * invalid for frictional contact at rest, and the number it returns is the size of the stiction
+    * being carried.
+    * <p>
+    * Measured on a statically resting Zulu (no controller, 9 contacts, residual joint motion
+    * 1.2e-4 rad/s): <b>42.8 with {@code condim == 4} and 5.1e-12 with {@code condim == 1}</b>,
+    * identical model, identical contact set -- a ratio of 8.4e12. Per-row decomposition shows the
+    * residual sitting on the elliptic contacts' friction rows, where forward returns tens of newtons
+    * and inverse returns ~0; only the normal rows differ by anything resembling a solver margin
+    * (around 5%). A symmetric box resting flat reads 1e-12 for the same reason -- it has no
+    * tangential demand -- which is what makes naive probe comparisons so misleading here.
+    * <p>
+    * It remains meaningful with {@code condim == 1}, in free flight, and as a relative signal at a
+    * fixed friction configuration. The norm also mixes units: newtons on a free joint's three
+    * translational DoF, newton-metres on the rest.
     */
    public void updateSolverDiagnostics(boolean fwdinvEnabled)
    {

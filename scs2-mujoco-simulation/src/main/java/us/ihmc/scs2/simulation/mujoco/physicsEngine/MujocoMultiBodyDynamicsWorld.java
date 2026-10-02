@@ -9,7 +9,6 @@ import org.bytedeco.javacpp.DoublePointer;
 import us.ihmc.euclid.tuple3D.interfaces.Vector3DReadOnly;
 import us.ihmc.log.LogTools;
 import us.ihmc.scs2.simulation.mujoco.Mujoco;
-import us.ihmc.scs2.simulation.mujoco.Mujoco.mjContact;
 import us.ihmc.scs2.simulation.mujoco.Mujoco.mjData;
 import us.ihmc.scs2.simulation.mujoco.Mujoco.mjModel;
 import us.ihmc.scs2.simulation.mujoco.Mujoco.mjOption;
@@ -214,6 +213,7 @@ public class MujocoMultiBodyDynamicsWorld
       enableflags = setBit(enableflags, Mujoco.mjENBL_OVERRIDE, options.enableOverride.getValue());
       enableflags = setBit(enableflags, Mujoco.mjENBL_ENERGY, options.enableEnergy.getValue());
       enableflags = setBit(enableflags, Mujoco.mjENBL_FWDINV, options.enableFwdinv.getValue());
+      enableflags = setBit(enableflags, Mujoco.mjENBL_DIAGEXACT, options.enableDiagexact.getValue());
       opt.enableflags(enableflags);
 
       // Read-modify-write matters more here than for the enable flags: mjDSBL_FILTERPARENT is set
@@ -222,6 +222,7 @@ public class MujocoMultiBodyDynamicsWorld
       int disableflags = opt.disableflags();
       disableflags = setBit(disableflags, Mujoco.mjDSBL_CONTACT, options.disableContact.getValue());
       disableflags = setBit(disableflags, Mujoco.mjDSBL_GRAVITY, options.disableGravity.getValue());
+      disableflags = setBit(disableflags, Mujoco.mjDSBL_LIMIT, options.disableLimit.getValue());
       disableflags = setBit(disableflags, Mujoco.mjDSBL_EQUALITY, options.disableEquality.getValue());
       disableflags = setBit(disableflags, Mujoco.mjDSBL_ACTUATION, options.disableActuation.getValue());
       disableflags = setBit(disableflags, Mujoco.mjDSBL_WARMSTART, options.disableWarmstart.getValue());
@@ -251,6 +252,10 @@ public class MujocoMultiBodyDynamicsWorld
                        timeconst,
                        2.0 * opt.timestep());
       }
+
+      // Read the values straight back out of the native struct and log them, so a question about
+      // whether an edit reached MuJoCo is answered by MuJoCo rather than by what we think we set.
+      // Off unless asked: this fires on every option change.
    }
 
 
