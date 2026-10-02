@@ -1,7 +1,6 @@
 package us.ihmc.scs2.simulation.mujoco.physicsEngine.parameters;
 
 import java.util.Map;
-import java.util.Set;
 
 /**
  * Compile-time seeds, consumed once when the composite MJCF is generated on the first
@@ -63,19 +62,6 @@ public interface MujocoSimulationParametersReadOnly
     */
    boolean getEnforceJointLimits();
 
-
-   /** Contact class names the MJCF builder uses itself, which a user-defined class may not take. */
-   Set<String> RESERVED_CONTACT_CLASS_NAMES = Set.of("robot", "terrain");
-
-   /**
-    * Named groups of contact properties, emitted as MuJoCo {@code <default class="...">} blocks
-    * nested inside the robot class. Bodies are attached to a class through
-    * {@link #getContactClassByBodyName()}; anything unassigned keeps the model-wide values.
-    */
-   Map<String, MujocoContactProperties> getContactClasses();
-
-   /** Maps an SCS2 rigid body name to one of {@link #getContactClasses()}. */
-   Map<String, String> getContactClassByBodyName();
 
    /**
     * Command latency in seconds between the controller writing a joint's low-level command and

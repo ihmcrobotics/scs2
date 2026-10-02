@@ -14,8 +14,6 @@ public class MujocoSimulationParameters implements MujocoSimulationParametersBas
    private double timestep = 0.0;
    private boolean filterParentCollisions = true;
    private boolean enforceJointLimits = true;
-   private final Map<String, MujocoContactProperties> contactClasses = new LinkedHashMap<>();
-   private final Map<String, String> contactClassByBodyName = new LinkedHashMap<>();
    private double actuatorDelay = 0.0;
    private int actuatorDelaySamples = 16;
    private final Map<String, Double> actuatorDelayByJointName = new LinkedHashMap<>();
@@ -87,33 +85,6 @@ public class MujocoSimulationParameters implements MujocoSimulationParametersBas
       this.enforceJointLimits = enforceJointLimits;
    }
 
-
-   @Override
-   public Map<String, MujocoContactProperties> getContactClasses()
-   {
-      return contactClasses;
-   }
-
-   @Override
-   public Map<String, String> getContactClassByBodyName()
-   {
-      return contactClassByBodyName;
-   }
-
-   @Override
-   public void addContactClass(String contactClassName, MujocoContactProperties properties)
-   {
-      if (RESERVED_CONTACT_CLASS_NAMES.contains(contactClassName))
-         throw new IllegalArgumentException("'" + contactClassName + "' is reserved by the MJCF builder; pick another contact class name.");
-      contactClasses.put(contactClassName, new MujocoContactProperties(properties));
-   }
-
-   @Override
-   public void assignContactClass(String bodyName, String contactClassName)
-   {
-      contactClassByBodyName.put(bodyName, contactClassName);
-   }
-
    @Override
    public double getActuatorDelay()
    {
@@ -151,7 +122,6 @@ public class MujocoSimulationParameters implements MujocoSimulationParametersBas
    {
       actuatorDelayByJointName.put(jointName, actuatorDelay);
    }
-
 
    @Override
    public void setFilterParentCollisions(boolean filterParentCollisions)

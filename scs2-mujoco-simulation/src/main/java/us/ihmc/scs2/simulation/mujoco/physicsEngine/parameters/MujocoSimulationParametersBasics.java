@@ -13,8 +13,6 @@ public interface MujocoSimulationParametersBasics extends MujocoSimulationParame
       setTimestep(other.getTimestep());
       setFilterParentCollisions(other.getFilterParentCollisions());
       setEnforceJointLimits(other.getEnforceJointLimits());
-      other.getContactClasses().forEach(this::addContactClass);
-      other.getContactClassByBodyName().forEach(this::assignContactClass);
       setActuatorDelay(other.getActuatorDelay());
       setActuatorDelaySamples(other.getActuatorDelaySamples());
       other.getActuatorDelayByJointName().forEach(this::setActuatorDelay);
@@ -44,19 +42,7 @@ public interface MujocoSimulationParametersBasics extends MujocoSimulationParame
    void setEnforceJointLimits(boolean enforceJointLimits);
 
 
-   /**
-    * Defines a named contact class. The properties are copied, so the caller may reuse the instance.
-    *
-    * @throws IllegalArgumentException if the name is one the MJCF builder reserves.
-    * @see MujocoContactProperties
-    */
-   void addContactClass(String contactClassName, MujocoContactProperties properties);
 
-   /**
-    * Puts every collision shape on {@code bodyName} into a class previously defined with
-    * {@link #addContactClass(String, MujocoContactProperties)}.
-    */
-   void assignContactClass(String bodyName, String contactClassName);
 
    /** @see MujocoSimulationParametersReadOnly#getActuatorDelay() */
    void setActuatorDelay(double actuatorDelay);

@@ -356,14 +356,6 @@ public class MujocoPhysicsEngine implements PhysicsEngine
       dynamicsWorld.writeOptions(options);
       options.pollUpdateRequest(); // Discard the dirty flag the constructor-time seeding tripped.
 
-      // Contact override is global, so any per-body contact class configured by the caller is being
-      // silently ignored. Say so rather than letting it look applied.
-      int contactClassCount = seedParameters.getContactClasses().size();
-      if (options.enableOverride.getValue() && contactClassCount > 0)
-         LogTools.warn("enableOverride is ON, so the {} configured per-body contact class(es) have NO effect: "
-                       + "o_margin/o_solref/o_solimp/o_friction replace contact properties on every geom. "
-                       + "Set enableOverride=false to use the contact classes.",
-                       contactClassCount);
 
       MujocoTools.logEffectiveModelSummary(dynamicsWorld.getModel());
 
