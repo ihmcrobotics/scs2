@@ -150,7 +150,7 @@ public class MujocoPhysicsEngine implements PhysicsEngine
       for (MujocoRobot robot : robotList)
       {
          robot.initializeState();
-         robot.updateSensors(dynamicsWorld.getData().cfrc_ext());
+         robot.updateSensors(dynamicsWorld.getData().cfrc_ext(), dynamicsWorld.getData().xpos(), dynamicsWorld.getData().subtree_com());
          robot.getControllerManager().initializeControllers();
       }
       hasBeenInitialized = true;
@@ -198,7 +198,7 @@ public class MujocoPhysicsEngine implements PhysicsEngine
          // see one-tick-stale contact wrenches; same discrete-time convention as Bullet /
          // ContactPointBased. On the very first tick cfrc_ext is zero (mj_makeData default).
          // Frames are already current from pullStateFromMujoco() at the end of the previous step.
-         robot.updateSensors(dynamicsWorld.getData().cfrc_ext());
+         robot.updateSensors(dynamicsWorld.getData().cfrc_ext(), dynamicsWorld.getData().xpos(), dynamicsWorld.getData().subtree_com());
          robot.getControllerManager().updateControllers(currentTime);
          robot.getControllerManager().writeControllerOutput(JointStateType.EFFORT);
          robot.getControllerManager().writeControllerOutputForJointsToIgnore(JointStateType.values());
@@ -241,7 +241,9 @@ public class MujocoPhysicsEngine implements PhysicsEngine
                                    dynamicsWorld.getData().qpos(),
                                    dynamicsWorld.getData().qvel(),
                                    dynamicsWorld.getData().qacc(),
-                                   dynamicsWorld.getData().cacc());
+                                   dynamicsWorld.getData().cacc(),
+                                   dynamicsWorld.getData().xpos(),
+                                   dynamicsWorld.getData().subtree_com());
          robot.pullActuationFromMujoco(dynamicsWorld.getData());
       }
    }
@@ -344,7 +346,7 @@ public class MujocoPhysicsEngine implements PhysicsEngine
       for (MujocoRobot robot : robotList)
       {
          robot.updateFrames();
-         robot.updateSensors(dynamicsWorld.getData().cfrc_ext());
+         robot.updateSensors(dynamicsWorld.getData().cfrc_ext(), dynamicsWorld.getData().xpos(), dynamicsWorld.getData().subtree_com());
          robot.getControllerManager().pauseControllers();
       }
    }

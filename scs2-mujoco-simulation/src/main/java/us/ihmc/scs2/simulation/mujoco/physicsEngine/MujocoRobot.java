@@ -11,8 +11,12 @@ import java.util.Set;
 import org.bytedeco.javacpp.BoolPointer;
 import org.bytedeco.javacpp.DoublePointer;
 
+import us.ihmc.log.LogTools;
+import us.ihmc.scs2.definition.robot.JointDefinition;
+import us.ihmc.scs2.definition.robot.GroundContactPointDefinition;
+import us.ihmc.euclid.tuple3D.interfaces.Tuple3DReadOnly;
+import us.ihmc.scs2.simulation.mujoco.physicsEngine.parameters.MujocoSimulationParametersReadOnly;
 import us.ihmc.euclid.referenceFrame.FramePoint3D;
-import us.ihmc.euclid.referenceFrame.FrameVector3D;
 import us.ihmc.euclid.referenceFrame.ReferenceFrame;
 import us.ihmc.euclid.tuple3D.Vector3D;
 import us.ihmc.euclid.tuple3D.interfaces.Vector3DReadOnly;
@@ -44,6 +48,9 @@ import us.ihmc.yoVariables.registry.YoRegistry;
 public class MujocoRobot extends RobotExtension
 {
    private final MujocoMultiBodyRobot mujocoMultiBodyRobot;
+   /** Release once the point is this far above its own anchor, so chatter does not re-latch per tick. */
+   /** True when the welds are applied as CPB forces, which supersedes the equality-constraint path. */
+   /** Temporary diagnostic: print the first few ticks of weld forces. */
    /** Populated only under JOINT_SERVO; keyed by SCS2 joint name, iterated in registration order. */
    private final Map<String, MujocoJointActuation> jointActuationByName = new LinkedHashMap<>();
    private final List<MujocoJointActuation> jointActuationList = new ArrayList<>();
@@ -71,13 +78,15 @@ public class MujocoRobot extends RobotExtension
    private final Wrench scratchWrench = new Wrench();
    private final Wrench tmpExternalWrench = new Wrench();
 
-   // F/T moment-arm correction: cfrc_ext is at the body CoM, we register it at the body origin.
-   private final FrameVector3D comOffsetWorld = new FrameVector3D();
+   // F/T moment-arm correction: cfrc_ext's moment is referenced at subtree_com (the whole-robot
+   // centre of mass), we register it at the body origin.
+   private final Vector3D refPointToOrigin = new Vector3D();
    private final Vector3D forceWorld = new Vector3D();
    private final Vector3D torqueShift = new Vector3D();
 
-   // Scratch for cacc CoM-to-joint-origin spatial acceleration shift.
+   // Scratch for the cacc subtree-CoM-to-joint-origin spatial acceleration shift.
    private final Vector3D caccCoMShift = new Vector3D();
+   private final Vector3D caccRefToOrigin = new Vector3D();
 
    public MujocoRobot(Robot robot, YoRegistry physicsRegistry, MujocoMultiBodyRobot mujocoMultiBodyRobot)
    {
@@ -251,11 +260,24 @@ public class MujocoRobot extends RobotExtension
    /**
     * Pack per-body external wrenches from {@code mjData.cfrc_ext} into the registry, invalidate the
     * spatial-acceleration cache, then update every considered joint's sensor auxiliary data (IMU,
-    * wrench sensors, etc.). The cfrc_ext wrench is at the body CoM; it is shifted to the
-    * body-fixed-frame origin (a ~10 N*m bias on Alex feet without the shift). See inline notes for
-    * the {@code [torque|force]} layout.
+    * wrench sensors, etc.).
+    *
+    * <p>{@code cfrc_ext} is a member of MuJoCo's com-based {@code c*} family, so its moment is
+    * referenced at {@code subtree_com[body_rootid[bodyId]]} -- the centre of mass of the whole
+    * robot, NOT the body's own centre of mass. It is shifted from there to the body-fixed-frame
+    * origin, which is where the registry expects it. Getting this reference point wrong biases the
+    * moment by {@code (C - S) x F}: measured at 27.5 N*m on a foot carrying 638 N, which is about
+    * 43 mm of centre-of-pressure error that moves as the robot's centre of mass does. The state
+    * estimator plants the trusted foot at the measured CoP, so that error walks the foot.
+    *
+    * <p>Note the asymmetry with the push direction, which is a genuine trap: {@code xfrc_applied}
+    * (input) acts at the body's own centre of mass, while {@code cfrc_ext} (output) is referenced at
+    * {@code subtree_com}. Both verified by measurement. So
+    * {@link #pushExternalWrenchesToMujoco(DoublePointer)} shifting to the body CoM is correct, and
+    * this method shifting from subtree_com is correct; they are not each other's inverse.
+    * See inline notes for the {@code [torque|force]} layout.
     */
-   public void updateSensors(DoublePointer cfrcExt)
+   public void updateSensors(DoublePointer cfrcExt, DoublePointer xpos, DoublePointer subtreeCom)
    {
       ReferenceFrame worldFrame = getRobot().getInertialFrame();
       wrenchRegistry.reset();
@@ -264,6 +286,7 @@ public class MujocoRobot extends RobotExtension
          int base = entry.getKey() * 6;
          SimRigidBodyBasics body = entry.getValue();
 
+
          double torqueAtCoMX = cfrcExt.get(base);
          double torqueAtCoMY = cfrcExt.get(base + 1);
          double torqueAtCoMZ = cfrcExt.get(base + 2);
@@ -271,11 +294,14 @@ public class MujocoRobot extends RobotExtension
          double forceY = cfrcExt.get(base + 4);
          double forceZ = cfrcExt.get(base + 5);
 
-         // CoM offset is in body-fixed frame; rotating into world gives (CoM - origin) in world.
-         comOffsetWorld.setIncludingFrame(body.getInertia().getCenterOfMassOffset());
-         comOffsetWorld.changeFrame(worldFrame);
+         // Shift the moment from subtree_com to the body origin: m_O = m_S + (S - O) x F.
+         int bodyId = entry.getKey();
+         int rootBodyId = mujocoMultiBodyRobot.getBodyRootId(bodyId);
+         refPointToOrigin.set(subtreeCom.get(rootBodyId * 3) - xpos.get(bodyId * 3),
+                              subtreeCom.get(rootBodyId * 3 + 1) - xpos.get(bodyId * 3 + 1),
+                              subtreeCom.get(rootBodyId * 3 + 2) - xpos.get(bodyId * 3 + 2));
          forceWorld.set(forceX, forceY, forceZ);
-         torqueShift.cross(comOffsetWorld, forceWorld);
+         torqueShift.cross(refPointToOrigin, forceWorld);
 
          scratchWrench.setToZero(body.getBodyFixedFrame(), worldFrame);
          scratchWrench.getAngularPart().set(torqueAtCoMX + torqueShift.getX(),
@@ -330,7 +356,7 @@ public class MujocoRobot extends RobotExtension
          for (int i = 0; i < 6; i++)
             xfrcApplied.put(base + i, 0.0);
 
-         // Body CoM position in world — same for all EWPs on this body, so compute once.
+         // Body CoM position in world, same for all EWPs on this body, so compute once.
          pushBodyComPosWorld.setIncludingFrame(body.getInertia().getCenterOfMassOffset());
          pushBodyComPosWorld.changeFrame(worldFrame);
 
@@ -452,6 +478,29 @@ public class MujocoRobot extends RobotExtension
     * <p>Combined with {@code pushStateToMujoco}, the usual "move it, then hold it" recipe works:
     * set the joint state through SCS2 and set pinned, and MuJoCo holds it there.
     */
+
+
+
+   /**
+    * ContactPointBased's force law, applied as an actual force rather than a constraint. This is the
+    * faithful emulation: CPB does not constrain anything, it adds
+    * {@code Fz = Kz*zPrime/(L - zPrime) - Bz*zPrimeDot} along the normal and
+    * {@code Fxy = Kxy*delta - Bxy*deltaDot} in-plane, measured from the remembered touchdown point.
+    * <p>
+    * Three things the equality-constraint form could not do, which this can:
+    * <ul>
+    * <li><b>Anisotropy.</b> CPB is 6:1 -- about 71 kN/m normal (Kz/L) against 11.4 kN/m in-plane.
+    * {@code mjEQ_CONNECT} has one solref for all three axes.
+    * <li><b>Redundancy.</b> Four coincident points on one rigid foot is 12 constraints on a 6-DoF
+    * body, which a constraint solver cannot take and superposed forces do not care about.
+    * <li><b>CPB's actual nonlinearity</b>, including the pole at {@code L}.
+    * </ul>
+    * Must run AFTER {@code pushExternalWrenchesToMujoco}, which rezeros the slots it manages; this
+    * adds to {@code xfrc_applied} rather than overwriting it. The moment is referenced to the body
+    * CoM ({@code xipos}), which is the convention {@code xfrc_applied} uses.
+    */
+
+
    public void pushPinnedJointsToMujoco(mjModel model, mjData data)
    {
       DoublePointer eqData = model.eq_data();
@@ -563,7 +612,9 @@ public class MujocoRobot extends RobotExtension
                                    DoublePointer qpos,
                                    DoublePointer qvel,
                                    DoublePointer qacc,
-                                   DoublePointer cacc)
+                                   DoublePointer cacc,
+                                   DoublePointer xpos,
+                                   DoublePointer subtreeCom)
    {
       // The session owns gravity and can change it between ticks, so the IMU's acceleration
       // calculator has to track it rather than assume standard gravity.
@@ -604,30 +655,44 @@ public class MujocoRobot extends RobotExtension
             if (bodyId >= 0)
             {
                int base = bodyId * 6;
-               // cacc layout: [αx αy αz ax ay az] at CoM in world frame.
+               // cacc layout: [wdot_x wdot_y wdot_z ax ay az], world-aligned axes.
+               //
+               // Reference point: the whole c* family (cvel, cacc, cfrc_*) is referenced at
+               // subtree_com[body_rootid[bodyId]] -- the CoM of the subtree rooted at this body's
+               // top-level ancestor, i.e. for a floating robot the CoM of the ENTIRE robot. It is
+               // NOT the body's own CoM. (Verified by measurement against v_S = v_O + w x (S - O)
+               // on cvel: exact match at subtree_com, off by the full lever arm at the body origin.)
+               // For a single-body robot the two coincide, which is why simple models hide the
+               // difference; for a humanoid the whole-robot CoM sits tens of cm from the pelvis.
+               //
                // MuJoCo's cacc uses proper-acceleration convention (root reference = -g), so
-               // a body at rest reads +9.81 m/s² upward. SpatialAccelerationCalculator already
+               // a body at rest reads +9.81 m/s^2 upward. SpatialAccelerationCalculator already
                // applies the -g reference via setGravitionalAcceleration, which would double-count
                // gravity. Add gravity here to convert back to the Featherstone mathematical
-               // convention (= 0 at rest) that the calculator expects.
+               // convention (= 0 at rest) that the calculator expects. Gravity is uniform, so this
+               // is independent of the reference point and can be applied in either order.
                angularAcceleration.set(cacc.get(base), cacc.get(base + 1), cacc.get(base + 2));
                linearAcceleration.set(cacc.get(base + 3), cacc.get(base + 4), cacc.get(base + 5));
-               linearAcceleration.add(gravity); // world frame: +(-9.81 z) → 9.81 - 9.81 = 0 at rest
+               linearAcceleration.add(gravity); // world frame: +(-9.81 z) -> 9.81 - 9.81 = 0 at rest
 
-               // Rotate both parts from world to body frame.
+               // Shift the spatial linear acceleration from subtree_com to the joint origin, in
+               // world axes, before rotating. For spatial accelerations:
+               //   a_O = a_S + wdot x r_{S->O}
+               // (no centripetal w x (w x r) term -- that only appears in classical acceleration)
+               int rootBodyId = mujocoMultiBodyRobot.getBodyRootId(bodyId);
+               caccRefToOrigin.set(xpos.get(bodyId * 3) - subtreeCom.get(rootBodyId * 3),
+                                   xpos.get(bodyId * 3 + 1) - subtreeCom.get(rootBodyId * 3 + 1),
+                                   xpos.get(bodyId * 3 + 2) - subtreeCom.get(rootBodyId * 3 + 2));
+               caccCoMShift.cross(angularAcceleration, caccRefToOrigin);
+               linearAcceleration.add(caccCoMShift);
+
+               // Rotate both parts from world into the body (after-joint) frame mecano expects.
                quaternion.inverseTransform(angularAcceleration);
                quaternion.inverseTransform(linearAcceleration);
 
-               // Shift spatial linear acceleration from CoM to joint origin (body frame).
-               // For spatial accelerations: a_origin = a_CoM + α × r_{CoM→origin}
-               //                                      = a_CoM - α × comOffset
-               // (no centripetal ω×(ω×r) term — that only appears in classical acceleration)
-               caccCoMShift.cross(angularAcceleration, floating.getSuccessor().getInertia().getCenterOfMassOffset());
-               linearAcceleration.sub(caccCoMShift);
-
                floating.getJointAcceleration().getAngularPart().set(angularAcceleration);
                floating.getJointAcceleration().getLinearPart().set(linearAcceleration);
-               // cacc is already Featherstone spatial — addCrossToLinearPart is NOT needed.
+               // cacc is already Featherstone spatial, so addCrossToLinearPart is NOT needed.
             }
             else
             {

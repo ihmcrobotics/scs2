@@ -1,6 +1,7 @@
 package us.ihmc.scs2.simulation.mujoco.physicsEngine;
 
 import java.util.LinkedHashMap;
+import java.util.HashMap;
 import java.util.Map;
 
 import org.bytedeco.javacpp.BytePointer;
@@ -62,6 +63,19 @@ public class MujocoMultiBodyRobot
    }
 
    /**
+    * MuJoCo's {@code body_rootid}: the ancestor of {@code bodyId} that is a direct child of world.
+    * This is the index whose {@code subtree_com} entry the com-based {@code c*} family
+    * ({@code cvel}, {@code cacc}, {@code cfrc_*}) is referenced to, so reading any of those
+    * requires it.
+    */
+   public int getBodyRootId(int bodyId)
+   {
+      if (bodyId < 0)
+         return -1;
+      return model.body_rootid().get(bodyId);
+   }
+
+   /**
     * Resolve the MuJoCo joint id for the given SCS2 joint name and cache its qpos/qvel addresses.
     * Throws if the joint isn't found in the compiled `mjModel`.
     */
@@ -108,6 +122,8 @@ public class MujocoMultiBodyRobot
       if (equalityId >= 0)
          pinEqualityIdByJointName.put(scs2JointName, equalityId);
    }
+
+
 
    /** The joint's pin equality constraint id, or -1 when the joint has none. */
    public int getPinEqualityId(String scs2JointName)
