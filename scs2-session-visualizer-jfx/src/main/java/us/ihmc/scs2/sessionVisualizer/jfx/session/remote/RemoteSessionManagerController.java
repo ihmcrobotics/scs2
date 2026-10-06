@@ -57,7 +57,9 @@ import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.MenuTools;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.PositiveIntegerValueFilter;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.TreeTableViewTools;
-import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.YoHeightGridFX3D;
+import us.ihmc.scs2.sessionVisualizer.jfx.messager.Topic;
+import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.YoGraphicFX3D;
+import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.YoHeightGridVoxelsFX3D;
 
 public class RemoteSessionManagerController implements SessionControlsController
 {
@@ -382,17 +384,22 @@ public class RemoteSessionManagerController implements SessionControlsController
 
       JavaFXMissingTools.runLaterIfNeeded(getClass(), () ->
       {
-         YoHeightGridFX3D heightMapGraphic = new YoHeightGridFX3D();
-         heightMapGraphic.setName("HeightMap");
-         toolkit.getYoGraphicFXRootGroup().addYoGraphicFX3D(heightMapGraphic);
-         // null (not false): SCS2JavaFXMessager.createPropertyInput only reflects the topic's actual current value
-         // when the passed-in value is null - a concrete default bypasses it and always wins.
-         Property<Boolean> showHeightMapProperty = toolkit.getMessager().createPropertyInput(toolkit.getTopics().getShowHeightMap(), null);
-         heightMapGraphic.visibleProperty().set(Boolean.TRUE.equals(showHeightMapProperty.getValue()));
-         showHeightMapProperty.addListener((o, oldShow, newShow) -> heightMapGraphic.setVisible(Boolean.TRUE.equals(newShow)));
-
+         YoHeightGridVoxelsFX3D heightMapGraphic = addHeightMapGraphic(new YoHeightGridVoxelsFX3D(), "HeightMap", toolkit.getTopics().getShowHeightMap());
          perceptionLiveFeed.startHeightMap(heightMapGraphic::setData);
       });
+   }
+
+   /** Adds a height map graphic to the persistent root group with its visibility bound to {@code showTopic}. */
+   private <T extends YoGraphicFX3D> T addHeightMapGraphic(T graphic, String name, Topic<Boolean> showTopic)
+   {
+      graphic.setName(name);
+      toolkit.getYoGraphicFXRootGroup().addYoGraphicFX3D(graphic);
+      // null (not false): SCS2JavaFXMessager.createPropertyInput only reflects the topic's actual current value when
+      // the passed-in value is null - a concrete default bypasses it and always wins.
+      Property<Boolean> showProperty = toolkit.getMessager().createPropertyInput(showTopic, null);
+      graphic.visibleProperty().set(Boolean.TRUE.equals(showProperty.getValue()));
+      showProperty.addListener((o, oldShow, newShow) -> graphic.setVisible(Boolean.TRUE.equals(newShow)));
+      return graphic;
    }
 
    private void stopSession()

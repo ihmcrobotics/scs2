@@ -57,7 +57,9 @@ import us.ihmc.scs2.sessionVisualizer.jfx.session.SessionControlsController;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.CoalescingFXTaskScheduler;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.FXCoalescedUpdater;
 import us.ihmc.scs2.sessionVisualizer.jfx.tools.JavaFXMissingTools;
-import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.YoHeightGridFX3D;
+import us.ihmc.scs2.sessionVisualizer.jfx.messager.Topic;
+import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.YoGraphicFX3D;
+import us.ihmc.scs2.sessionVisualizer.jfx.yoGraphic.YoHeightGridVoxelsFX3D;
 import us.ihmc.scs2.sharedMemory.interfaces.YoBufferPropertiesReadOnly;
 import us.ihmc.yoVariables.registry.YoRegistry;
 import us.ihmc.yoVariables.variable.YoVariable;
@@ -472,18 +474,7 @@ public class LogSessionManagerController implements SessionControlsController
             if (heightMapScrubber.isAvailable())
             {
                LogTools.info("Loaded " + perceptionMcapFile + ", found " + heightMapScrubber.getMessageCount() + " height map messages.");
-               YoHeightGridFX3D heightMapGraphic = new YoHeightGridFX3D();
-               heightMapGraphic.setName("HeightMap");
-               // Not toolkit.getYoGraphicFXSessionRootGroup(): that group only gets attached to the actual JavaFX
-               // scene graph when the session declares at least one YoGraphicDefinition (see
-               // YoGraphicFXManager.startSession()), which LogSession never does for this manager-driven graphic.
-               // The persistent root group is always attached, and still gets cleared on session end regardless.
-               toolkit.getYoGraphicFXRootGroup().addYoGraphicFX3D(heightMapGraphic);
-               // null (not false): SCS2JavaFXMessager.createPropertyInput only reflects the topic's actual current
-               // value when the passed-in value is null - a concrete default bypasses it and always wins.
-               Property<Boolean> showHeightMapProperty = messager.createPropertyInput(topics.getShowHeightMap(), null);
-               heightMapGraphic.visibleProperty().set(Boolean.TRUE.equals(showHeightMapProperty.getValue()));
-               showHeightMapProperty.addListener((o, oldShow, newShow) -> heightMapGraphic.setVisible(Boolean.TRUE.equals(newShow)));
+               YoHeightGridVoxelsFX3D heightMapGraphic = addHeightMapGraphic(new YoHeightGridVoxelsFX3D(), "HeightMap", topics.getShowHeightMap());
                heightMapGraphic.setData(heightMapScrubber.scrub(logDataReader.getTimestamp().getLongValue()));
                logDataReader.getTimestamp().addListener(v -> heightMapGraphic.setData(heightMapScrubber.scrub(v.getValueAsLongBits())));
             }
@@ -519,6 +510,26 @@ public class LogSessionManagerController implements SessionControlsController
             addLogToGUI(addedLog.getChildLogDataReader().getLogDirectory(), addedLog);
          }
       }
+   }
+
+   /**
+    * Adds a height map graphic to the persistent root group with its visibility bound to {@code showTopic}.
+    * <p>
+    * Not toolkit.getYoGraphicFXSessionRootGroup(): that group only gets attached to the actual JavaFX scene graph when
+    * the session declares at least one YoGraphicDefinition (see YoGraphicFXManager.startSession()), which LogSession
+    * never does for this manager-driven graphic. The persistent root group is always attached, and still gets cleared
+    * on session end regardless.
+    */
+   private <T extends YoGraphicFX3D> T addHeightMapGraphic(T graphic, String name, Topic<Boolean> showTopic)
+   {
+      graphic.setName(name);
+      toolkit.getYoGraphicFXRootGroup().addYoGraphicFX3D(graphic);
+      // null (not false): SCS2JavaFXMessager.createPropertyInput only reflects the topic's actual current value when
+      // the passed-in value is null - a concrete default bypasses it and always wins.
+      Property<Boolean> showProperty = toolkit.getMessager().createPropertyInput(showTopic, null);
+      graphic.visibleProperty().set(Boolean.TRUE.equals(showProperty.getValue()));
+      showProperty.addListener((o, oldShow, newShow) -> graphic.setVisible(Boolean.TRUE.equals(newShow)));
+      return graphic;
    }
 
    private void clearControls()

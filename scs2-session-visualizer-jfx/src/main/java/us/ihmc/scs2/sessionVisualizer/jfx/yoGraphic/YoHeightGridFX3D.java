@@ -80,13 +80,29 @@ public class YoHeightGridFX3D extends YoGraphicFX3D
       meshView.idProperty().bind(nameProperty());
       meshView.getProperties().put(YO_GRAPHICFX_ITEM_KEY, this);
 
+      meshView.setMaterial(createColormapMaterial());
+   }
+
+   /** Matte material whose diffuse map is the elevation gradient strip - sample it with {@link #toColormapU(double)}.
+    *  Shared with {@link YoHeightGridVoxelsFX3D} so both height map views color elevation identically. */
+   static PhongMaterial createColormapMaterial()
+   {
       PhongMaterial material = new PhongMaterial();
       material.setDiffuseMap(buildColormapImage(COLORMAP_SAMPLES));
       // Default PhongMaterial specular reflectivity shows up as bright highlight streaks on the steep "wall"
       // triangles between big height jumps - not wanted for a flat, matte, color-coded data surface like this one.
       material.setSpecularColor(Color.TRANSPARENT);
       material.setSpecularPower(0.0);
-      meshView.setMaterial(material);
+      return material;
+   }
+
+   /** Texture U coordinate into {@link #createColormapMaterial()}'s gradient strip for the given world elevation. */
+   static float toColormapU(double elevation)
+   {
+      double alpha = elevation % GRADIENT_LENGTH;
+      if (alpha < 0.0)
+         alpha += GRADIENT_LENGTH;
+      return (float) (alpha / GRADIENT_LENGTH);
    }
 
    /** Called from outside (log-viewer wiring) whenever the scrubbed height scan data changes. Cheap, FX-thread-safe. */
@@ -162,10 +178,7 @@ public class YoHeightGridFX3D extends YoGraphicFX3D
             vertices[vertexIndex] = new Point3D32(localPoint);
             normals[vertexIndex] = upNormal32;
 
-            double alpha = elevation % GRADIENT_LENGTH;
-            if (alpha < 0.0)
-               alpha += GRADIENT_LENGTH;
-            textures[vertexIndex] = new Point2D32((float) (alpha / GRADIENT_LENGTH), 0.5f);
+            textures[vertexIndex] = new Point2D32(toColormapU(elevation), 0.5f);
          }
       }
 
