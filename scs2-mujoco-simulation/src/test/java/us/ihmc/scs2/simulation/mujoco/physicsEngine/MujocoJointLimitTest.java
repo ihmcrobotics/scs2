@@ -67,8 +67,14 @@ public class MujocoJointLimitTest
 
    private Robot createSession(boolean enforceJointLimits)
    {
+      return createSession(enforceJointLimits, new MujocoSimulationParameters().get_solreflimit_timeconst());
+   }
+
+   private Robot createSession(boolean enforceJointLimits, double solreflimitTimeconst)
+   {
       MujocoSimulationParameters parameters = new MujocoSimulationParameters();
       parameters.setEnforceJointLimits(enforceJointLimits);
+      parameters.set_solreflimit_timeconst(solreflimitTimeconst);
       session = new SimulationSession((inertialFrame, rootRegistry) -> new MujocoPhysicsEngine(inertialFrame, rootRegistry, parameters));
       session.addRobot(createRobot());
       session.setSessionDTSeconds(DT);
@@ -166,5 +172,61 @@ public class MujocoJointLimitTest
 
       double q = ((OneDoFJointBasics) robot.getJoint(JOINT)).getQ();
       assertTrue(q > UPPER_LIMIT + 1.0, "The joint was limited even with enforceJointLimits off; q = " + q);
+   }
+
+   /** Runs the joint hard into its stop and reports how far past the range it got. */
+   private double peakOvershootAboveUpperLimit(double solreflimitTimeconst)
+   {
+      Robot robot = createSession(true, solreflimitTimeconst);
+      addConstantTorque(robot, 10.0);
+      OneDoFJointBasics joint = (OneDoFJointBasics) robot.getJoint(JOINT);
+      double peak = 0.0;
+      for (int i = 0; i < 2000; i++)
+      {
+         assertTrue(session.getSimulationSessionControls().simulateNow(1), "Simulation reported a failure");
+         peak = Math.max(peak, joint.getQ() - UPPER_LIMIT);
+      }
+      return peak;
+   }
+
+   /**
+    * The end stop has to be stiff enough that a joint arriving fast does not simply pass through it.
+    * MuJoCo's default {@code solreflimit} of 0.02 s is a soft stop, and the existing tests above
+    * only ever push the joint into it quasi-statically, so they cannot see this: drive the joint in
+    * at speed and it travels several degrees past a range the hardware physically ends at.
+    * <p>
+    * Stiffness goes as 1/timeconst^2 in MuJoCo's positive solref form, so a 4x shorter time constant
+    * is ~16x stiffer; this asserts a conservative 4x reduction in overshoot.
+    */
+   @Test
+   public void testAStifferEndStopIsPassedThroughLess()
+   {
+      double softOvershoot = peakOvershootAboveUpperLimit(0.02);
+      shutdown();
+      double stiffOvershoot = peakOvershootAboveUpperLimit(0.005);
+
+      assertTrue(softOvershoot > 0.0, "Expected the default stop to be passed through at all; got " + softOvershoot);
+      assertTrue(stiffOvershoot < softOvershoot / 4.0,
+                 "A stiffer end stop should be passed through far less: 0.02 s gave " + softOvershoot
+                 + " rad, 0.005 s gave " + stiffOvershoot + " rad");
+   }
+
+   /**
+    * The stiffness has to actually reach the model. Guards against the attribute being dropped from
+    * the MJCF, which would leave every joint silently back on MuJoCo's default stop.
+    */
+   @Test
+   public void testTheEndStopStiffnessIsEmittedIntoTheMjcf()
+   {
+      MujocoSimulationParameters parameters = new MujocoSimulationParameters();
+      parameters.set_solreflimit_timeconst(0.005);
+      parameters.set_solreflimit_dampratio(1.0);
+      Robot robot = new Robot(createRobot(), SimulationSession.DEFAULT_INERTIAL_FRAME, false);
+      String mjcf = MujocoMultiBodyRobotFactory.buildWorldMjcf(java.util.List.of(robot),
+                                                               java.util.List.of(),
+                                                               new java.io.File(System.getProperty("java.io.tmpdir")),
+                                                               parameters);
+      assertTrue(mjcf.contains("solreflimit=\"0.005 1.0\""),
+                 "Expected the joint limit stiffness in the MJCF, got:\n" + mjcf);
    }
 }

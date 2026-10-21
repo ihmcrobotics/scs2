@@ -1,5 +1,7 @@
 package us.ihmc.scs2.simulation.mujoco.physicsEngine.parameters;
 
+import java.util.Map;
+
 /**
  * Compile-time seeds, consumed once when the composite MJCF is generated on the first
  * {@code simulate()} -- except {@link #getSubSteps()}, which the engine mirrors live in
@@ -50,42 +52,25 @@ public interface MujocoSimulationParametersReadOnly
    boolean getFilterParentCollisions();
 
    /**
-    * When true, each 1-DoF joint's position limits are emitted as MJCF {@code range} so MuJoCo's
-    * constraint solver enforces them. MuJoCo emitted no limits at all before this existed, which
-    * let a diverging controller wind a joint far past its range instead of hitting a stop.
-    * <p>
-    * ContactPointBased applies a soft limit stop instead (see {@code RobotOneDoFJointSoftLimitCalculator});
-    * the MJCF uses MuJoCo's default {@code solreflimit}, so the stop is comparably soft but not
-    * gain-matched. Set false to restore the old unlimited behavior.
+    * When true, each 1-DoF joint's position limits are emitted as MJCF {@code range}, with the end
+    * stop's stiffness from {@link #get_solreflimit_timeconst()}. ContactPointBased's soft limit stop
+    * runs only under that engine, so the two mechanisms never both act on a joint.
     */
    boolean getEnforceJointLimits();
 
 
    /**
-    * Command latency in seconds between the controller writing a joint's low-level command and
-    * MuJoCo applying it, modelling the lag a real drive has between receiving a setpoint and
-    * producing torque. 0 means no delay.
-    * <p>
-    * Applies to every joint the builder could give an actuator, which is all 1-DoF joints. This is
-    * command latency, not measurement latency -- MuJoCo's matching {@code sensor_delay} is indexed
-    * by sensor and the MJCF builder emits no {@code <sensor>} elements yet.
-    * <p>
-    * Compile-time: MuJoCo sizes the history buffer that holds the delayed samples when the model
-    * compiles, so this cannot be changed on a running simulation.
+    * Command latency [s] between the controller writing a joint's low-level command and MuJoCo
+    * applying it; 0 for none. Command latency only -- MuJoCo's {@code sensor_delay} is per sensor
+    * and no {@code <sensor>} elements are emitted. Compile-time: it sizes a history buffer.
     */
    double getActuatorDelay();
 
    /**
-    * Number of samples MuJoCo keeps in the history buffer backing the delay, at least 2. MuJoCo
-    * rejects a model that sets a delay without one, so this is not optional when the delay is
-    * non-zero.
-    * <p>
-    * It controls how faithful the delay is, and the minimum of 2 is a trap worth knowing about:
-    * the samples span the whole delay window, so with 2 of them linear interpolation ramps the
-    * command across the entire delay instead of transporting it, and the joint starts responding
-    * immediately. Sample spacing is {@code delay / (samples - 1)}, so for a delay that behaves like
-    * real transport lag set this to roughly {@code delay / timestep}. The default of 16 covers the
-    * usual case of a few milliseconds of latency at a sub-millisecond timestep.
+    * History samples backing the delay, at least 2. The samples span the whole delay window, so at
+    * the minimum of 2 the command is interpolated across the delay rather than transported through
+    * it and the joint responds immediately; spacing is {@code delay / (samples - 1)}, so set this
+    * near {@code delay / timestep} for true transport lag.
     */
    int getActuatorDelaySamples();
 
@@ -93,16 +78,9 @@ public interface MujocoSimulationParametersReadOnly
    Map<String, Double> getActuatorDelayByJointName();
 
    /**
-    * Joints to drive with a {@code <dcmotor>} instead of the affine servo, keyed by SCS2 joint name.
-    * A joint absent from this map keeps the affine servo, so an empty map is the default and leaves
-    * every simulation exactly as it was.
-    * <p>
-    * Per joint rather than global, and with no default: motors differ joint to joint, and a global
-    * fallback motor would be fiction applied to every joint that nobody had characterised.
-    * <p>
-    * Compile-time: the actuator element and its activation states are fixed when the model
-    * compiles, so this cannot change on a running simulation. The controller gains inside it are
-    * live, as they are for the affine servo.
+    * Joints driven by a {@code <dcmotor>} instead of the affine servo, keyed by SCS2 joint name; a
+    * joint absent from the map keeps the servo. Compile-time: the actuator element and its
+    * activation states are fixed at compile, though the gains inside it stay live.
     */
    Map<String, MujocoMotorParameters> getMotorByJointName();
 
@@ -114,6 +92,27 @@ public interface MujocoSimulationParametersReadOnly
    int getPerContactDiagnosticsCapacity();
 
    // ---------- MuJoCo-owned ----------
+
+   /**
+    * MJCF {@code joint/@solreflimit[0]}: settling time constant [s] of the JOINT LIMIT constraint,
+    * i.e. the mechanical end stop, as opposed to {@link #get_solref_timeconst()} for ground
+    * contact. Keep &ge; 2&middot;timestep. MuJoCo's default is 0.02.
+    * <p>
+    * The positive {@code (timeconst, dampratio)} form is normalised by the constraint inertia
+    * internally, so one time constant means the same settling on any joint. Do not convert a
+    * torque-space gain such as {@code getKpSoftLimitStop()} into the negative
+    * {@code (-stiffness, -damping)} form instead: MuJoCo's reference is an ACCELERATION, so that
+    * conversion needs the joint's pose-dependent inertia, which a compile-time attribute cannot have.
+    * @see <a href="https://mujoco.readthedocs.io/en/stable/modeling.html#reference">Modeling: solref</a>
+    */
+   double get_solreflimit_timeconst();
+
+   /**
+    * MJCF {@code joint/@solreflimit[1]}: damping ratio of the joint limit constraint. 1 is
+    * critically damped and is MuJoCo's default; below 1 the joint bounces off its own end stop.
+    * @see <a href="https://mujoco.readthedocs.io/en/stable/modeling.html#reference">Modeling: solref</a>
+    */
+   double get_solreflimit_dampratio();
 
    /**
     * MJCF default {@code geom/@solref[0]}: contact settling time constant [s]. Keep &ge;
@@ -142,7 +141,8 @@ public interface MujocoSimulationParametersReadOnly
    double get_solimp_dmax();
 
    /**
-    * MJCF default {@code geom/@solimp[2]} (width) [m]: penetration depth over which hardness ramps dmin to dmax.
+    * MJCF default {@code geom/@solimp[2]} (width) [m]: penetration depth over which hardness ramps
+    * dmin to dmax. MuJoCo's default, 1e-3.
     * @see <a href="https://mujoco.readthedocs.io/en/stable/modeling.html#impedance">Modeling: solimp</a>
     */
    double get_solimp_width();
@@ -166,22 +166,33 @@ public interface MujocoSimulationParametersReadOnly
    double get_friction_slide();
 
    /**
-    * MJCF default {@code geom/@friction[1]}: torsional ("spin") friction coefficient. 0.05
-    * empirically balances turn-in-place authority against stance-foot yaw wobble.
+    * MJCF default {@code geom/@friction[1]}: torsional ("spin") friction, in METRES -- it is the
+    * contact patch radius the solver assumes. MuJoCo's tiny default suits contacts whose patch is
+    * NOT resolved into separate points (a sphere, a capsule); a box sole is resolved into corner
+    * contacts that already resist yaw through their lever arms, so a coefficient on top
+    * double-counts. Below the geometry's own corner lever arm it changes nothing; above it the body
+    * resists yaw by a fixed amount regardless of how it is actually supported.
     * @see <a href="https://mujoco.readthedocs.io/en/stable/modeling.html#contact-parameters">Modeling: contact parameters</a>
     */
    double get_friction_spin();
 
    /**
-    * MJCF default {@code geom/@friction[2]}: rolling friction coefficient. 0.01 (vs MuJoCo default 1e-4) so spheres settle in finite time.
+    * MJCF default {@code geom/@friction[2]}: rolling friction, in metres, like
+    * {@link #get_friction_spin()}. Inert below condim 6, and raising it resists foot roll-over at
+    * heel-strike and toe-off, which is rarely what a walking robot wants.
     * @see <a href="https://mujoco.readthedocs.io/en/stable/modeling.html#contact-parameters">Modeling: contact parameters</a>
     */
    double get_friction_roll();
 
    /**
     * MJCF default {@code geom/@condim}: contact dimensionality (1 frictionless, 3 sliding, 4
-    * +torsional, 6 +rolling). Default 4: per-corner torsional friction stops yaw-induced lateral
-    * foot slip on flat feet (condim=3 wobbles).
+    * +torsional, 6 +rolling). MuJoCo's default is 3 and so is this one.
+    * <p>
+    * 3 suits box feet structurally: MuJoCo resolves a box sole against a plane or box into four
+    * corner contacts which already carry the whole wrench, so condim 4 adds a torsional friction
+    * cone per corner for a patch the geometry has resolved. Raise it to 4 for geometry that really
+    * contacts at one point -- a lone sphere or capsule -- and size {@code friction_spin} as that
+    * sole's true radius. See {@link #get_friction_spin()}.
     * @see <a href="https://mujoco.readthedocs.io/en/stable/computation/index.html#condim">Computation: condim</a>
     */
    int get_condim();

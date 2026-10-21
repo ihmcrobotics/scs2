@@ -7,39 +7,24 @@ import us.ihmc.yoVariables.variable.YoEnum;
 import us.ihmc.yoVariables.variable.YoInteger;
 
 /**
- * The single home of every live-tunable value: the full runtime-writable {@code mjOption} struct
- * plus SCS2's own {@code subSteps}, in a {@code MujocoOptions} child registry; editing any variable
- * here changes the physics engine. The MJCF deliberately emits none of them. Defaults match
- * {@code mj_defaultOption} except the noted SCS2 deviations; {@code timestep} and {@code gravity}
- * are engine-owned and absent.
+ * The single home of every live-tunable value: the runtime-writable {@code mjOption} fields plus
+ * SCS2's own {@code subSteps}, in a {@code MujocoOptions} child registry. The MJCF emits none of
+ * them. Defaults match {@code mj_defaultOption} except {@code integrator}, which is IMPLICITFAST
+ * rather than EULER because several IHMC robots carry joint damping; {@code timestep} and
+ * {@code gravity} are engine-owned and absent.
  * <p>
- * Names are verbatim {@code mjOption} field names, so each one is directly searchable: googling
- * e.g. "mujoco solimp" or "mujoco impratio" lands on the reference. The relevant pages are
- * <a href="https://mujoco.readthedocs.io/en/stable/modeling.html#solver-parameters">Modeling &gt;
- * Solver parameters</a> (solref/solimp semantics; the Contact override section there is exactly
- * the o_* / enableOverride mechanism) and the
- * <a href="https://mujoco.readthedocs.io/en/stable/XMLreference.html#option">XML reference,
- * option element</a>.
- * Array-valued fields get a component suffix -- a "shim name" that is not itself an API symbol,
- * taken from the docs' parameter tuples (solref = (timeconst, dampratio), solimp = (dmin, dmax,
- * width, midpoint, power)); each description states the exact index it maps to. The {@code o_} prefix is MuJoCo's "override"
- * marker: these mirror {@code mjOption}'s contact-override group (active when enableOverride),
- * as opposed to the per-geom defaults of the same name in MujocoSimulationParameters. Naming
- * convention module-wide: MuJoCo-derived names are snake_case verbatim; SCS2-owned names are
- * camelCase; members are grouped SCS2 first, then MuJoCo.
+ * Names are verbatim {@code mjOption} field names, with a component suffix on array-valued fields
+ * taken from the docs' tuples (solref = (timeconst, dampratio)); each description states the index.
+ * The {@code o_} prefix is MuJoCo's "override" marker: those mirror {@code mjOption}'s
+ * contact-override group, active only when {@code enableOverride} is set, as opposed to the
+ * per-geom defaults of the same name in {@link MujocoSimulationParametersReadOnly}, which also
+ * documents which values belong here and which need a recompile.
  * </p>
  * <p>
- * Edits from any thread only trip a dirty flag (a plain boolean so GUI buffer scrubbing cannot
- * replay it); the engine consumes it via {@link #pollUpdateRequest()} and pushes the values into
- * {@code mjModel.opt} on the physics thread -- including once at compile, so values set before the
+ * Edits from any thread only trip a dirty flag -- a plain boolean, so GUI buffer scrubbing cannot
+ * replay it -- which the engine consumes through {@link #pollUpdateRequest()} and pushes into
+ * {@code mjModel.opt} on the physics thread, including once at compile so values set before the
  * first tick apply from step one.
- * </p>
- * <p>
- * Rule of thumb for where a value belongs: if the {@code mjOption} struct accepts a change between
- * steps (global solver and contact-override settings), it is an option and goes here, live-tunable
- * from the GUI; if MuJoCo would need a model recompile to honor it (per-geom/per-joint attributes,
- * collision structure, allocation sizes), it is a parameter and belongs in
- * {@link MujocoSimulationParametersReadOnly}.
  * </p>
  */
 public class YoMujocoOptions
@@ -158,13 +143,18 @@ public class YoMujocoOptions
    public final YoEnum<MujocoSolver> solver = var("solver",
          "Constraint solver (mjtSolver); NEWTON converges fastest", MujocoSolver.NEWTON);
    public final YoInteger iterations = var("iterations",
-         "Max main solver iterations per step (SCS2 default 25, MuJoCo 100)", 25);
+         "Max main solver iterations per step; MuJoCo default 100. Newton exits on tolerance, so this is a "
+         + "cap rather than a cost: a 25 cap was measured bit-identical on walking Alex, i.e. never reached", 100);
    public final YoInteger ls_iterations = var("ls_iterations",
          "Max line-search iterations per solver iteration", 50);
    public final YoInteger noslip_iterations = var("noslip_iterations",
-         "Non-physical noslip post-pass iterations suppressing residual contact drift; 0 disables (SCS2 default 5, MuJoCo 0)", 5);
+         "Non-physical noslip post-pass iterations suppressing residual contact drift; 0 disables, and 0 is both "
+         + "MuJoCo's default and ours. Measured on walking Alex, dropping the previous 5 to 0 left peak ankle "
+         + "acceleration unchanged (+0.1%) and lowered its rms by 7.6%", 0);
    public final YoInteger ccd_iterations = var("ccd_iterations",
-         "Max convex-mesh narrowphase (GJK/EPA) iterations", 50);
+         "Max convex-mesh narrowphase (GJK/EPA) iterations; MuJoCo's default. A 50 cap was measured "
+         + "bit-identical to this on walking Alex, on flat ground and on terrain carrying 15 mesh geoms, "
+         + "i.e. the cap is never reached and the higher value bought nothing", 35);
 
    public YoMujocoOptions(YoRegistry parentRegistry)
    {

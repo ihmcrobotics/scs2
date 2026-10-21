@@ -19,6 +19,8 @@ public interface MujocoSimulationParametersBasics extends MujocoSimulationParame
       other.getMotorByJointName().forEach(this::setMotor);
       setPerContactDiagnosticsCapacity(other.getPerContactDiagnosticsCapacity());
 
+      set_solreflimit_timeconst(other.get_solreflimit_timeconst());
+      set_solreflimit_dampratio(other.get_solreflimit_dampratio());
       set_solref_timeconst(other.get_solref_timeconst());
       set_solref_dampratio(other.get_solref_dampratio());
       set_solimp_dmin(other.get_solimp_dmin());
@@ -59,6 +61,10 @@ public interface MujocoSimulationParametersBasics extends MujocoSimulationParame
    void setPerContactDiagnosticsCapacity(int perContactDiagnosticsCapacity);
 
    // ---------- MuJoCo-owned ----------
+
+   void set_solreflimit_timeconst(double solreflimit_timeconst);
+
+   void set_solreflimit_dampratio(double solreflimit_dampratio);
 
    void set_solref_timeconst(double solref_timeconst);
 

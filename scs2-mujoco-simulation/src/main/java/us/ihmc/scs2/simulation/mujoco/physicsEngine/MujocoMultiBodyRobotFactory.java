@@ -56,6 +56,14 @@ public final class MujocoMultiBodyRobotFactory
    // Collision groups: the coarse foot box would self-collide (swing foot catching the stance
    // foot) in ways the real robot doesn't, so contype/conaffinity restrict robot geoms to test
    // only against terrain (robot=1/2, terrain=2/1), mirroring ContactPointBased.
+   // Robot-terrain collides, robot-robot does not: (contype & conaffinity) is non-zero only across
+   // the two groups. MuJoCo's default is 1/1 for everything, i.e. self-collision on, so this is a
+   // deliberate deviation and not an oversight -- SELF-COLLISION IS INTENTIONALLY DISABLED.
+   // Consequence worth knowing rather than rediscovering: the legs can pass through each other, so
+   // a controller or a learned policy is never penalised for a self-intersecting posture, and any
+   // result about limb clearance from this engine is vacuous. Turning it on means giving every
+   // robot a workable self-collision geometry first; the URDF collision primitives are sized for
+   // ground contact, not for limb-on-limb.
    private static final int ROBOT_CONTYPE = 1;
    private static final int ROBOT_CONAFFINITY = 2;
    private static final int TERRAIN_CONTYPE = 2;
@@ -365,13 +373,8 @@ public final class MujocoMultiBodyRobotFactory
    }
 
    /**
-    * Emit one disabled equality constraint per joint, used to implement
-    * {@code SimJointBasics.setPinned(boolean)}.
-    *
-    * <p>The other SCS2 engines pin a joint by switching it to an acceleration source and skipping
-    * its integration, which freezes it without the solver knowing. MuJoCo can do better: an
-    * equality constraint holds the joint through the same solver that resolves contact, so a
-    * pinned body produces correct reaction forces instead of being teleported back after the step.
+    * Emit one disabled equality constraint per joint, backing
+    * {@code SimJointBasics.setPinned(boolean)}; see {@code MujocoRobot.pushPinnedJointsToMujoco}.
     *
     * <p>A free root joint gets a {@code weld} to the world; a 1-DoF joint gets a {@code joint}
     * equality with no second joint, which MuJoCo constrains to a constant. All are emitted
@@ -418,16 +421,10 @@ public final class MujocoMultiBodyRobotFactory
     * {@code ctrl = tau_ff + kp * q_d + kd * qd_d} produces
     * {@code tau_ff + kp * (q_d - q) + kd * (qd_d - qdot)}.
     *
-    * <p>One rather than one-per-term, which an earlier revision used to get the torque decomposition
-    * straight out of {@code actuator_force}. The two are numerically identical -- measured at
-    * 5.6e-17 over 3000 steps, and the implicit integration of the damping term, which is the whole
-    * reason for this mode, is unaffected either way. But one actuator is the faithful model: the
-    * drive is a single device producing a single force, and the three terms are arithmetic inside
-    * the controller rather than three force sources acting on the joint. Modelling it as three makes
-    * every per-actuator MuJoCo property ambiguous -- the delay had to be replicated across all three,
-    * and {@code actuator_armature} was unusable because the reflected inertia would have been
-    * counted three times. The decomposition is instead computed in {@link MujocoJointActuation} from
-    * the same pre-step state MuJoCo evaluates from, and checked against the force it reports.
+    * <p>One actuator rather than one per term: MuJoCo's per-actuator properties would otherwise be
+    * ambiguous -- the delay would need replicating across all three and {@code actuator_armature}
+    * would count the reflected inertia three times. The decomposition is computed in
+    * {@link MujocoJointActuation} instead and checked against the force MuJoCo reports.
     */
    private static void appendJointServoActuators(StringBuilder sb,
                                                 RobotDefinition robotDefinition,
@@ -487,23 +484,15 @@ public final class MujocoMultiBodyRobotFactory
     * Emit a joint's drive as a {@code <dcmotor>} rather than the affine servo.
     *
     * <p>{@code input="pos vel ff"} gives the actuator the same three-part command the affine servo
-    * gets -- a position setpoint, a velocity setpoint and a feedforward torque -- so the controller
-    * contract does not change and the actuator keeps the same name, which is what lets index
-    * resolution stay as it is. What changes is downstream of the command: the drive converts its
-    * commanded torque to a terminal voltage, compensating back-EMF the way a current loop does, and
-    * then the electrical limits bite. Below them the delivered torque is exactly the commanded one;
-    * past them the torque-speed envelope takes over.
+    * gets, so the controller contract and the actuator's name are unchanged and index resolution
+    * stays as it is. Values are emitted joint-side with {@code gear="1"} -- see
+    * {@link MujocoMotorParameters}. No {@code armature} attribute: reflected inertia rides on the
+    * joint, and MuJoCo would add the two together.
     *
-    * <p>Everything is emitted on the joint side with {@code gear="1"} -- see
-    * {@link MujocoMotorParameters} for why that loses nothing. No {@code armature} attribute is
-    * emitted: reflected inertia rides on the joint, where MuJoCo would otherwise add the two
-    * together.
-    *
-    * <p>The controller gains go out as zeros and are written into {@code gainprm} per tick from the
-    * controller's command, as the affine servo's gains are. {@code ki} stays at zero permanently and
-    * on purpose: a non-zero integral gain at compile time allocates an integrator state, and MuJoCo
-    * forbids toggling that at runtime, so an actuator compiled without one can never grow one.
-    * IHMC's controllers close their own integral loops regardless.
+    * <p>Gains go out as zeros and are written into {@code gainprm} per tick like the servo's.
+    * {@code ki} stays zero permanently and on purpose: a non-zero integral gain at compile time
+    * allocates an integrator state, and MuJoCo forbids toggling that at runtime, so an actuator
+    * compiled without one can never grow one.
     */
    private static void appendDcMotorActuator(StringBuilder sb,
                                              String pad,

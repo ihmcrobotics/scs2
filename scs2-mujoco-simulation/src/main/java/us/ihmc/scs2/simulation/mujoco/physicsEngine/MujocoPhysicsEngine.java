@@ -1,7 +1,6 @@
 package us.ihmc.scs2.simulation.mujoco.physicsEngine;
 
 import java.io.File;
-import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -10,6 +9,7 @@ import us.ihmc.euclid.referenceFrame.ReferenceFrame;
 import us.ihmc.euclid.tuple3D.interfaces.Vector3DReadOnly;
 import us.ihmc.log.LogTools;
 import us.ihmc.mecano.tools.JointStateType;
+import us.ihmc.scs2.definition.yoGraphic.YoGraphicDefinition;
 import us.ihmc.scs2.definition.robot.RobotDefinition;
 import us.ihmc.scs2.definition.robot.RobotStateDefinition;
 import us.ihmc.scs2.definition.terrain.TerrainObjectDefinition;
@@ -206,7 +206,9 @@ public class MujocoPhysicsEngine implements PhysicsEngine
                                    dynamicsWorld.getData().qpos(),
                                    dynamicsWorld.getData().qvel(),
                                    dynamicsWorld.getData().qacc(),
-                                   dynamicsWorld.getData().cacc());
+                                   dynamicsWorld.getData().cacc(),
+                                   dynamicsWorld.getData().xpos(),
+                                   dynamicsWorld.getData().subtree_com());
 
       simulateCallStartTime = 0;
       realtimeRateWindowStartTime = 0;
@@ -313,11 +315,7 @@ public class MujocoPhysicsEngine implements PhysicsEngine
       // Only a path at this point: nothing is created here. A world of primitive collision shapes
       // never needs it, since the MJCF is compiled from memory and inline meshes carry their own
       // vertices; it only comes into existence if a file-backed mesh has to be staged.
-      // Environment variable first: a -D on a Gradle command line configures the daemon, not the
-      // forked test JVM, so a property alone cannot reach a test run.
-      String workingDirectoryProperty = System.getenv("SCS2_MUJOCO_WORKING_DIRECTORY");
-      if (workingDirectoryProperty == null)
-         workingDirectoryProperty = System.getProperty("scs2.mujoco.workingDirectory");
+      String workingDirectoryProperty = System.getProperty("scs2.mujoco.workingDirectory");
       boolean workingDirectoryWasRequested = workingDirectoryProperty != null;
       workingDirectory = workingDirectoryWasRequested ? new File(workingDirectoryProperty)
                                                       : new File(System.getProperty("java.io.tmpdir"), "scs2-mujoco-" + System.nanoTime());
@@ -368,23 +366,7 @@ public class MujocoPhysicsEngine implements PhysicsEngine
       dynamicsWorld.writeOptions(options);
       options.pollUpdateRequest(); // Discard the dirty flag the constructor-time seeding tripped.
 
-      // Contact override is global, so any per-body contact class configured by the caller is being
-      // silently ignored. Say so rather than letting it look applied.
-      int contactClassCount = seedParameters.getContactClasses().size();
-      if (options.enableOverride.getValue() && contactClassCount > 0)
-         LogTools.warn("enableOverride is ON, so the {} configured per-body contact class(es) have NO effect: "
-                       + "o_margin/o_solref/o_solimp/o_friction replace contact properties on every geom. "
-                       + "Set enableOverride=false to use the contact classes.",
-                       contactClassCount);
-
       MujocoTools.logEffectiveModelSummary(dynamicsWorld.getModel());
-
-      // SCS2_MUJOCO_PRINT_MODEL dumps the entire compiled model through MuJoCo's own mj_printModel.
-      // "1" sends it to the console; anything else is treated as a path, which is usually what you
-      // want -- the dump runs to tens of thousands of lines for a humanoid.
-      String printModelTarget = System.getenv("SCS2_MUJOCO_PRINT_MODEL");
-      if (printModelTarget != null && !printModelTarget.isBlank())
-         MujocoTools.printNativeModel(dynamicsWorld.getModel(), "1".equals(printModelTarget) ? "/dev/stdout" : printModelTarget);
 
       statistics.bind(dynamicsWorld.getModel(), dynamicsWorld.getData());
       if (contactPool != null)

@@ -374,12 +374,11 @@ public final class MujocoTools
         .append("\" type=\"").append(mjcfType)
         .append("\" axis=\"").append(axis.getX()).append(' ').append(axis.getY()).append(' ').append(axis.getZ()).append('"');
 
-      // Damping
       if (jointDef.getDamping() > 0.0)
          sb.append(" damping=\"").append(jointDef.getDamping()).append('"');
 
-      // Coulomb joint friction. No SCS2 engine reads stiction today, so for the URDFs in use
-      // (Alex and Zulu both declare friction="0.0") this emits nothing.
+      // Coulomb joint friction. No SCS2 engine reads stiction today, so this emits nothing for a
+      // URDF that leaves friction at 0.
       if (jointDef.getStiction() > 0.0)
          sb.append(" frictionloss=\"").append(jointDef.getStiction()).append('"');
 
@@ -388,15 +387,19 @@ public final class MujocoTools
       if (jointDef.getArmature() > 0.0)
          sb.append(" armature=\"").append(jointDef.getArmature()).append('"');
 
-      // Position limits. solreflimit is deliberately left at MuJoCo's default rather than derived
-      // from getKpSoftLimitStop()/getKdSoftLimitStop(): MuJoCo's negative-solref form specifies
-      // stiffness per unit of acceleration, so those gains would need scaling by the joint's
-      // effective inertia to mean the same thing. A default-stiffness stop is closer to the other
-      // engines than no stop at all; gain-matching it is a follow-up.
+      // Position limits, with the end stop's stiffness set explicitly rather than left at MuJoCo's
+      // default. This models the MECHANICAL hard stop, so it is parameterised the same way contact
+      // is -- a settling time constant and a damping ratio -- and the avatar configuration sets it
+      // as stiff as the ground. Left at MuJoCo's 0.02 s default, a joint rides several degrees
+      // THROUGH its own end stop at terrain touchdown speeds, which hands the controller travel the
+      // hardware does not have. See MujocoSimulationParametersReadOnly#get_solreflimit_timeconst()
+      // for why this is NOT derived from getKpSoftLimitStop()/getKdSoftLimitStop().
       if (parameters.getEnforceJointLimits() && hasFinitePositionLimits(jointDef))
       {
          sb.append(" limited=\"true\" range=\"").append(jointDef.getPositionLowerLimit())
-           .append(' ').append(jointDef.getPositionUpperLimit()).append('"');
+           .append(' ').append(jointDef.getPositionUpperLimit())
+           .append("\" solreflimit=\"").append(parameters.get_solreflimit_timeconst())
+           .append(' ').append(parameters.get_solreflimit_dampratio()).append('"');
       }
 
       // Total actuator force limit, clamping qfrc_actuator. This is what reproduces
@@ -434,96 +437,6 @@ public final class MujocoTools
    }
 
    private static final int MODEL_SUMMARY_MAX_GEOMS = 8;
-
-   /** Logs the compiled model's effective option and per-geom contact values -- what MuJoCo actually runs vs what was requested. */
-   /**
-    * Prints {@code mjModel.opt} READ BACK FROM THE NATIVE STRUCT, so it states what MuJoCo holds
-    * rather than what SCS2 believes it set. Use it to settle whether an option edit actually landed:
-    * nothing here passes through a YoVariable on the way out.
-    * <p>
-    * Two things it is deliberately explicit about, because both have caused wasted days here:
-    * <ul>
-    * <li>{@code timestep} is whatever {@code opt} holds at this write. Since {@code writeOptions}
-    * runs at compile and the engine rewrites {@code opt.timestep} every TICK from the session DT, a
-    * compile-time readback shows the pre-tick value rather than what MuJoCo steps with. Derive the
-    * stepping timestep from the recording cadence instead.
-    * <li>The {@code o_*} entries are annotated with whether {@code mjENBL_OVERRIDE} is actually set.
-    * With the flag clear they are dead weight: contact uses the PER-GEOM solref/solimp instead, and
-    * editing {@code o_solref}/{@code o_solimp} changes nothing at all.
-    * </ul>
-    */
-   public static void logEffectiveOptions(Mujoco.mjModel model, String context)
-   {
-      Mujoco.mjOption opt = model.opt();
-      int enableflags = opt.enableflags();
-      int disableflags = opt.disableflags();
-      boolean overrideActive = (enableflags & Mujoco.mjENBL_OVERRIDE) != 0;
-
-      StringBuilder summary = new StringBuilder();
-      summary.append(String.format("MuJoCo mjOption read back from the native model (%s):%n", context));
-      // NOTE the timestep here is whatever opt holds at the moment of this write. writeOptions runs
-      // at compile and on option edits, and the engine rewrites opt.timestep every TICK from the
-      // session DT -- so a compile-time readback shows the pre-tick value, not what MuJoCo steps with.
-      // Derive the stepping timestep from the recording cadence, not from this line.
-      summary.append(String.format("  timestep=%s (as held at this write; see note) integrator=%d solver=%d cone=%d jacobian=%d%n",
-                                   opt.timestep(),
-                                   opt.integrator(),
-                                   opt.solver(),
-                                   opt.cone(),
-                                   opt.jacobian()));
-      summary.append(String.format("  impratio=%s tolerance=%s iterations=%d ls_iterations=%d noslip_iterations=%d%n",
-                                   opt.impratio(),
-                                   opt.tolerance(),
-                                   opt.iterations(),
-                                   opt.ls_iterations(),
-                                   opt.noslip_iterations()));
-      summary.append(String.format("  enableflags=0x%x [%s]  disableflags=0x%x [%s]%n",
-                                   enableflags,
-                                   describeEnableFlags(enableflags),
-                                   disableflags,
-                                   describeDisableFlags(disableflags)));
-      summary.append(String.format("  o_* contact override is %s%n",
-                                   overrideActive ? "ACTIVE: the values below replace solref/solimp/margin/friction on EVERY contact"
-                                                  : "INACTIVE (mjENBL_OVERRIDE clear): the values below are IGNORED; contact uses per-geom solref/solimp"));
-      summary.append(String.format("  o_margin=%s o_solref=(%s %s) o_solimp=(%s %s %s %s %s) o_friction=(%s %s %s %s %s)%n",
-                                   opt.o_margin(),
-                                   opt.o_solref(0),
-                                   opt.o_solref(1),
-                                   opt.o_solimp(0),
-                                   opt.o_solimp(1),
-                                   opt.o_solimp(2),
-                                   opt.o_solimp(3),
-                                   opt.o_solimp(4),
-                                   opt.o_friction(0),
-                                   opt.o_friction(1),
-                                   opt.o_friction(2),
-                                   opt.o_friction(3),
-                                   opt.o_friction(4)));
-
-      // The per-geom values are what contact actually uses when the override is off, so print the
-      // first few: they are compile-time only and cannot be changed at runtime.
-      int ngeom = (int) model.ngeom();
-      DoublePointer geomSolref = model.geom_solref();
-      DoublePointer geomSolimp = model.geom_solimp();
-      for (int geomId = 0; geomId < Math.min(ngeom, MODEL_SUMMARY_MAX_GEOMS); geomId++)
-      {
-         BytePointer namePointer = Mujoco.mj_id2name(model, Mujoco.mjOBJ_GEOM, geomId);
-         summary.append(String.format("  geom[%d] %s: solref=(%s %s) solimp=(%s %s %s %s %s)%n",
-                                      geomId,
-                                      namePointer == null || namePointer.isNull() ? "(unnamed)" : namePointer.getString(),
-                                      geomSolref.get(2L * geomId),
-                                      geomSolref.get(2L * geomId + 1),
-                                      geomSolimp.get(5L * geomId),
-                                      geomSolimp.get(5L * geomId + 1),
-                                      geomSolimp.get(5L * geomId + 2),
-                                      geomSolimp.get(5L * geomId + 3),
-                                      geomSolimp.get(5L * geomId + 4)));
-      }
-      if (ngeom > MODEL_SUMMARY_MAX_GEOMS)
-         summary.append(String.format("  ... %d more geoms elided%n", ngeom - MODEL_SUMMARY_MAX_GEOMS));
-
-      LogTools.info(summary.toString());
-   }
 
    private static String describeEnableFlags(int enableflags)
    {
@@ -570,18 +483,6 @@ public final class MujocoTools
       if (names.length() > 0)
          names.append('|');
       names.append(name);
-   }
-
-   /**
-    * Dumps the entire compiled {@code mjModel} through MuJoCo's own {@code mj_printModel}, i.e. every
-    * field MuJoCo holds, written by MuJoCo rather than reformatted by us. {@code /dev/stdout} sends it
-    * to the console; any other path writes a file, which is usually what you want since the dump is
-    * tens of thousands of lines for a humanoid.
-    */
-   public static void printNativeModel(Mujoco.mjModel model, String filename)
-   {
-      LogTools.info("Dumping the full native mjModel via mj_printModel to {}", filename);
-      Mujoco.mj_printModel(model, filename);
    }
 
    public static void logEffectiveModelSummary(Mujoco.mjModel model)

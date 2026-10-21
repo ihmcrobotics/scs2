@@ -1,5 +1,8 @@
 package us.ihmc.scs2.simulation.mujoco.physicsEngine.parameters;
 
+import java.util.LinkedHashMap;
+import java.util.Map;
+
 /**
  * Compile-time MuJoCo simulation seeds; see {@link MujocoSimulationParametersReadOnly}. This class
  * is the single home of the default values. Members are grouped SCS2-owned (camelCase) first, then
@@ -11,20 +14,25 @@ public class MujocoSimulationParameters implements MujocoSimulationParametersBas
    private double timestep = 0.0;
    private boolean filterParentCollisions = true;
    private boolean enforceJointLimits = true;
+   private double actuatorDelay = 0.0;
+   private int actuatorDelaySamples = 16;
+   private final Map<String, Double> actuatorDelayByJointName = new LinkedHashMap<>();
    private final Map<String, MujocoMotorParameters> motorByJointName = new LinkedHashMap<>();
    private int perContactDiagnosticsCapacity = 16;
 
+   private double solreflimit_timeconst = 0.02;
+   private double solreflimit_dampratio = 1.0;
    private double solref_timeconst = 0.02;
    private double solref_dampratio = 1.0;
    private double solimp_dmin = 0.9;
-   private double solimp_dmax = 0.99;
-   private double solimp_width = 0.0007;
+   private double solimp_dmax = 0.95;
+   private double solimp_width = 0.001;
    private double solimp_midpoint = 0.5;
    private double solimp_power = 2.0;
    private double friction_slide = 1.0;
-   private double friction_spin = 0.05;
-   private double friction_roll = 0.01;
-   private int condim = 4;
+   private double friction_spin = 0.005;
+   private double friction_roll = 0.0001;
+   private int condim = 3;
    private double margin = 0.0;
    private double gap = 0.0;
    private double armature = 0.0;
@@ -80,8 +88,6 @@ public class MujocoSimulationParameters implements MujocoSimulationParametersBas
       this.enforceJointLimits = enforceJointLimits;
    }
 
-
-   @Override
 
    @Override
    public double getActuatorDelay()
@@ -156,6 +162,30 @@ public class MujocoSimulationParameters implements MujocoSimulationParametersBas
    }
 
    // ---------- MuJoCo-owned ----------
+
+   @Override
+   public double get_solreflimit_timeconst()
+   {
+      return solreflimit_timeconst;
+   }
+
+   @Override
+   public void set_solreflimit_timeconst(double solreflimit_timeconst)
+   {
+      this.solreflimit_timeconst = solreflimit_timeconst;
+   }
+
+   @Override
+   public double get_solreflimit_dampratio()
+   {
+      return solreflimit_dampratio;
+   }
+
+   @Override
+   public void set_solreflimit_dampratio(double solreflimit_dampratio)
+   {
+      this.solreflimit_dampratio = solreflimit_dampratio;
+   }
 
    @Override
    public double get_solref_timeconst()
