@@ -5,7 +5,7 @@ $ErrorActionPreference = 'Stop'
 # ==============================
 # User Configuration Variables
 # ==============================
-$MUJOCO_VERSION      = "3.10.0"
+$MUJOCO_VERSION      = "3.14.0"
 $MUJOCO_ZIP          = "mujoco-$MUJOCO_VERSION-windows-x86_64.zip"
 $MUJOCO_URL          = "https://github.com/google-deepmind/mujoco/releases/download/$MUJOCO_VERSION/$MUJOCO_ZIP"
 # Module root is the parent of native-build/; resources must land there for Gradle to find them.

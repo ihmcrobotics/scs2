@@ -112,7 +112,7 @@ public class YoMujocoContactPool implements SCS2YoGraphicHolder
       contactOverflowCount.set(Math.max(0, ncon - slots.length));
 
       // mjData.contact and the efc_* arrays live in the arena, whose layout can change between
-      // steps — re-fetch the base pointers every tick instead of caching them in bind().
+      // steps -- re-fetch the base pointers every tick instead of caching them in bind().
       mjContact contact = data.contact();
       IntPointer efcState = data.efc_state();
       DoublePointer efcKBIP = data.efc_KBIP();

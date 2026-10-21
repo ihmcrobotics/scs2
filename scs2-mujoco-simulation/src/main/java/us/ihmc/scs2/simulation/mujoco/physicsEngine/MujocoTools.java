@@ -435,7 +435,7 @@ public final class MujocoTools
 
    private static final int MODEL_SUMMARY_MAX_GEOMS = 8;
 
-   /** Logs the compiled model's effective option and per-geom contact values — what MuJoCo actually runs vs what was requested. */
+   /** Logs the compiled model's effective option and per-geom contact values -- what MuJoCo actually runs vs what was requested. */
    /**
     * Prints {@code mjModel.opt} READ BACK FROM THE NATIVE STRUCT, so it states what MuJoCo holds
     * rather than what SCS2 believes it set. Use it to settle whether an option edit actually landed:

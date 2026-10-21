@@ -1,7 +1,6 @@
 package us.ihmc.scs2.simulation.mujoco.physicsEngine;
 
 import java.util.LinkedHashMap;
-import java.util.HashMap;
 import java.util.Map;
 
 import org.bytedeco.javacpp.BytePointer;
@@ -158,6 +157,39 @@ public class MujocoMultiBodyRobot
    {
       Integer index = actuatorIndexByJointName.get(scs2JointName);
       return index == null ? -1 : index;
+   }
+
+   /**
+    * Address of an actuator's FIRST control in {@code mjData.ctrl}.
+    *
+    * <p>Not the same as the actuator index. Since MuJoCo 3.14 an actuator may own several controls
+    * -- a {@code <dcmotor input="pos vel ff">} owns three -- so {@code mjModel.nu} counts scalar
+    * controls while {@code nactuator} counts actuators, and the two diverge as soon as one
+    * multi-control actuator exists. Indexing {@code ctrl} by actuator would then write a joint's
+    * command into its neighbour's setpoint. For a single-control actuator this returns the actuator
+    * index, which is why the distinction is invisible until the first dcmotor appears.
+    */
+   public int getActuatorControlAddress(int actuatorIndex)
+   {
+      if (actuatorIndex < 0)
+         return -1;
+      return model.actuator_ctrladr().get(actuatorIndex);
+   }
+
+   /** Number of controls the actuator owns: 1 for every actuator but a multi-input dcmotor. */
+   public int getActuatorControlCount(int actuatorIndex)
+   {
+      if (actuatorIndex < 0)
+         return 0;
+      return model.actuator_ctrlnum().get(actuatorIndex);
+   }
+
+   /** True when the actuator is a {@code <dcmotor>}, whose command and gains live elsewhere. */
+   public boolean isDcMotorActuator(int actuatorIndex)
+   {
+      if (actuatorIndex < 0)
+         return false;
+      return model.actuator_gaintype().get(actuatorIndex) == Mujoco.mjGAIN_DCMOTOR;
    }
 
    public static final class JointAddress

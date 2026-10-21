@@ -11,6 +11,7 @@ public class MujocoSimulationParameters implements MujocoSimulationParametersBas
    private double timestep = 0.0;
    private boolean filterParentCollisions = true;
    private boolean enforceJointLimits = true;
+   private final Map<String, MujocoMotorParameters> motorByJointName = new LinkedHashMap<>();
    private int perContactDiagnosticsCapacity = 16;
 
    private double solref_timeconst = 0.02;
@@ -120,6 +121,21 @@ public class MujocoSimulationParameters implements MujocoSimulationParametersBas
       actuatorDelayByJointName.put(jointName, actuatorDelay);
    }
 
+
+   @Override
+   public Map<String, MujocoMotorParameters> getMotorByJointName()
+   {
+      return motorByJointName;
+   }
+
+   @Override
+   public void setMotor(String jointName, MujocoMotorParameters motor)
+   {
+      if (motor == null)
+         motorByJointName.remove(jointName);
+      else
+         motorByJointName.put(jointName, motor);
+   }
 
    @Override
    public void setFilterParentCollisions(boolean filterParentCollisions)

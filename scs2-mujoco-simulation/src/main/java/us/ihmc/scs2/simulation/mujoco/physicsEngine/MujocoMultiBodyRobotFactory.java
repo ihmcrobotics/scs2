@@ -23,6 +23,8 @@ import us.ihmc.scs2.simulation.mujoco.Mujoco;
 import us.ihmc.scs2.simulation.mujoco.Mujoco.mjData;
 import us.ihmc.scs2.simulation.mujoco.Mujoco.mjModel;
 import us.ihmc.scs2.simulation.mujoco.physicsEngine.MujocoMultiBodyRobot.JointAddress;
+import us.ihmc.log.LogTools;
+import us.ihmc.scs2.simulation.mujoco.physicsEngine.parameters.MujocoMotorParameters;
 import us.ihmc.scs2.simulation.mujoco.physicsEngine.parameters.MujocoSimulationParametersReadOnly;
 import us.ihmc.scs2.simulation.robot.Robot;
 
@@ -163,10 +165,12 @@ public final class MujocoMultiBodyRobotFactory
          }
       }
       StringBuilder actuators = new StringBuilder();
+      Set<String> motorisedJointNames = new HashSet<>();
       for (Robot robot : robots)
       {
-         appendJointServoActuators(actuators, robot.getRobotDefinition(), parameters, 2);
+         appendJointServoActuators(actuators, robot.getRobotDefinition(), parameters, 2, motorisedJointNames);
       }
+      warnAboutUnmatchedMotors(parameters, motorisedJointNames);
       if (actuators.length() > 0)
       {
          mjcf.append("  <actuator>\n").append(actuators).append("  </actuator>\n");
@@ -428,7 +432,8 @@ public final class MujocoMultiBodyRobotFactory
    private static void appendJointServoActuators(StringBuilder sb,
                                                 RobotDefinition robotDefinition,
                                                 MujocoSimulationParametersReadOnly parameters,
-                                                int indent)
+                                                int indent,
+                                                Set<String> motorisedJointNamesToPack)
    {
       String namePrefix = robotDefinition.getName() + "_";
       String pad = "  ".repeat(indent);
@@ -447,8 +452,101 @@ public final class MujocoMultiBodyRobotFactory
          double delay = parameters.getActuatorDelayByJointName().getOrDefault(joint.getName(), parameters.getActuatorDelay());
          String delayAttributes = delay > 0.0 ? " delay=\"" + delay + "\" nsample=\"" + parameters.getActuatorDelaySamples() + "\" interp=\"linear\"" : "";
 
-         appendGeneralActuator(sb, pad, jointName + ACTUATOR_SUFFIX_SERVO, jointName, "1 0 0", "0 0 0", delayAttributes);
+         MujocoMotorParameters motor = parameters.getMotorByJointName().get(joint.getName());
+         if (motor != null)
+         {
+            appendDcMotorActuator(sb, pad, jointName + ACTUATOR_SUFFIX_SERVO, jointName, motor, (OneDoFJointDefinition) joint, delayAttributes);
+            motorisedJointNamesToPack.add(joint.getName());
+         }
+         else
+            appendGeneralActuator(sb, pad, jointName + ACTUATOR_SUFFIX_SERVO, jointName, "1 0 0", "0 0 0", delayAttributes);
       }
+   }
+
+   /**
+    * A motor configured for a joint name that no robot has is almost always a typo, and the failure
+    * mode is silence: the map is keyed by string, an unmatched entry simply never emits an actuator,
+    * and the joint quietly keeps the affine servo with none of the electrical limits the caller
+    * thought they had asked for. Warning is the right level rather than throwing -- in a
+    * multi-robot session a caller may legitimately hold one parameter block covering joints that
+    * only some of the robots have.
+    */
+   private static void warnAboutUnmatchedMotors(MujocoSimulationParametersReadOnly parameters, Set<String> motorisedJointNames)
+   {
+      for (String jointName : parameters.getMotorByJointName().keySet())
+      {
+         if (!motorisedJointNames.contains(jointName))
+         {
+            LogTools.warn("No joint named '{}' to attach a dcmotor to; it keeps the affine servo and none of the motor's limits apply."
+                          + " Check the name against the robot definition.", jointName);
+         }
+      }
+   }
+
+   /**
+    * Emit a joint's drive as a {@code <dcmotor>} rather than the affine servo.
+    *
+    * <p>{@code input="pos vel ff"} gives the actuator the same three-part command the affine servo
+    * gets -- a position setpoint, a velocity setpoint and a feedforward torque -- so the controller
+    * contract does not change and the actuator keeps the same name, which is what lets index
+    * resolution stay as it is. What changes is downstream of the command: the drive converts its
+    * commanded torque to a terminal voltage, compensating back-EMF the way a current loop does, and
+    * then the electrical limits bite. Below them the delivered torque is exactly the commanded one;
+    * past them the torque-speed envelope takes over.
+    *
+    * <p>Everything is emitted on the joint side with {@code gear="1"} -- see
+    * {@link MujocoMotorParameters} for why that loses nothing. No {@code armature} attribute is
+    * emitted: reflected inertia rides on the joint, where MuJoCo would otherwise add the two
+    * together.
+    *
+    * <p>The controller gains go out as zeros and are written into {@code gainprm} per tick from the
+    * controller's command, as the affine servo's gains are. {@code ki} stays at zero permanently and
+    * on purpose: a non-zero integral gain at compile time allocates an integrator state, and MuJoCo
+    * forbids toggling that at runtime, so an actuator compiled without one can never grow one.
+    * IHMC's controllers close their own integral loops regardless.
+    */
+   private static void appendDcMotorActuator(StringBuilder sb,
+                                             String pad,
+                                             String name,
+                                             String jointName,
+                                             MujocoMotorParameters motor,
+                                             OneDoFJointDefinition jointDef,
+                                             String extraAttributes)
+   {
+      sb.append(pad).append("<dcmotor name=\"").append(name)
+        .append("\" joint=\"").append(jointName)
+        .append("\" input=\"pos vel ff\" ctrllimited=\"false\" gear=\"1\"")
+        .append(" motorconst=\"").append(motor.torqueConstant()).append(' ').append(motor.torqueConstant())
+        .append("\" resistance=\"").append(motor.resistance()).append('"');
+
+      // saturation[0] is what becomes forcerange. Falling back to the joint's effort limit keeps
+      // one torque limit in the model instead of two that can disagree; the joint's own
+      // actuatorfrcrange still clamps as well, and the tighter of the two wins.
+      double maxTorque = motor.maxTorque() > 0.0 ? motor.maxTorque() : effortLimitMagnitude(jointDef);
+      if (maxTorque > 0.0)
+         sb.append(" saturation=\"").append(maxTorque).append(" 0 0\"");
+
+      if (motor.inductance() > 0.0)
+         sb.append(" inductance=\"").append(motor.inductance()).append(" 0\"");
+      if (motor.viscousDamping() > 0.0)
+         sb.append(" damping=\"").append(motor.viscousDamping()).append(" 0\"");
+
+      // (kp, ki, kd, slew, Imax, Vmax); only Vmax is set here, the rest ride in gainprm per tick.
+      sb.append(" controller=\"0 0 0 0 0 ").append(motor.supplyVoltage()).append('"');
+      sb.append(extraAttributes);
+      sb.append("/>\n");
+   }
+
+   /**
+    * The joint's symmetric effort limit, or 0 when it has none. The smaller magnitude of the two
+    * bounds, since a {@code <dcmotor>} torque limit is symmetric and the conservative choice is the
+    * one that cannot invent torque the joint does not have.
+    */
+   private static double effortLimitMagnitude(OneDoFJointDefinition jointDef)
+   {
+      if (!MujocoTools.hasFiniteEffortLimits(jointDef))
+         return 0.0;
+      return Math.min(Math.abs(jointDef.getEffortLowerLimit()), Math.abs(jointDef.getEffortUpperLimit()));
    }
 
    private static void appendGeneralActuator(StringBuilder sb,

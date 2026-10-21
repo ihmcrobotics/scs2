@@ -20,7 +20,7 @@ import us.ihmc.yoVariables.variable.YoInteger;
  * the o_* / enableOverride mechanism) and the
  * <a href="https://mujoco.readthedocs.io/en/stable/XMLreference.html#option">XML reference,
  * option element</a>.
- * Array-valued fields get a component suffix — a "shim name" that is not itself an API symbol,
+ * Array-valued fields get a component suffix -- a "shim name" that is not itself an API symbol,
  * taken from the docs' parameter tuples (solref = (timeconst, dampratio), solimp = (dmin, dmax,
  * width, midpoint, power)); each description states the exact index it maps to. The {@code o_} prefix is MuJoCo's "override"
  * marker: these mirror {@code mjOption}'s contact-override group (active when enableOverride),
@@ -31,7 +31,7 @@ import us.ihmc.yoVariables.variable.YoInteger;
  * <p>
  * Edits from any thread only trip a dirty flag (a plain boolean so GUI buffer scrubbing cannot
  * replay it); the engine consumes it via {@link #pollUpdateRequest()} and pushes the values into
- * {@code mjModel.opt} on the physics thread — including once at compile, so values set before the
+ * {@code mjModel.opt} on the physics thread -- including once at compile, so values set before the
  * first tick apply from step one.
  * </p>
  * <p>
@@ -50,7 +50,7 @@ public class YoMujocoOptions
 
    // ---------- SCS2-owned ----------
 
-   /** Not an {@code mjOption} field — SCS2's own stepping knob, placed here because it is live. */
+   /** Not an {@code mjOption} field -- SCS2's own stepping knob, placed here because it is live. */
    public final YoInteger subSteps = var("subSteps",
          "SCS2-owned, not an mjOption field: mj_step calls per SCS2 tick; MuJoCo timestep = session dt / subSteps", 1);
    public final YoBoolean enableOverride = var("enableOverride",
@@ -188,7 +188,7 @@ public class YoMujocoOptions
 
    /**
     * Consume-and-clear the dirty flag. Physics thread only; apply the values to the native model
-    * when this returns true — cleared before applying so a concurrent edit is not swallowed.
+    * when this returns true -- cleared before applying so a concurrent edit is not swallowed.
     */
    public boolean pollUpdateRequest()
    {

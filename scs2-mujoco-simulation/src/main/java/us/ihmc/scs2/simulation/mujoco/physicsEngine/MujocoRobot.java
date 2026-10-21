@@ -11,11 +11,7 @@ import java.util.Set;
 import org.bytedeco.javacpp.BoolPointer;
 import org.bytedeco.javacpp.DoublePointer;
 
-import us.ihmc.log.LogTools;
-import us.ihmc.scs2.definition.robot.JointDefinition;
-import us.ihmc.scs2.definition.robot.GroundContactPointDefinition;
 import us.ihmc.euclid.tuple3D.interfaces.Tuple3DReadOnly;
-import us.ihmc.scs2.simulation.mujoco.physicsEngine.parameters.MujocoSimulationParametersReadOnly;
 import us.ihmc.euclid.referenceFrame.FramePoint3D;
 import us.ihmc.euclid.referenceFrame.ReferenceFrame;
 import us.ihmc.euclid.tuple3D.Vector3D;
@@ -26,7 +22,6 @@ import us.ihmc.mecano.multiBodySystem.interfaces.JointBasics;
 import us.ihmc.mecano.multiBodySystem.interfaces.OneDoFJointBasics;
 import us.ihmc.mecano.multiBodySystem.interfaces.SixDoFJointBasics;
 import us.ihmc.mecano.spatial.Wrench;
-import us.ihmc.scs2.definition.robot.RigidBodyDefinition;
 import us.ihmc.scs2.definition.state.interfaces.OneDoFJointStateReadOnly;
 import us.ihmc.scs2.simulation.mujoco.Mujoco;
 import us.ihmc.scs2.simulation.mujoco.Mujoco.mjData;
@@ -121,7 +116,10 @@ public class MujocoRobot extends RobotExtension
             int actuatorIndex = mujocoMultiBodyRobot.getActuatorIndex(joint.getName());
             if (actuatorIndex < 0)
                continue;
-            MujocoJointActuation actuation = new MujocoJointActuation(joint.getName(), actuatorIndex);
+            MujocoJointActuation actuation = new MujocoJointActuation(joint.getName(),
+                                                                      actuatorIndex,
+                                                                      mujocoMultiBodyRobot.getActuatorControlAddress(actuatorIndex),
+                                                                      mujocoMultiBodyRobot.isDcMotorActuator(actuatorIndex));
             jointActuationByName.put(joint.getName(), actuation);
             jointActuationList.add(actuation);
             actuatedJoints.add((OneDoFJointBasics) joint);
@@ -156,22 +154,13 @@ public class MujocoRobot extends RobotExtension
     * Write each joint's combined setpoint into {@code mjData.ctrl} and, when they have changed, its
     * gains into {@code mjModel.actuator_biasprm}.
     *
-    * <p>A single affine actuator carries the whole law: {@code gainprm[0]} stays at the 1 the MJCF
-    * gave it, {@code biasprm} holds {@code 0, -kp, -kd}, and {@code ctrl} carries
+    * <p>One affine actuator carries the whole law: {@code gainprm[0]} stays at the 1 the MJCF gave
+    * it, {@code biasprm} holds {@code 0, -kp, -kd}, and {@code ctrl} carries
     * {@code tau_ff + kp * q_d + kd * qd_d}. Writing gains into {@code mjModel} between steps is
-    * supported -- they take part in no derived constant and change no array size, so no recompile is
-    * needed; they live in the model rather than in {@code mjData} purely because MuJoCo treats them
-    * as actuator description.
+    * supported -- they feed no derived constant and change no array size, so no recompile is needed.
     *
-    * <p>The joint state is captured here too. This runs after the state push, so the mecano joints
-    * and {@code mjData} agree, and it is exactly the state MuJoCo will evaluate the actuator at --
-    * which is what lets the torque decomposition be computed rather than guessed.
-    *
-    * <p>The command comes from {@code ControllerOutput}, the same place the effort does, so a
-    * controller reaches the actuators without knowing MuJoCo exists. A controller that publishes
-    * only an effort -- which is all SCS2's engine contract has ever required -- gets it applied
-    * through the actuator with zero gains, which is the same force an applied torque would have
-    * been.
+    * <p>The joint state is captured here too, after the state push, so it is the state MuJoCo will
+    * evaluate the actuator at; that is what lets the torque decomposition be computed, not guessed.
     */
    public void pushActuationToMujoco(mjModel model, mjData data)
    {
@@ -180,6 +169,7 @@ public class MujocoRobot extends RobotExtension
 
       DoublePointer ctrl = data.ctrl();
       DoublePointer biasprm = model.actuator_biasprm();
+      DoublePointer gainprm = model.actuator_gainprm();
 
       for (int i = 0; i < jointActuationList.size(); i++)
       {
@@ -209,13 +199,35 @@ public class MujocoRobot extends RobotExtension
          }
          actuation.setStateAtCommand(joint.getQ(), joint.getQd());
 
-         ctrl.put(index, actuation.getCombinedControl());
+         int controlAddress = actuation.getControlAddress();
 
-         if (actuation.gainsNeedWriting())
+         if (actuation.isDcMotor())
          {
-            biasprm.put((long) index * MJ_NBIAS + 1, -actuation.getStiffness());
-            biasprm.put((long) index * MJ_NBIAS + 2, -actuation.getDamping());
-            actuation.markGainsWritten();
+            // input="pos vel ff": the drive owns three controls and closes the loop itself, so the
+            // terms cross separately rather than being packed into one affine control. The drive
+            // then converts its commanded torque to a terminal voltage and the electrical limits
+            // apply, which is the whole point of the mode.
+            ctrl.put(controlAddress, actuation.getDesiredPosition());
+            ctrl.put(controlAddress + 1L, actuation.getDesiredVelocity());
+            ctrl.put(controlAddress + 2L, actuation.getFeedforwardTorque());
+
+            if (actuation.gainsNeedWriting())
+            {
+               gainprm.put((long) index * MJ_NGAIN + GAINPRM_KP, actuation.getStiffness());
+               gainprm.put((long) index * MJ_NGAIN + GAINPRM_KD, actuation.getDamping());
+               actuation.markGainsWritten();
+            }
+         }
+         else
+         {
+            ctrl.put(controlAddress, actuation.getCombinedControl());
+
+            if (actuation.gainsNeedWriting())
+            {
+               biasprm.put((long) index * MJ_NBIAS + 1, -actuation.getStiffness());
+               biasprm.put((long) index * MJ_NBIAS + 2, -actuation.getDamping());
+               actuation.markGainsWritten();
+            }
          }
       }
    }
@@ -248,9 +260,13 @@ public class MujocoRobot extends RobotExtension
    private final Quaternion pinOrientation = new Quaternion();
    private final Vector3D pinPosition = new Vector3D();
 
-   // gainprm is not written at runtime: the single servo actuator keeps the gain of 1 the MJCF gave
-   // it, and the gains ride in biasprm.
+   // For the affine servo the gain of 1 the MJCF gave it never changes and the PD gains ride in
+   // biasprm. A dcmotor is the other way round: gainprm[0..3] describe the motor and the controller
+   // gains sit at gainprm[4..7] as (kp, ki, kd, vmax).
    private static final int MJ_NBIAS = Mujoco.mjNBIAS;
+   private static final int MJ_NGAIN = Mujoco.mjNGAIN;
+   private static final int GAINPRM_KP = 4;
+   private static final int GAINPRM_KD = 6;
 
    public MujocoMultiBodyRobot getMujocoMultiBodyRobot()
    {
@@ -259,23 +275,18 @@ public class MujocoRobot extends RobotExtension
 
    /**
     * Pack per-body external wrenches from {@code mjData.cfrc_ext} into the registry, invalidate the
-    * spatial-acceleration cache, then update every considered joint's sensor auxiliary data (IMU,
-    * wrench sensors, etc.).
+    * spatial-acceleration cache, then update each considered joint's sensor auxiliary data.
     *
-    * <p>{@code cfrc_ext} is a member of MuJoCo's com-based {@code c*} family, so its moment is
-    * referenced at {@code subtree_com[body_rootid[bodyId]]} -- the centre of mass of the whole
-    * robot, NOT the body's own centre of mass. It is shifted from there to the body-fixed-frame
-    * origin, which is where the registry expects it. Getting this reference point wrong biases the
-    * moment by {@code (C - S) x F}: measured at 27.5 N*m on a foot carrying 638 N, which is about
-    * 43 mm of centre-of-pressure error that moves as the robot's centre of mass does. The state
-    * estimator plants the trusted foot at the measured CoP, so that error walks the foot.
+    * <p>{@code cfrc_ext} belongs to MuJoCo's com-based {@code c*} family, so its moment is
+    * referenced at {@code subtree_com[body_rootid[bodyId]]} -- the whole robot's centre of mass, NOT
+    * the body's own -- and is shifted from there to the body-fixed-frame origin the registry wants.
+    * Getting that wrong biases the moment by {@code (C - S) x F}, which reads as a centre-of-pressure
+    * error that moves with the robot's CoM.
     *
-    * <p>Note the asymmetry with the push direction, which is a genuine trap: {@code xfrc_applied}
-    * (input) acts at the body's own centre of mass, while {@code cfrc_ext} (output) is referenced at
-    * {@code subtree_com}. Both verified by measurement. So
-    * {@link #pushExternalWrenchesToMujoco(DoublePointer)} shifting to the body CoM is correct, and
-    * this method shifting from subtree_com is correct; they are not each other's inverse.
-    * See inline notes for the {@code [torque|force]} layout.
+    * <p>Note the asymmetry with the push direction: {@code xfrc_applied} (input) acts at the body's
+    * own CoM while {@code cfrc_ext} (output) is referenced at {@code subtree_com}, both verified by
+    * measurement, so the two are not each other's inverse. See inline notes for the
+    * {@code [torque|force]} layout.
     */
    public void updateSensors(DoublePointer cfrcExt, DoublePointer xpos, DoublePointer subtreeCom)
    {
@@ -515,40 +526,10 @@ public class MujocoRobot extends RobotExtension
 
    /**
     * Mirror each joint's {@code isPinned()} flag onto its MuJoCo equality constraint, holding the
-    * joint at the state SCS2 currently has for it.
-    *
-    * <p>Pinning is an existing SCS2 concept ({@link SimJointBasics#setPinned(boolean)}), exposed as
-    * a live YoBoolean per joint, and honored by ContactPointBased and ImpulseBased. Those engines
-    * freeze the joint outside the solver; here the constraint goes through the same solver that
-    * resolves contact, so a pinned body pushes back on whatever touches it instead of being
-    * silently teleported after the step.
-    *
-    * <p>Combined with {@code pushStateToMujoco}, the usual "move it, then hold it" recipe works:
-    * set the joint state through SCS2 and set pinned, and MuJoCo holds it there.
+    * joint where SCS2 currently has it. ContactPointBased and ImpulseBased freeze the joint outside
+    * the solver; here the constraint goes through the same solver that resolves contact, so a pinned
+    * body pushes back on whatever touches it rather than being teleported after the step.
     */
-
-
-
-   /**
-    * ContactPointBased's force law, applied as an actual force rather than a constraint. This is the
-    * faithful emulation: CPB does not constrain anything, it adds
-    * {@code Fz = Kz*zPrime/(L - zPrime) - Bz*zPrimeDot} along the normal and
-    * {@code Fxy = Kxy*delta - Bxy*deltaDot} in-plane, measured from the remembered touchdown point.
-    * <p>
-    * Three things the equality-constraint form could not do, which this can:
-    * <ul>
-    * <li><b>Anisotropy.</b> CPB is 6:1 -- about 71 kN/m normal (Kz/L) against 11.4 kN/m in-plane.
-    * {@code mjEQ_CONNECT} has one solref for all three axes.
-    * <li><b>Redundancy.</b> Four coincident points on one rigid foot is 12 constraints on a 6-DoF
-    * body, which a constraint solver cannot take and superposed forces do not care about.
-    * <li><b>CPB's actual nonlinearity</b>, including the pole at {@code L}.
-    * </ul>
-    * Must run AFTER {@code pushExternalWrenchesToMujoco}, which rezeros the slots it manages; this
-    * adds to {@code xfrc_applied} rather than overwriting it. The moment is referenced to the body
-    * CoM ({@code xipos}), which is the convention {@code xfrc_applied} uses.
-    */
-
-
    public void pushPinnedJointsToMujoco(mjModel model, mjData data)
    {
       DoublePointer eqData = model.eq_data();
@@ -705,20 +686,15 @@ public class MujocoRobot extends RobotExtension
                int base = bodyId * 6;
                // cacc layout: [wdot_x wdot_y wdot_z ax ay az], world-aligned axes.
                //
-               // Reference point: the whole c* family (cvel, cacc, cfrc_*) is referenced at
-               // subtree_com[body_rootid[bodyId]] -- the CoM of the subtree rooted at this body's
-               // top-level ancestor, i.e. for a floating robot the CoM of the ENTIRE robot. It is
-               // NOT the body's own CoM. (Verified by measurement against v_S = v_O + w x (S - O)
-               // on cvel: exact match at subtree_com, off by the full lever arm at the body origin.)
-               // For a single-body robot the two coincide, which is why simple models hide the
-               // difference; for a humanoid the whole-robot CoM sits tens of cm from the pelvis.
+               // The whole c* family (cvel, cacc, cfrc_*) is referenced at
+               // subtree_com[body_rootid[bodyId]] -- for a floating robot the CoM of the ENTIRE
+               // robot, NOT the body's own CoM. Verified by measurement on cvel. A single-body
+               // model hides the difference; on a humanoid it is tens of cm.
                //
-               // MuJoCo's cacc uses proper-acceleration convention (root reference = -g), so
-               // a body at rest reads +9.81 m/s^2 upward. SpatialAccelerationCalculator already
-               // applies the -g reference via setGravitionalAcceleration, which would double-count
-               // gravity. Add gravity here to convert back to the Featherstone mathematical
-               // convention (= 0 at rest) that the calculator expects. Gravity is uniform, so this
-               // is independent of the reference point and can be applied in either order.
+               // cacc uses the proper-acceleration convention (root reference = -g), so a body at
+               // rest reads +9.81 upward, while SpatialAccelerationCalculator already applies the
+               // -g reference itself. Adding gravity back here converts to the Featherstone
+               // convention the calculator expects, instead of double-counting it.
                angularAcceleration.set(cacc.get(base), cacc.get(base + 1), cacc.get(base + 2));
                linearAcceleration.set(cacc.get(base + 3), cacc.get(base + 4), cacc.get(base + 5));
                linearAcceleration.add(gravity); // world frame: +(-9.81 z) -> 9.81 - 9.81 = 0 at rest

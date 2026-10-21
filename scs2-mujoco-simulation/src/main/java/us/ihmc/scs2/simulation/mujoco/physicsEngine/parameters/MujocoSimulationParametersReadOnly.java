@@ -2,10 +2,10 @@ package us.ihmc.scs2.simulation.mujoco.physicsEngine.parameters;
 
 /**
  * Compile-time seeds, consumed once when the composite MJCF is generated on the first
- * {@code simulate()} — except {@link #getSubSteps()}, which the engine mirrors live in
+ * {@code simulate()} -- except {@link #getSubSteps()}, which the engine mirrors live in
  * {@code MujocoOptions}. Defaults live in {@link MujocoSimulationParameters}.
  * <p>
- * Names use MuJoCo's vocabulary verbatim, so each term is directly searchable — the relevant pages
+ * Names use MuJoCo's vocabulary verbatim, so each term is directly searchable -- the relevant pages
  * are <a href="https://mujoco.readthedocs.io/en/stable/modeling.html#solver-parameters">Modeling
  * &gt; Solver parameters</a> (solref/solimp semantics),
  * <a href="https://mujoco.readthedocs.io/en/stable/modeling.html#contact-parameters">Modeling &gt;
@@ -93,6 +93,20 @@ public interface MujocoSimulationParametersReadOnly
    Map<String, Double> getActuatorDelayByJointName();
 
    /**
+    * Joints to drive with a {@code <dcmotor>} instead of the affine servo, keyed by SCS2 joint name.
+    * A joint absent from this map keeps the affine servo, so an empty map is the default and leaves
+    * every simulation exactly as it was.
+    * <p>
+    * Per joint rather than global, and with no default: motors differ joint to joint, and a global
+    * fallback motor would be fiction applied to every joint that nobody had characterised.
+    * <p>
+    * Compile-time: the actuator element and its activation states are fixed when the model
+    * compiles, so this cannot change on a running simulation. The controller gains inside it are
+    * live, as they are for the affine servo.
+    */
+   Map<String, MujocoMotorParameters> getMotorByJointName();
+
+   /**
     * Number of pre-allocated per-contact YoVariable slots (penetration, forces, slip flag);
     * 0 disables per-contact readback. Compile-time by nature: the variables must exist before the
     * session buffer is set up.
@@ -103,7 +117,7 @@ public interface MujocoSimulationParametersReadOnly
 
    /**
     * MJCF default {@code geom/@solref[0]}: contact settling time constant [s]. Keep &ge;
-    * 2&middot;timestep. Empirically for closed-loop locomotion 0.005 s is the sweet spot — 0.02
+    * 2&middot;timestep. Empirically for closed-loop locomotion 0.005 s is the sweet spot -- 0.02
     * (MuJoCo default) is too soft for the controller; 0.002 gives harsh touchdowns.
     * @see <a href="https://mujoco.readthedocs.io/en/stable/modeling.html#reference">Modeling: solref</a>
     */
@@ -179,7 +193,7 @@ public interface MujocoSimulationParametersReadOnly
    double get_margin();
 
    /**
-    * MJCF default {@code geom/@gap}: contacts with distance &gt; gap are detected but inactive; force onset at margin − gap [m].
+    * MJCF default {@code geom/@gap}: contacts with distance &gt; gap are detected but inactive; force onset at margin - gap [m].
     * @see <a href="https://mujoco.readthedocs.io/en/stable/computation/index.html#margin-and-gap">Computation: margin and gap</a>
     */
    double get_gap();

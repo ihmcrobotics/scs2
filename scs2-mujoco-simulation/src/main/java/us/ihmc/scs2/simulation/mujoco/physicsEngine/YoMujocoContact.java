@@ -76,7 +76,7 @@ public class YoMujocoContact
       tangentialForce = new YoDouble("tangentialForce_" + index, "Norm of mj_contactForce[1..2]: tangential friction force magnitude [N]", registry);
       slipping = new YoBoolean("slipping_" + index, "True when efc_state at this contact is on the friction-cone boundary (LINEARNEG/LINEARPOS/CONE)", registry);
       age = new YoInteger("age_" + index, "Consecutive ticks this slot has tracked the same physical contact; 0 means the slot is free", registry);
-      impedance = new YoDouble("impedance_" + index, "efc_KBIP[4*efc_address+2]: realized constraint impedance d — where on the solimp sigmoid this contact sits", registry);
+      impedance = new YoDouble("impedance_" + index, "efc_KBIP[4*efc_address+2]: realized constraint impedance d -- where on the solimp sigmoid this contact sits", registry);
       clear();
    }
 

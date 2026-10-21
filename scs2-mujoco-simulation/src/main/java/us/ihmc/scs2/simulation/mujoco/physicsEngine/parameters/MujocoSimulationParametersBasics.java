@@ -16,7 +16,7 @@ public interface MujocoSimulationParametersBasics extends MujocoSimulationParame
       setActuatorDelay(other.getActuatorDelay());
       setActuatorDelaySamples(other.getActuatorDelaySamples());
       other.getActuatorDelayByJointName().forEach(this::setActuatorDelay);
-      setActuationMode(other.getActuationMode());
+      other.getMotorByJointName().forEach(this::setMotor);
       setPerContactDiagnosticsCapacity(other.getPerContactDiagnosticsCapacity());
 
       set_solref_timeconst(other.get_solref_timeconst());
@@ -42,6 +42,10 @@ public interface MujocoSimulationParametersBasics extends MujocoSimulationParame
    /** @see MujocoSimulationParametersReadOnly#getEnforceJointLimits() */
    void setEnforceJointLimits(boolean enforceJointLimits);
 
+
+
+   /** @see MujocoSimulationParametersReadOnly#getMotorByJointName() */
+   void setMotor(String jointName, MujocoMotorParameters motor);
 
    /**
     * @deprecated Never read: the effective MuJoCo timestep is the session dt divided by

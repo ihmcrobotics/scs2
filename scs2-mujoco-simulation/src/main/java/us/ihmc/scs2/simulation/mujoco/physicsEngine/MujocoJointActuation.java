@@ -1,41 +1,32 @@
 package us.ihmc.scs2.simulation.mujoco.physicsEngine;
 
 /**
- * One 1-DoF joint's low-level command under the joint servo, plus the
- * torque decomposition for it.
+ * One 1-DoF joint's low-level command under the joint servo, plus the torque decomposition for it.
  *
- * <p>The command is what the hardware drives receive: a feedforward torque, a position and
- * velocity setpoint, and the gains to close the loop with. The engine reads it off
- * {@code ControllerOutput} once per tick, where a controller publishes it alongside the effort;
- * {@link #setCommand} is for anything that wants to drive a joint directly instead. MuJoCo then
+ * <p>The command is what the hardware drives receive: a feedforward torque, position and velocity
+ * setpoints, and the gains to close the loop with. The engine reads it off {@code ControllerOutput}
+ * once per tick; {@link #setCommand} is for anything wanting to drive a joint directly. MuJoCo then
  * evaluates {@code tau_ff + kp * (q_d - q) + kd * (qd_d - qd)} on every physics step in between.
  *
- * <p>The torque decomposition is kept as plain fields rather than YoVariables. The feedforward term
- * is by construction the same number {@code SCS2OutputWriter} already publishes as
- * {@code <joint>LowLevelControllerTau}, and the applied total is what
- * {@code pullActuationFromMujoco} writes onto the joint as {@code tau_<joint>}, so putting either in
- * the buffer duplicates a variable that is already there. The two feedback terms are genuinely
- * MuJoCo's own -- evaluated at the state the actuator saw rather than at the controller's -- but the
- * buffer only samples once per recorded tick, so what it would capture is one arbitrary physics step
- * out of the ten or twenty in a controller tick, which is not the intra-tick detail that would make
- * them worth the variables. They stay available through the getters for tests and debugging.
- *
- * <p>The terms are computed from the state MuJoCo evaluated the actuator at -- the joint's q and qd
- * at the top of the tick, captured when the command was pushed -- so they are what actually produced
- * the force, not a controller-rate prediction of it. {@link #getAppliedTau()} carries the force
- * MuJoCo reports, and the three sum to it; a test pins that down rather than leaving the arithmetic
- * trusted.
- *
- * <p>The sum parts company with the applied force only when the joint's {@code actuatorfrcrange}
- * clamps it, since the decomposition is of the command rather than of the clamped result. That was
- * equally true when each term had its own actuator: MuJoCo clamps the joint's total, so the
- * per-actuator forces did not sum to it either.
+ * <p>The decomposition is computed from the state MuJoCo evaluated the actuator at, captured when
+ * the command was pushed, so the terms are what produced the force rather than a controller-rate
+ * prediction of it. They sum to {@link #getAppliedTau()} except when the joint's
+ * {@code actuatorfrcrange} clamps it, since the decomposition is of the command and not of the
+ * clamped result. Plain fields rather than YoVariables: the feedforward and the total are already
+ * in the buffer under other names.
  */
 public class MujocoJointActuation
 {
    private final String jointName;
    /** Index of this joint's servo actuator, or -1 when the joint has none. */
    private final int actuatorIndex;
+   /**
+    * Address of the actuator's first control in {@code mjData.ctrl}. Equal to {@link #actuatorIndex}
+    * for a single-control actuator, and NOT equal once any actuator in the model owns several.
+    */
+   private final int controlAddress;
+   /** True when the actuator is a {@code <dcmotor>}: three controls, and gains in {@code gainprm}. */
+   private final boolean dcMotor;
 
    private double feedforwardTorque = 0.0;
    private double desiredPosition = 0.0;
@@ -60,8 +51,15 @@ public class MujocoJointActuation
 
    public MujocoJointActuation(String jointName, int actuatorIndex)
    {
+      this(jointName, actuatorIndex, actuatorIndex, false);
+   }
+
+   public MujocoJointActuation(String jointName, int actuatorIndex, int controlAddress, boolean dcMotor)
+   {
       this.jointName = jointName;
       this.actuatorIndex = actuatorIndex;
+      this.controlAddress = controlAddress;
+      this.dcMotor = dcMotor;
    }
 
    /**
@@ -127,6 +125,18 @@ public class MujocoJointActuation
    public int getActuatorIndex()
    {
       return actuatorIndex;
+   }
+
+   /** Address of this joint's first control in {@code mjData.ctrl}. */
+   public int getControlAddress()
+   {
+      return controlAddress;
+   }
+
+   /** True when this joint is driven by a {@code <dcmotor>} rather than the affine servo. */
+   public boolean isDcMotor()
+   {
+      return dcMotor;
    }
 
    /**
