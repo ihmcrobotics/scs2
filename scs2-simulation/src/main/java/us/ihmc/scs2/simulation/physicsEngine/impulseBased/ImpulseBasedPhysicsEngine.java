@@ -1,6 +1,9 @@
 package us.ihmc.scs2.simulation.physicsEngine.impulseBased;
 
 import us.ihmc.euclid.referenceFrame.ReferenceFrame;
+import us.ihmc.euclid.referenceFrame.interfaces.FrameBox3DReadOnly;
+import us.ihmc.euclid.referenceFrame.interfaces.FrameCylinder3DReadOnly;
+import us.ihmc.euclid.referenceFrame.interfaces.FrameShape3DReadOnly;
 import us.ihmc.euclid.tuple3D.interfaces.Vector3DReadOnly;
 import us.ihmc.mecano.multiBodySystem.interfaces.RigidBodyBasics;
 import us.ihmc.mecano.spatial.Wrench;
@@ -25,6 +28,10 @@ import us.ihmc.scs2.simulation.robot.RobotExtension;
 import us.ihmc.scs2.simulation.robot.multiBodySystem.interfaces.SimJointBasics;
 import us.ihmc.scs2.simulation.robot.multiBodySystem.interfaces.SimRigidBodyBasics;
 import us.ihmc.scs2.simulation.robot.trackers.ExternalWrenchPoint;
+import us.ihmc.scs2.simulation.shapes.FrameSTPBox3D;
+import us.ihmc.scs2.simulation.shapes.FrameSTPCylinder3D;
+import us.ihmc.scs2.simulation.shapes.interfaces.FrameSTPBox3DReadOnly;
+import us.ihmc.scs2.simulation.shapes.interfaces.FrameSTPCylinder3DReadOnly;
 import us.ihmc.yoVariables.registry.YoRegistry;
 import us.ihmc.yoVariables.variable.YoBoolean;
 import us.ihmc.yoVariables.variable.YoDouble;
@@ -74,6 +81,9 @@ public class ImpulseBasedPhysicsEngine implements PhysicsEngine
 
    private final List<TerrainObjectDefinition> terrainObjectDefinitions = new ArrayList<>();
    private final List<Collidable> environmentCollidables = new ArrayList<>();
+   /** Margins for rounding the robots' sharp collision shapes, see {@link #roundSharpCollisionShapes(Robot)}. */
+   private double shapeRoundingMinimumMargin = 1.0e-5;
+   private double shapeRoundingMaximumMargin = 4.0e-4;
 
    private final SimpleCollisionDetection collisionDetectionPlugin;
 
@@ -143,6 +153,7 @@ public class ImpulseBasedPhysicsEngine implements PhysicsEngine
    public void addRobot(Robot robot)
    {
       inertialFrame.checkReferenceFrameMatch(robot.getInertialFrame());
+      roundSharpCollisionShapes(robot);
       ImpulseBasedRobot ibRobot = new ImpulseBasedRobot(robot, physicsEngineRegistry);
       if (estimateJointWrenches)
          ibRobot.enableJointWrenchCalculator();
@@ -150,6 +161,76 @@ public class ImpulseBasedPhysicsEngine implements PhysicsEngine
       rootRegistry.addChild(ibRobot.getRegistry());
       physicsEngineRegistry.addChild(ibRobot.getSecondaryRegistry());
       robotList.add(ibRobot);
+   }
+
+   /**
+    * Sets the margins used to round the robots' sharp collision shapes, see {@link #roundSharpCollisionShapes(Robot)}.
+    * Setting both to zero disables the rounding, which is only advisable if the shapes are already smooth.
+    *
+    * @param minimumMargin the smallest distance between the original shape and the rounded one.
+    * @param maximumMargin the largest distance between the original shape and the rounded one.
+    */
+   public void setCollisionShapeRoundingMargins(double minimumMargin, double maximumMargin)
+   {
+      shapeRoundingMinimumMargin = minimumMargin;
+      shapeRoundingMaximumMargin = maximumMargin;
+   }
+
+   /**
+    * Replaces the robot's boxes and cylinders with their rounded (sphere-torus-patch) equivalents.
+    * <p>
+    * This engine resolves a single contact point per pair of shapes. Two flat faces resting on each other do not
+    * define one: the contact point jumps between the face's features from tick to tick, and the shapes sink into each
+    * other rather than resting. Rounding the edges by a fraction of a millimetre gives the closest-point query a
+    * unique and continuous solution, at a cost in size that is well below the accuracy of the collision geometry
+    * itself.
+    * </p>
+    * <p>
+    * Spheres, capsules and ellipsoids are already smooth and are left alone, as are shapes that are already rounded.
+    * Only the robots are treated: rounding one side of each contact pair is enough, and the terrain is commonly a
+    * height map rather than shapes.
+    * </p>
+    */
+   private void roundSharpCollisionShapes(Robot robot)
+   {
+      if (shapeRoundingMinimumMargin <= 0.0 && shapeRoundingMaximumMargin <= 0.0)
+         return;
+
+      for (SimRigidBodyBasics rigidBody : robot.getRootBody().subtreeIterable())
+      {
+         List<Collidable> collidables = rigidBody.getCollidables();
+
+         for (int i = 0; i < collidables.size(); i++)
+         {
+            Collidable collidable = collidables.get(i);
+            FrameShape3DReadOnly roundedShape = roundSharpEdges(collidable.getShape());
+
+            if (roundedShape != collidable.getShape())
+               collidables.set(i, new Collidable(collidable.getRigidBody(), collidable.getCollisionMask(), collidable.getCollisionGroup(), roundedShape));
+         }
+      }
+   }
+
+   private FrameShape3DReadOnly roundSharpEdges(FrameShape3DReadOnly shape)
+   {
+      if (shape instanceof FrameSTPBox3DReadOnly || shape instanceof FrameSTPCylinder3DReadOnly)
+         return shape;
+
+      if (shape instanceof FrameBox3DReadOnly box)
+      {
+         FrameSTPBox3D roundedBox = new FrameSTPBox3D(box);
+         roundedBox.setMargins(shapeRoundingMinimumMargin, shapeRoundingMaximumMargin);
+         return roundedBox;
+      }
+
+      if (shape instanceof FrameCylinder3DReadOnly cylinder)
+      {
+         FrameSTPCylinder3D roundedCylinder = new FrameSTPCylinder3D(cylinder);
+         roundedCylinder.setMargins(shapeRoundingMinimumMargin, shapeRoundingMaximumMargin);
+         return roundedCylinder;
+      }
+
+      return shape;
    }
 
    public void setGlobalConstraintParameters(ConstraintParametersReadOnly parameters)
