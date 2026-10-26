@@ -15,7 +15,7 @@ public class YoEnumBuffer<E extends Enum<E>> extends YoVariableBuffer<YoEnum<E>>
    }
 
    @Override
-   public void resizeBuffer(int from, int length)
+   protected void resizeBufferRaw(int from, int length)
    {
       if (from == 0 && length == buffer.length)
          return;
@@ -23,13 +23,13 @@ public class YoEnumBuffer<E extends Enum<E>> extends YoVariableBuffer<YoEnum<E>>
    }
 
    @Override
-   public void writeBufferAt(int index)
+   protected void writeBufferAtRaw(int index)
    {
       buffer[index] = (byte) yoVariable.getOrdinal();
    }
 
    @Override
-   public void readBufferAt(int index)
+   protected void readBufferAtRaw(int index)
    {
       yoVariable.set(buffer[index]);
    }
@@ -41,13 +41,13 @@ public class YoEnumBuffer<E extends Enum<E>> extends YoVariableBuffer<YoEnum<E>>
    }
 
    @Override
-   public BufferSample<byte[]> copy(int from, int length, YoBufferPropertiesReadOnly properties)
+   protected BufferSample<byte[]> copyRaw(int from, int length, YoBufferPropertiesReadOnly properties)
    {
       return new BufferSample<>(from, SharedMemoryTools.ringArrayCopy(buffer, from, length), length, properties);
    }
 
    @Override
-   public void fillBuffer(boolean zeroFill, int from, int length)
+   protected void fillBufferRaw(boolean zeroFill, int from, int length)
    {
       SharedMemoryTools.ringArrayFill(buffer, zeroFill ? 0 : (byte) yoVariable.getOrdinal(), from, length);
    }

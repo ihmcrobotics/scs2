@@ -168,10 +168,15 @@ public class LinkedYoRegistry extends LinkedBuffer
 
       if (linkedYoVariable == null)
       {
-         YoVariableBuffer yoVariableBuffer = yoRegistryBuffer.findYoVariableBuffer(variableToLink);
-         // variableToLink can be a mirror variable that has since been destroy()'d (e.g. an old UI control still
-         // holding a reference to a robot's variable across a reload/replace) - it no longer resolves to a buffer,
-         // so there is nothing to link it to.
+         // findOrCreate, not find: variableToLink is a mirror variable from this LinkedYoRegistry's own rootRegistry
+         // (built by duplicateMissingYoVariablesInTarget), and its value only ever gets updated via this link's
+         // pull() - if a restrictive eager-variable filter (see YoRegistryBuffer.setEagerVariableFilter) skipped
+         // giving the corresponding backend variable a buffer, findYoVariableBuffer would return null here, this
+         // link would never be created, and the mirror (and anything showing it - search panel, sliderboard, a
+         // YoGraphic) would stay frozen at its just-duplicated default forever with no visible error.
+         YoVariableBuffer yoVariableBuffer = yoRegistryBuffer.findOrCreateYoVariableBuffer(variableToLink);
+         // variableToLink can still fail to resolve if it's a mirror variable that has since been destroy()'d (e.g.
+         // an old UI control still holding a reference to a robot's variable across a reload/replace).
          if (yoVariableBuffer == null)
             return null;
          linkedYoVariable = yoVariableBuffer.newLinkedYoVariable(variableToLink, initialUser);

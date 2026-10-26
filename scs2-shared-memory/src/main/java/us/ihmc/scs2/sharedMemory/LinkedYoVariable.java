@@ -189,6 +189,20 @@ public abstract class LinkedYoVariable<T extends YoVariable> extends LinkedBuffe
       if (from < 0 || from >= properties.getSize() || length < 0 || length > properties.getSize())
          throw new IllegalArgumentException("Invalid request: from = " + from + ", length = " + length);
 
+      // Backfilling this range from a HistoricalValueBitsSource can mean decompressing a large stretch of a log
+      // file, and it happens on the buffer manager's thread - the same one that applies the user's buffer index
+      // changes. Running it to completion here is what makes the UI stop responding to scrubbing and dragging while
+      // a newly charted variable loads. So only do this cycle's share and leave the request outstanding: no sample
+      // is produced until the whole range is real, which also means a chart never renders a half-backfilled window
+      // it would have no reason to ask about again.
+      if (!buffer.ensurePopulatedWithinBudget(from, length))
+      {
+         // Don't clobber a request that arrived while this one was being worked on - that one is newer.
+         if (bufferSampleRequest == null)
+            bufferSampleRequest = localRequest;
+         return;
+      }
+
       bufferSample = buffer.copy(from, length, properties.copy());
    }
 
