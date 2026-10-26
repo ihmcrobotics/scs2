@@ -20,7 +20,6 @@ public abstract class OneDoFJointDefinition extends JointDefinition
    private double effortLowerLimit = Double.NEGATIVE_INFINITY, effortUpperLimit = Double.POSITIVE_INFINITY;
    private double damping = 0.0;
    private double stiction = 0.0;
-   private double armature = 0.0;
 
    private double kpSoftLimitStop = 0.0;
    private double kdSoftLimitStop = 0.0;
@@ -56,7 +55,6 @@ public abstract class OneDoFJointDefinition extends JointDefinition
       effortUpperLimit = other.effortUpperLimit;
       damping = other.damping;
       stiction = other.stiction;
-      armature = other.armature;
       kpSoftLimitStop = other.kpSoftLimitStop;
       kdSoftLimitStop = other.kdSoftLimitStop;
       dampingVelocitySoftLimit = other.dampingVelocitySoftLimit;
@@ -186,18 +184,6 @@ public abstract class OneDoFJointDefinition extends JointDefinition
       return stiction;
    }
 
-   /** Reflected rotor inertia added to the joint's own, in kg*m^2 (revolute) or kg (prismatic). Read by MuJoCo only. */
-   @XmlElement
-   public void setArmature(double armature)
-   {
-      this.armature = armature;
-   }
-
-   public double getArmature()
-   {
-      return armature;
-   }
-
    @XmlElement
    public void setDamping(double damping)
    {
@@ -298,7 +284,6 @@ public abstract class OneDoFJointDefinition extends JointDefinition
       bits = EuclidHashCodeTools.addToHashCode(bits, effortUpperLimit);
       bits = EuclidHashCodeTools.addToHashCode(bits, damping);
       bits = EuclidHashCodeTools.addToHashCode(bits, stiction);
-      bits = EuclidHashCodeTools.addToHashCode(bits, armature);
       bits = EuclidHashCodeTools.addToHashCode(bits, kpSoftLimitStop);
       bits = EuclidHashCodeTools.addToHashCode(bits, kdSoftLimitStop);
       bits = EuclidHashCodeTools.addToHashCode(bits, dampingVelocitySoftLimit);
@@ -331,8 +316,6 @@ public abstract class OneDoFJointDefinition extends JointDefinition
       if (!EuclidCoreTools.equals(effortUpperLimit, other.effortUpperLimit))
          return false;
       if (!EuclidCoreTools.equals(damping, other.damping))
-         return false;
-      if (!EuclidCoreTools.equals(armature, other.armature))
          return false;
       if (!EuclidCoreTools.equals(stiction, other.stiction))
          return false;

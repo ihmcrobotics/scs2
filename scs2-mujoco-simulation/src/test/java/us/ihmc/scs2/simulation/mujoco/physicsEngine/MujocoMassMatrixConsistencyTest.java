@@ -45,6 +45,7 @@ public class MujocoMassMatrixConsistencyTest
 {
    private static final double DT = 1.0e-3;
    private static final String IGNORED_JOINT = "ignored";
+   private static final String[] JOINT_NAMES = {"shoulder", "elbow", "wrist"};
    private static final double TOLERANCE = 1.0e-9;
 
    private SimulationSession session;
@@ -67,19 +68,18 @@ public class MujocoMassMatrixConsistencyTest
     * A fixed-base three-link arm with deliberately awkward inertias: off-centre CoMs, a non-diagonal
     * tensor, a rotated inertia frame, and a tip link on a joint the controller ignores.
     */
-   private static RobotDefinition createArm(boolean ignoreTipJoint, double armature)
+   private static RobotDefinition createArm(boolean ignoreTipJoint)
    {
       RobotDefinition robot = new RobotDefinition("robot");
       RigidBodyDefinition elevator = new RigidBodyDefinition("elevator");
 
       RigidBodyDefinition parent = elevator;
-      String[] jointNames = {"shoulder", "elbow", "wrist"};
+      String[] jointNames = JOINT_NAMES;
       Vector3D[] axes = {new Vector3D(0.0, 1.0, 0.0), new Vector3D(1.0, 0.0, 0.0), new Vector3D(0.0, 0.0, 1.0)};
 
       for (int i = 0; i < jointNames.length; i++)
       {
          RevoluteJointDefinition joint = new RevoluteJointDefinition(jointNames[i], new Vector3D(0.0, 0.0, -0.3), axes[i]);
-         joint.setArmature(armature);
          RigidBodyDefinition link = new RigidBodyDefinition("link" + i);
          link.setMass(2.0 + i);
          link.setCenterOfMassOffset(0.02 * (i + 1), -0.03, -0.15);
@@ -97,7 +97,6 @@ public class MujocoMassMatrixConsistencyTest
       // A tip link hanging off a joint the controller does not drive. The other engines keep its
       // inertia rigidly attached, so MuJoCo has to weld it rather than drop it.
       RevoluteJointDefinition tipJoint = new RevoluteJointDefinition(IGNORED_JOINT, new Vector3D(0.0, 0.0, -0.25), new Vector3D(0.0, 1.0, 0.0));
-      tipJoint.setArmature(armature);
       RigidBodyDefinition tip = new RigidBodyDefinition("tip");
       tip.setMass(1.5);
       tip.setCenterOfMassOffset(0.0, 0.0, -0.08);
@@ -113,10 +112,12 @@ public class MujocoMassMatrixConsistencyTest
 
    private Robot createSession(boolean ignoreTipJoint, double armature)
    {
-      session = new SimulationSession((inertialFrame, rootRegistry) -> new MujocoPhysicsEngine(inertialFrame,
-                                                                                                rootRegistry,
-                                                                                                new MujocoSimulationParameters()));
-      session.addRobot(createArm(ignoreTipJoint, armature));
+      MujocoSimulationParameters parameters = new MujocoSimulationParameters();
+      for (String jointName : JOINT_NAMES)
+         parameters.setArmature(jointName, armature);
+      parameters.setArmature(IGNORED_JOINT, armature);
+      session = new SimulationSession((inertialFrame, rootRegistry) -> new MujocoPhysicsEngine(inertialFrame, rootRegistry, parameters));
+      session.addRobot(createArm(ignoreTipJoint));
       session.setSessionDTSeconds(DT);
       session.setGravity(0.0, 0.0, -9.81);
       session.initializeBufferSize(1000);

@@ -121,7 +121,6 @@ public final class MujocoMultiBodyRobotFactory
           .append("\" margin=\"").append(parameters.get_margin())
           .append("\" gap=\"").append(parameters.get_gap())
           .append("\"/>\n");
-      mjcf.append("    <joint armature=\"").append(parameters.get_armature()).append("\"/>\n");
       mjcf.append("    <default class=\"robot\">\n");
       mjcf.append("      <geom contype=\"").append(ROBOT_CONTYPE).append("\" conaffinity=\"").append(ROBOT_CONAFFINITY).append("\"/>\n");
       mjcf.append("    </default>\n");

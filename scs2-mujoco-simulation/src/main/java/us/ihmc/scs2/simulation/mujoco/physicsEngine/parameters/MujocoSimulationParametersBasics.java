@@ -17,6 +17,7 @@ public interface MujocoSimulationParametersBasics extends MujocoSimulationParame
       setActuatorDelaySamples(other.getActuatorDelaySamples());
       other.getActuatorDelayByJointName().forEach(this::setActuatorDelay);
       other.getMotorByJointName().forEach(this::setMotor);
+      other.getArmatureByJointName().forEach(this::setArmature);
       setPerContactDiagnosticsCapacity(other.getPerContactDiagnosticsCapacity());
 
       set_solreflimit_timeconst(other.get_solreflimit_timeconst());
@@ -34,7 +35,6 @@ public interface MujocoSimulationParametersBasics extends MujocoSimulationParame
       set_condim(other.get_condim());
       set_margin(other.get_margin());
       set_gap(other.get_gap());
-      set_armature(other.get_armature());
    }
 
    // ---------- SCS2-owned ----------
@@ -44,10 +44,20 @@ public interface MujocoSimulationParametersBasics extends MujocoSimulationParame
    /** @see MujocoSimulationParametersReadOnly#getEnforceJointLimits() */
    void setEnforceJointLimits(boolean enforceJointLimits);
 
+   /** @see MujocoSimulationParametersReadOnly#getActuatorDelay() */
+   void setActuatorDelay(double actuatorDelay);
 
+   /** @see MujocoSimulationParametersReadOnly#getActuatorDelaySamples() */
+   void setActuatorDelaySamples(int actuatorDelaySamples);
+
+   /** Overrides {@link #setActuatorDelay(double)} for one joint. */
+   void setActuatorDelay(String jointName, double actuatorDelay);
 
    /** @see MujocoSimulationParametersReadOnly#getMotorByJointName() */
    void setMotor(String jointName, MujocoMotorParameters motor);
+
+   /** @see MujocoSimulationParametersReadOnly#getArmatureByJointName() */
+   void setArmature(String jointName, double armature);
 
    /**
     * @deprecated Never read: the effective MuJoCo timestep is the session dt divided by
@@ -91,15 +101,4 @@ public interface MujocoSimulationParametersBasics extends MujocoSimulationParame
    void set_margin(double margin);
 
    void set_gap(double gap);
-
-   void set_armature(double armature);
-
-   /** @see MujocoSimulationParametersReadOnly#getActuatorDelay() */
-   void setActuatorDelay(double actuatorDelay);
-
-   /** @see MujocoSimulationParametersReadOnly#getActuatorDelaySamples() */
-   void setActuatorDelaySamples(int actuatorDelaySamples);
-
-   /** Overrides {@link #setActuatorDelay(double)} for one joint. */
-   void setActuatorDelay(String jointName, double actuatorDelay);
 }

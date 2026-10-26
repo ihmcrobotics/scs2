@@ -58,7 +58,6 @@ public interface MujocoSimulationParametersReadOnly
     */
    boolean getEnforceJointLimits();
 
-
    /**
     * Command latency [s] between the controller writing a joint's low-level command and MuJoCo
     * applying it; 0 for none. Command latency only -- MuJoCo's {@code sensor_delay} is per sensor
@@ -83,6 +82,13 @@ public interface MujocoSimulationParametersReadOnly
     * activation states are fixed at compile, though the gains inside it stay live.
     */
    Map<String, MujocoMotorParameters> getMotorByJointName();
+
+   /**
+    * MJCF {@code joint/@armature} per joint, keyed by SCS2 joint name: the drive's rotor inertia
+    * reflected through its gearing, which every joint has a different value of. A joint absent from
+    * the map gets none. Compile-time: armature enters the mass matrix when MuJoCo compiles.
+    */
+   Map<String, Double> getArmatureByJointName();
 
    /**
     * Number of pre-allocated per-contact YoVariable slots (penetration, forces, slip flag);
@@ -208,7 +214,4 @@ public interface MujocoSimulationParametersReadOnly
     * @see <a href="https://mujoco.readthedocs.io/en/stable/computation/index.html#margin-and-gap">Computation: margin and gap</a>
     */
    double get_gap();
-
-   /** MJCF default {@code joint/@armature}: rotor inertia added to every joint DoF. */
-   double get_armature();
 }

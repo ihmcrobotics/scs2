@@ -76,6 +76,15 @@ public class MujocoDcMotorTest
       return MujocoMotorParameters.fromNoLoadSpeed(SUPPLY_VOLTAGE, NO_LOAD_SPEED, RESISTANCE, MAX_TORQUE);
    }
 
+   /** Parameters carrying the rotor inertia both joints run with; motors are added on top per test. */
+   private static MujocoSimulationParameters parameters()
+   {
+      MujocoSimulationParameters parameters = new MujocoSimulationParameters();
+      parameters.setArmature(MOTORISED_JOINT, ARMATURE);
+      parameters.setArmature(PLAIN_JOINT, ARMATURE);
+      return parameters;
+   }
+
    private static RobotDefinition createRobot(double damping)
    {
       RobotDefinition robot = new RobotDefinition("robot");
@@ -87,7 +96,6 @@ public class MujocoDcMotorTest
          RevoluteJointDefinition joint = new RevoluteJointDefinition(jointName, new Vector3D(), new Vector3D(0.0, 1.0, 0.0));
          joint.setEffortLimits(MAX_TORQUE);
          joint.setDamping(damping);
-         joint.setArmature(ARMATURE);
          RigidBodyDefinition link = new RigidBodyDefinition(jointName + "Link");
          link.setMass(1.0);
          link.setMomentOfInertia(new MomentOfInertiaDefinition(LINK_INERTIA, LINK_INERTIA, LINK_INERTIA));
@@ -103,7 +111,7 @@ public class MujocoDcMotorTest
    /** @param motor the motor for {@link #MOTORISED_JOINT}, or null to leave both joints on the affine servo. */
    private Robot createSession(MujocoMotorParameters motor, double damping)
    {
-      MujocoSimulationParameters parameters = new MujocoSimulationParameters();
+      MujocoSimulationParameters parameters = parameters();
       if (motor != null)
          parameters.setMotor(MOTORISED_JOINT, motor);
       session = new SimulationSession((inertialFrame, rootRegistry) -> new MujocoPhysicsEngine(inertialFrame, rootRegistry, parameters));
@@ -335,7 +343,7 @@ public class MujocoDcMotorTest
    public void testAMotorWithNoTorqueLimitAnywhereStillRuns()
    {
       MujocoMotorParameters noClamp = MujocoMotorParameters.fromNoLoadSpeed(SUPPLY_VOLTAGE, NO_LOAD_SPEED, RESISTANCE, 0.0);
-      MujocoSimulationParameters parameters = new MujocoSimulationParameters();
+      MujocoSimulationParameters parameters = parameters();
       parameters.setMotor(MOTORISED_JOINT, noClamp);
       session = new SimulationSession((inertialFrame, rootRegistry) -> new MujocoPhysicsEngine(inertialFrame, rootRegistry, parameters));
       RobotDefinition definition = createRobot(JOINT_DAMPING);
@@ -374,7 +382,7 @@ public class MujocoDcMotorTest
    @Test
    public void testAMotorForAnUnknownJointIsIgnoredRatherThanMisapplied()
    {
-      MujocoSimulationParameters parameters = new MujocoSimulationParameters();
+      MujocoSimulationParameters parameters = parameters();
       parameters.setMotor("thisJointDoesNotExist", knee());
       session = new SimulationSession((inertialFrame, rootRegistry) -> new MujocoPhysicsEngine(inertialFrame, rootRegistry, parameters));
       session.addRobot(createRobot(JOINT_DAMPING));

@@ -18,6 +18,7 @@ public class MujocoSimulationParameters implements MujocoSimulationParametersBas
    private int actuatorDelaySamples = 16;
    private final Map<String, Double> actuatorDelayByJointName = new LinkedHashMap<>();
    private final Map<String, MujocoMotorParameters> motorByJointName = new LinkedHashMap<>();
+   private final Map<String, Double> armatureByJointName = new LinkedHashMap<>();
    private int perContactDiagnosticsCapacity = 16;
 
    private double solreflimit_timeconst = 0.02;
@@ -35,7 +36,6 @@ public class MujocoSimulationParameters implements MujocoSimulationParametersBas
    private int condim = 3;
    private double margin = 0.0;
    private double gap = 0.0;
-   private double armature = 0.0;
 
    public static MujocoSimulationParameters defaultMujocoSimulationParameters()
    {
@@ -88,7 +88,6 @@ public class MujocoSimulationParameters implements MujocoSimulationParametersBas
       this.enforceJointLimits = enforceJointLimits;
    }
 
-
    @Override
    public double getActuatorDelay()
    {
@@ -127,7 +126,6 @@ public class MujocoSimulationParameters implements MujocoSimulationParametersBas
       actuatorDelayByJointName.put(jointName, actuatorDelay);
    }
 
-
    @Override
    public Map<String, MujocoMotorParameters> getMotorByJointName()
    {
@@ -141,6 +139,18 @@ public class MujocoSimulationParameters implements MujocoSimulationParametersBas
          motorByJointName.remove(jointName);
       else
          motorByJointName.put(jointName, motor);
+   }
+
+   @Override
+   public Map<String, Double> getArmatureByJointName()
+   {
+      return armatureByJointName;
+   }
+
+   @Override
+   public void setArmature(String jointName, double armature)
+   {
+      armatureByJointName.put(jointName, armature);
    }
 
    @Override
@@ -341,17 +351,5 @@ public class MujocoSimulationParameters implements MujocoSimulationParametersBas
    public void set_gap(double gap)
    {
       this.gap = gap;
-   }
-
-   @Override
-   public double get_armature()
-   {
-      return armature;
-   }
-
-   @Override
-   public void set_armature(double armature)
-   {
-      this.armature = armature;
    }
 }

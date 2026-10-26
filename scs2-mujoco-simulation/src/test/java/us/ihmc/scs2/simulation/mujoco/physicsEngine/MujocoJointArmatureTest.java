@@ -21,8 +21,8 @@ import us.ihmc.scs2.simulation.mujoco.physicsEngine.parameters.MujocoSimulationP
 import us.ihmc.scs2.simulation.robot.Robot;
 
 /**
- * Covers {@code OneDoFJointDefinition.setArmature}, the reflected rotor inertia, reaching MuJoCo's
- * {@code dof_armature} -- and the model-wide {@code <default>} value it falls back to.
+ * Covers {@code MujocoSimulationParametersBasics.setArmature}, the reflected rotor inertia, reaching MuJoCo's
+ * {@code dof_armature}, and what a joint the parameters say nothing about ends up with.
  */
 public class MujocoJointArmatureTest
 {
@@ -46,13 +46,12 @@ public class MujocoJointArmatureTest
       session = null;
    }
 
-   private static RobotDefinition createRobot(double armature)
+   private static RobotDefinition createRobot()
    {
       RobotDefinition robot = new RobotDefinition("robot");
       RigidBodyDefinition elevator = new RigidBodyDefinition("elevator");
 
       RevoluteJointDefinition joint = new RevoluteJointDefinition(JOINT, new Vector3D(), new Vector3D(0.0, 1.0, 0.0));
-      joint.setArmature(armature);
       RigidBodyDefinition link = new RigidBodyDefinition("link");
       link.setMass(1.0);
       link.setMomentOfInertia(new MomentOfInertiaDefinition(LINK_INERTIA, LINK_INERTIA, LINK_INERTIA));
@@ -63,12 +62,14 @@ public class MujocoJointArmatureTest
       return robot;
    }
 
-   private Robot createSession(double jointArmature, double defaultArmature)
+   private Robot createSession(double jointArmature)
    {
       MujocoSimulationParameters parameters = new MujocoSimulationParameters();
-      parameters.set_armature(defaultArmature);
+      // 0 means "not configured", so the joint is left out of the map rather than entered as zero.
+      if (jointArmature != 0.0)
+         parameters.setArmature(JOINT, jointArmature);
       session = new SimulationSession((inertialFrame, rootRegistry) -> new MujocoPhysicsEngine(inertialFrame, rootRegistry, parameters));
-      session.addRobot(createRobot(jointArmature));
+      session.addRobot(createRobot());
       session.setSessionDTSeconds(DT);
       session.setGravity(0.0, 0.0, 0.0);
       session.initializeBufferSize(2000);
@@ -100,25 +101,17 @@ public class MujocoJointArmatureTest
    @Test
    public void testPerJointArmatureReachesMujoco()
    {
-      Robot robot = createSession(0.05, 0.0);
+      Robot robot = createSession(0.05);
       simulate(1);
       assertEquals(0.05, dofArmature(robot), 1.0e-12, "The joint's armature did not reach dof_armature");
    }
 
    @Test
-   public void testJointArmatureOverridesTheModelDefault()
+   public void testAJointTheParametersDoNotNameGetsNoArmature()
    {
-      Robot robot = createSession(0.05, 0.01);
+      Robot robot = createSession(0.0);
       simulate(1);
-      assertEquals(0.05, dofArmature(robot), 1.0e-12, "The per-joint value should win over the <default> block");
-   }
-
-   @Test
-   public void testUnsetArmatureFallsBackToTheModelDefault()
-   {
-      Robot robot = createSession(0.0, 0.01);
-      simulate(1);
-      assertEquals(0.01, dofArmature(robot), 1.0e-12, "An unset joint armature should inherit the <default> block");
+      assertEquals(0.0, dofArmature(robot), 1.0e-12, "An unconfigured joint should carry no rotor inertia");
    }
 
    /**
@@ -128,13 +121,13 @@ public class MujocoJointArmatureTest
    @Test
    public void testArmatureHalvesTheAccelerationWhenItMatchesTheLinkInertia()
    {
-      Robot withoutArmature = createSession(0.0, 0.0);
+      Robot withoutArmature = createSession(0.0);
       addConstantTorque(withoutArmature, 0.1);
       simulate(500);
       double qdWithout = ((OneDoFJointBasics) withoutArmature.getJoint(JOINT)).getQd();
       shutdown();
 
-      Robot withArmature = createSession(LINK_INERTIA, 0.0);
+      Robot withArmature = createSession(LINK_INERTIA);
       addConstantTorque(withArmature, 0.1);
       simulate(500);
       double qdWith = ((OneDoFJointBasics) withArmature.getJoint(JOINT)).getQd();

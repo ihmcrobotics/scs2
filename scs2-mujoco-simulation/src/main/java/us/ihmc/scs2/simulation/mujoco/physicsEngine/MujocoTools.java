@@ -382,10 +382,11 @@ public final class MujocoTools
       if (jointDef.getStiction() > 0.0)
          sb.append(" frictionloss=\"").append(jointDef.getStiction()).append('"');
 
-      // Reflected rotor inertia. Emitted only when the joint carries its own value; otherwise the
-      // joint inherits the <default> block's armature, which is the model-wide fallback.
-      if (jointDef.getArmature() > 0.0)
-         sb.append(" armature=\"").append(jointDef.getArmature()).append('"');
+      // Reflected rotor inertia, emitted only where the parameters name this joint. A joint the
+      // parameters say nothing about keeps MuJoCo's own default of none.
+      Double armature = parameters.getArmatureByJointName().get(jointDef.getName());
+      if (armature != null && armature > 0.0)
+         sb.append(" armature=\"").append(armature).append('"');
 
       // Position limits, with the end stop's stiffness set explicitly rather than left at MuJoCo's
       // default. This models the MECHANICAL hard stop, so it is parameterised the same way contact
