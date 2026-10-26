@@ -1,0 +1,218 @@
+# Builds the MuJoCo natives for every supported platform on GitHub-hosted runners, so bumping the
+# MuJoCo version needs neither a Windows machine nor a developer's local Docker.
+#
+# Every platform is built in ONE dispatch on purpose. Each platform carries two binaries -- the
+# upstream library and the JavaCPP JNI shim -- and the shim is only valid against the exact headers
+# it was compiled from. The failure mode this prevents is the platforms drifting apart: MuJoCo keeps
+# its exported symbols stable across minor versions, so a shim from one version paired with a
+# library from another links and loads without complaint, and only then reads structs at the wrong
+# field offsets. That is silently wrong physics rather than an error, which is why the halves have
+# to be produced together and committed together.
+#
+# Pattern-matched from ihmcrobotics/opencv-javacpp-build: hosted runners, Docker on Linux to pin the
+# glibc floor, MSVC via ilammy/msvc-dev-cmd on a pinned windows-2022, upload-artifact per platform.
+#
+# This workflow commits nothing. Download the artifacts, drop each platform's files into
+# src/main/resources/mujoco/<platform>/, and commit them together with the bindings.
+name: MuJoCo natives
+
+on:
+  workflow_dispatch:
+    inputs:
+      expected-version:
+        description: 'Optional: assert the scripts are pinned to this MuJoCo version (e.g. 3.10.0). Leave blank to just use whatever they pin.'
+        required: false
+        default: ''
+
+jobs:
+  # Linux builds through the same Docker image a developer would use locally. The container is what
+  # pins the glibc/libstdc++ floor of the committed .so -- building on the bare runner would raise
+  # it to whatever the runner image ships, silently dropping support for older systems.
+  linux-x86_64:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    defaults:
+      run:
+        working-directory: scs2-mujoco-simulation
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Resolve the pinned MuJoCo version
+        id: version
+        run: |
+          pinned=$(grep -oP '^MUJOCO_VERSION="\K[^"]+' native-build/install.sh)
+          [ -n "$pinned" ] || { echo "Could not read MUJOCO_VERSION from install.sh" >&2; exit 1; }
+          asked="${{ inputs.expected-version }}"
+          if [ -n "$asked" ] && [ "$asked" != "$pinned" ]; then
+            echo "install.sh pins $pinned but this run asked for $asked." >&2
+            exit 1
+          fi
+          echo "Building MuJoCo $pinned"
+          echo "mujoco=$pinned" >> "$GITHUB_OUTPUT"
+
+      - name: Build the natives
+        run: |
+          ./build.sh docker
+          ./build.sh install
+          ./build.sh wrap
+
+      # The shim is only usable against bindings generated from the same headers, so check the
+      # generated constant rather than trusting that the build succeeded.
+      - name: Verify the bindings match the pinned version
+        run: |
+          want=$(echo "${{ steps.version.outputs.mujoco }}" | awk -F. '{printf "%d", $1*1000000 + $2*1000 + $3}')
+          found=$(grep -oP 'mjVERSION_HEADER = \K\d+' src/main/generated-java/us/ihmc/scs2/simulation/mujoco/Mujoco.java)
+          echo "mjVERSION_HEADER = $found (expected $want)"
+          [ "$found" = "$want" ] || { echo "Generated bindings report $found, expected $want." >&2; exit 1; }
+
+      # A low floor on purpose: this catches an empty or half-written shim without hardcoding a
+      # count that changes with every MuJoCo version. Cross-platform agreement is checked by the
+      # compare-platforms job, which is the assertion that actually detects drift.
+      - name: Verify the shim exports JNI entry points
+        run: |
+          n=$(nm -D --defined-only src/main/resources/mujoco/linux-x86_64/libjniMujoco.so \
+              | grep -c 'Java_us_ihmc_scs2_simulation_mujoco' || true)
+          echo "libjniMujoco.so exports $n JNI entry points"
+          echo "$n" > /tmp/jni-count-linux
+          [ "$n" -ge 1000 ] || { echo "Only $n JNI entry points; the shim looks incomplete." >&2; exit 1; }
+
+      # Only the two real files. libmujoco.so in the tree is a SYMLINK (git mode 120000) to the
+      # versioned library, and upload-artifact dereferences symlinks -- uploading the directory
+      # would hand back a second full copy of the library under the symlink's name, and committing
+      # that would silently turn the link into a duplicate binary. Recreate it with ln -s instead.
+      - name: Upload the Linux natives
+        uses: actions/upload-artifact@v4
+        with:
+          name: mujoco-natives-linux-x86_64
+          path: |
+            scs2-mujoco-simulation/src/main/resources/mujoco/linux-x86_64/libjniMujoco.so
+            scs2-mujoco-simulation/src/main/resources/mujoco/linux-x86_64/libmujoco.so.${{ steps.version.outputs.mujoco }}
+          if-no-files-found: error
+          retention-days: 14
+
+      # Mujoco.java comes from the Linux build only -- the split llama.cpp-javacpp uses. The preset
+      # is platform-neutral, so one canonical copy avoids a line-ending diff from a Windows
+      # checkout; this repository has no .gitattributes.
+      - name: Upload the regenerated bindings
+        uses: actions/upload-artifact@v4
+        with:
+          name: mujoco-bindings
+          path: scs2-mujoco-simulation/src/main/generated-java/us/ihmc/scs2/simulation/mujoco/Mujoco.java
+          if-no-files-found: error
+          retention-days: 14
+
+  # Windows cannot be containerised usefully, so the toolchain is pinned by the runner image
+  # instead: windows-2022, not windows-latest, because the output is a binary that gets committed.
+  windows-x86_64:
+    runs-on: windows-2022
+    timeout-minutes: 60
+    defaults:
+      run:
+        working-directory: scs2-mujoco-simulation
+    steps:
+      - uses: actions/checkout@v4
+
+      # Puts cl.exe, link.exe and dumpbin on PATH for every later step. A hand-rolled vcvars64 call
+      # would only apply to the step that made it, since each step is a fresh shell.
+      - uses: ilammy/msvc-dev-cmd@v1
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Resolve the pinned MuJoCo version
+        id: version
+        shell: pwsh
+        run: |
+          $m = Select-String -Path native-build\install.ps1 -Pattern '^\$MUJOCO_VERSION\s*=\s*"([^"]+)"'
+          if (-not $m) { throw "Could not read MUJOCO_VERSION from install.ps1" }
+          $pinned = $m.Matches[0].Groups[1].Value
+          $asked = '${{ inputs.expected-version }}'
+          if ($asked -and $asked -ne $pinned) { throw "install.ps1 pins $pinned but this run asked for $asked." }
+          Write-Host "Building MuJoCo $pinned"
+          "mujoco=$pinned" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+
+      - name: Verify cl.exe is available
+        shell: pwsh
+        run: |
+          $cl = Get-Command cl.exe -ErrorAction SilentlyContinue
+          if (-not $cl) { throw "cl.exe is not on PATH; the MSVC setup step did not take effect." }
+          Write-Host "cl.exe at $($cl.Source)"
+
+      - name: Stage the MuJoCo Windows SDK
+        shell: pwsh
+        run: .\native-build\install.ps1
+
+      - name: Build the JNI shim with MSVC
+        shell: pwsh
+        run: |
+          git config --global core.longpaths true
+          .\native-build\wrap.ps1
+
+      - name: Verify the bindings match the pinned version
+        shell: pwsh
+        run: |
+          $parts = '${{ steps.version.outputs.mujoco }}'.Split('.')
+          $want = [int]$parts[0] * 1000000 + [int]$parts[1] * 1000 + [int]$parts[2]
+          $found = (Select-String -Path 'src\main\generated-java\us\ihmc\scs2\simulation\mujoco\Mujoco.java' `
+                    -Pattern 'mjVERSION_HEADER\s*=\s*(\d+)').Matches[0].Groups[1].Value
+          Write-Host "mjVERSION_HEADER = $found (expected $want)"
+          if ([int]$found -ne $want) { throw "Generated bindings report $found, expected $want." }
+
+      - name: Verify the shim exports JNI entry points
+        shell: pwsh
+        run: |
+          $dll = 'src\main\resources\mujoco\windows-x86_64\jniMujoco.dll'
+          if (-not (Test-Path $dll)) { throw "$dll was not produced." }
+          $n = (dumpbin /exports $dll | Select-String 'Java_us_ihmc_scs2_simulation_mujoco').Count
+          Write-Host "jniMujoco.dll exports $n JNI entry points"
+          if ($n -lt 1000) { throw "Only $n JNI entry points; the shim looks incomplete." }
+
+      - name: Upload the Windows natives
+        uses: actions/upload-artifact@v4
+        with:
+          name: mujoco-natives-windows-x86_64
+          path: scs2-mujoco-simulation/src/main/resources/mujoco/windows-x86_64/
+          if-no-files-found: error
+          retention-days: 14
+
+  # The assertion the whole workflow exists for. Both shims are generated by JavaCPP from the same
+  # Mujoco.java, so they should declare the same set of native methods; a difference means one
+  # platform was built against different headers, which is exactly the drift that fails silently at
+  # runtime. objdump reads PE exports on Linux, so one runner can check both.
+  compare-platforms:
+    runs-on: ubuntu-latest
+    needs: [linux-x86_64, windows-x86_64]
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: mujoco-natives-linux-x86_64
+          path: linux
+      - uses: actions/download-artifact@v4
+        with:
+          name: mujoco-natives-windows-x86_64
+          path: windows
+
+      - name: Compare the JNI entry points of the two shims
+        run: |
+          nm -D --defined-only linux/libjniMujoco.so \
+            | grep -oP 'Java_us_ihmc_scs2_simulation_mujoco\S*' | sort -u > linux.txt
+          objdump -p windows/jniMujoco.dll \
+            | grep -oP 'Java_us_ihmc_scs2_simulation_mujoco\S*' | sort -u > windows.txt
+          echo "linux   $(wc -l < linux.txt) entry points"
+          echo "windows $(wc -l < windows.txt) entry points"
+          if ! diff -q linux.txt windows.txt > /dev/null; then
+            echo "::error::The two shims do not declare the same native methods."
+            echo "--- only on linux ---";   comm -23 linux.txt windows.txt | head -40
+            echo "--- only on windows ---"; comm -13 linux.txt windows.txt | head -40
+            echo "If the platforms legitimately differ here, relax this to a tolerance; otherwise"
+            echo "one of them was built against different headers and must not be committed."
+            exit 1
+          fi
+          echo "Both shims declare the same native methods."
