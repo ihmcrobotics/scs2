@@ -1,5 +1,6 @@
 package us.ihmc.scs2.simulation.mujoco;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -39,6 +40,23 @@ public class MujocoNativeSmokeTest
    public static void loadNatives()
    {
       assertTrue(MujocoNativeLibrary.load(), "MuJoCo native library failed to load");
+   }
+
+   /**
+    * The shipped library has to be the version the generated bindings were produced from. The
+    * bindings carry {@code mjVERSION_HEADER} as a compile-time constant and the library reports
+    * {@code mj_version()} at runtime, so a stale binary paired with fresh bindings shows up here
+    * rather than as inexplicable behaviour later. That pairing is per platform and the binaries are
+    * committed by hand, which is exactly how the Windows DLLs went four minor versions stale without
+    * anyone noticing.
+    */
+   @Test
+   public void theLibraryVersionMatchesTheBindings()
+   {
+      assertEquals(Mujoco.mjVERSION_HEADER,
+                   Mujoco.mj_version(),
+                   "MuJoCo library reports " + Mujoco.mj_versionString().getString() + " but the bindings were generated from "
+                   + Mujoco.mjVERSION_HEADER + "; the committed native for this platform is not the pinned version");
    }
 
    @Test
