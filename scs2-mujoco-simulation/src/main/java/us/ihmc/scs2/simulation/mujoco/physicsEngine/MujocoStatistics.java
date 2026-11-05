@@ -3,8 +3,8 @@ package us.ihmc.scs2.simulation.mujoco.physicsEngine;
 import us.ihmc.scs2.simulation.mujoco.Mujoco;
 import us.ihmc.scs2.simulation.mujoco.Mujoco.mjData;
 import us.ihmc.scs2.simulation.mujoco.Mujoco.mjModel;
-import us.ihmc.scs2.simulation.mujoco.Mujoco.mjSolverStat_;
-import us.ihmc.scs2.simulation.mujoco.Mujoco.mjWarningStat_;
+import us.ihmc.scs2.simulation.mujoco.Mujoco.mjSolverStat;
+import us.ihmc.scs2.simulation.mujoco.Mujoco.mjWarningStat;
 import java.util.concurrent.TimeUnit;
 
 import us.ihmc.scs2.session.YoTimer;
@@ -59,8 +59,8 @@ public class MujocoStatistics
    private mjData data;
    // Cached JavaCPP wrappers over mjData's stat arrays; the mjData arena is stable for the life of
    // the model, so binding once keeps the per-tick loop allocation-free.
-   private mjWarningStat_ warningStats;
-   private mjSolverStat_ solverStats;
+   private mjWarningStat warningStats;
+   private mjSolverStat solverStats;
 
    public MujocoStatistics(YoRegistry parentRegistry)
    {
@@ -99,8 +99,8 @@ public class MujocoStatistics
    public void bind(mjModel model, mjData data)
    {
       this.data = data;
-      warningStats = new mjWarningStat_(data.warning(0));
-      solverStats = new mjSolverStat_(data.solver(0));
+      warningStats = new mjWarningStat(data.warning(0));
+      solverStats = new mjSolverStat(data.solver(0));
    }
 
    /** Reads the diagnostics of the step that just completed; call after stepping, on the physics thread. */
